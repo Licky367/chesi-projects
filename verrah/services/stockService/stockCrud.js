@@ -1,29 +1,28 @@
+
+
 const mongoose = require("mongoose");
 const Stock = require("../../models/stock");
 const Product = require("../../models/products");
-const Substation = require("../../models/substations");
 
 const {
-    text,
-    cleanSubcategory,
-    productNameFromStock,
-    number,
-    wholeNumber,
-    calculateUnitBuyPrice,
-    sortFifoBatches,
-    calculateFifoValue,
-    weightedProductBuyPrice,
-    sortProductFifo
+text,
+cleanSubcategory,
+productNameFromStock,
+number,
+wholeNumber,
+calculateUnitBuyPrice,
+sortFifoBatches,
+calculateFifoValue
 } = require("./helpers");
 
 const {
-    getCategory,
-    validateCategory,
-    getCategoryByName
+getCategory,
+validateCategory,
+getCategoryByName
 } = require("./category");
 
 const {
-    reconcilePurchaseBatches
+reconcilePurchaseBatches
 } = require("./stockFifo");
 
 // ==========================================================
@@ -32,114 +31,120 @@ const {
 
 async function recalculateStockTotals(session = null) {
 
-    const query = Stock
-        .find({ isActive: true })
-        .select(
-            "_id category units buyPrice unitBuyPrice purchaseBatches createdAt"
-        );
+const query = Stock  
+    .find({ isActive: true })  
+    .select(  
+        "_id category units buyPrice unitBuyPrice purchaseBatches createdAt"  
+    );  
 
-    if (session) {
-        query.session(session);
-    }
+if (session) {  
+    query.session(session);  
+}  
 
-    const stocks = await query;
+const stocks = await query;  
 
-    const categoryTotals = new Map();
+const categoryTotals = new Map();  
 
-    let overall = 0;
+let overall = 0;  
 
-    // ------------------------------------------------------
-    // Reconcile FIFO batches first
-    // ------------------------------------------------------
 
-    for (const stock of stocks) {
+// ------------------------------------------------------  
+// Reconcile FIFO batches first  
+// ------------------------------------------------------  
 
-        await reconcilePurchaseBatches(
-            stock,
-            session
-        );
+for (const stock of stocks) {  
 
-    }
+    await reconcilePurchaseBatches(  
+        stock,  
+        session  
+    );  
 
-    // ------------------------------------------------------
-    // Calculate totals
-    // ------------------------------------------------------
+}  
 
-    for (const stock of stocks) {
 
-        const value =
-            calculateFifoValue(stock);
+// ------------------------------------------------------  
+// Calculate totals  
+// ------------------------------------------------------  
 
-        const unitBuyPrice =
-            calculateUnitBuyPrice(stock);
+for (const stock of stocks) {  
 
-        const categoryName =
-            text(stock.category).toLowerCase();
+    const value =  
+        calculateFifoValue(stock);  
 
-        categoryTotals.set(
-            categoryName,
-            (
-                categoryTotals.get(categoryName) || 0
-            ) + value
-        );
+    const unitBuyPrice =  
+        calculateUnitBuyPrice(stock);  
 
-        overall += value;
+    const categoryName =  
+        text(stock.category).toLowerCase();  
 
-        stock.unitBuyPrice =
-            unitBuyPrice;
 
-    }
+    categoryTotals.set(  
+        categoryName,  
+        (  
+            categoryTotals.get(categoryName) || 0  
+        ) + value  
+    );  
 
-    // ------------------------------------------------------
-    // Persist totals
-    // ------------------------------------------------------
 
-    const now = new Date();
+    overall += value;  
 
-    for (const stock of stocks) {
+    stock.unitBuyPrice =  
+        unitBuyPrice;  
 
-        const value =
-            calculateFifoValue(stock);
+}  
 
-        const categoryName =
-            text(stock.category).toLowerCase();
 
-        await Stock.updateOne(
-            {
-                _id: stock._id
-            },
-            {
-                $set: {
+// ------------------------------------------------------  
+// Persist totals  
+// ------------------------------------------------------  
 
-                    unitBuyPrice:
-                        calculateUnitBuyPrice(stock),
+const now = new Date();  
 
-                    cashOutflow:
-                        value,
+for (const stock of stocks) {  
 
-                    categoryOveral:
-                        categoryTotals.get(categoryName) || 0,
+    const value =  
+        calculateFifoValue(stock);  
 
-                    overal:
-                        overall,
+    const categoryName =  
+        text(stock.category).toLowerCase();  
 
-                    totalsUpdatedAt:
-                        now
 
-                }
-            },
-            {
-                session,
-                timestamps: true
-            }
-        );
+    await Stock.updateOne(  
+        { _id: stock._id },  
+        {  
+            $set: {  
 
-    }
+                unitBuyPrice:  
+                    calculateUnitBuyPrice(stock),  
 
-    return {
-        categoryTotals,
-        overal: overall
-    };
+                cashOutflow:  
+                    value,  
+
+                categoryOveral:  
+                    categoryTotals.get(categoryName) || 0,  
+
+                overal:  
+                    overall,  
+
+                totalsUpdatedAt:  
+                    now  
+
+            }  
+        },  
+        {  
+            session,  
+            timestamps: true  
+        }  
+    );  
+
+}  
+
+
+return {  
+    categoryTotals,  
+    overal: overall  
+};
+
 }
 
 // ==========================================================
@@ -147,449 +152,290 @@ async function recalculateStockTotals(session = null) {
 //
 // Form meaning:
 //
-// units     = initial quantity
+// units     = initial warehouse quantity
 // buyPrice  = total purchase cost of that initial batch
 // sellPrice = selling price per unit
 //
-// ADMIN:
-//     Creates one warehouse FIFO batch.
-//
-// STAFF:
-//     Stock warehouse units remain ZERO.
-//     Product receives the submitted units as FIFO.
-//     Assigned substation inventory receives the units.
+// A new stock record receives exactly ONE FIFO batch.
 // ==========================================================
 
-async function createStock(body, user) {
+async function createStock(body) {
+
+// ------------------------------------------------------  
+// STOCK NAME  
+// ------------------------------------------------------  
+
+const name =  
+    cleanSubcategory(  
+        body.name || body.subcategory  
+    );  
+
+if (!name) {  
+    throw new Error(  
+        "Stock name is required."  
+    );  
+}  
+
+
+// ------------------------------------------------------  
+// CATEGORY  
+// ------------------------------------------------------  
+
+const categoryDocument =  
+    await getCategory(  
+        body.category  
+    );  
+
+const category =  
+    text(  
+        categoryDocument.name  
+    ).toLowerCase();  
+
+
+// ------------------------------------------------------  
+// SUBCATEGORY  
+// ------------------------------------------------------  
+
+const subcategory =  
+    cleanSubcategory(  
+        body.subcategory  
+    );  
+
+if (!subcategory) {  
+    throw new Error(  
+        "Subcategory is required."  
+    );  
+}  
 
-    // ------------------------------------------------------
-    // STOCK NAME
-    // ------------------------------------------------------
-
-    const name =
-        cleanSubcategory(
-            body.name || body.subcategory
-        );
-
-    if (!name) {
-
-        throw new Error(
-            "Stock name is required."
-        );
-
-    }
-
-    // ------------------------------------------------------
-    // CATEGORY
-    // ------------------------------------------------------
-
-    const categoryDocument =
-        await getCategory(
-            body.category
-        );
-
-    const category =
-        text(
-            categoryDocument.name
-        ).toLowerCase();
-
-    // ------------------------------------------------------
-    // SUBCATEGORY
-    // ------------------------------------------------------
-
-    const subcategory =
-        cleanSubcategory(
-            body.subcategory
-        );
-
-    if (!subcategory) {
-
-        throw new Error(
-            "Subcategory is required."
-        );
-
-    }
-
-    // ------------------------------------------------------
-    // INITIAL UNITS
-    // ------------------------------------------------------
-
-    const units =
-        wholeNumber(
-            body.units,
-            "Units",
-            true
-        );
-
-    if (units <= 0) {
-
-        throw new Error(
-            "Initial units must be greater than zero."
-        );
-
-    }
 
-    // ------------------------------------------------------
-    // INITIAL PURCHASE COST
-    //
-    // buyPrice is the TOTAL purchase cost.
-    // The FIFO batch stores the calculated PER-UNIT
-    // buyPrice.
-    // ------------------------------------------------------
+// ------------------------------------------------------  
+// INITIAL UNITS  
+// ------------------------------------------------------  
 
-    const totalPurchaseCost =
-        number(
-            body.buyPrice,
-            "Total purchase cost",
-            true
-        );
+const units =  
+    wholeNumber(  
+        body.units,  
+        "Warehouse units",  
+        true  
+    );  
 
-    const unitBuyPrice =
-        totalPurchaseCost / units;
+if (units <= 0) {  
+    throw new Error(  
+        "Initial warehouse units must be greater than zero."  
+    );  
+}  
 
-    if (!Number.isFinite(unitBuyPrice)) {
 
-        throw new Error(
-            "Unable to calculate the unit buy price."
-        );
+// ------------------------------------------------------  
+// INITIAL PURCHASE COST  
+//  
+// This remains exactly as the existing implementation:  
+//  
+// total purchase cost / units  
+//  
+// = unit buy price of the FIFO batch  
+// ------------------------------------------------------  
 
-    }
+const totalPurchaseCost =  
+    number(  
+        body.buyPrice,  
+        "Total purchase cost",  
+        true  
+    );  
 
-    // ------------------------------------------------------
-    // SELL PRICE
-    //
-    // sellPrice is the PER-UNIT selling price.
-    // ------------------------------------------------------
-
-    const unitSellPrice =
-        number(
-            body.unitSellPrice ??
-            body.sellPrice,
-            "Selling price",
-            true
-        );
-
-    // ------------------------------------------------------
-    // OTHER STOCK DETAILS
-    // ------------------------------------------------------
-
-    const days =
-        wholeNumber(
-            body.days || 0,
-            "Delivery days"
-        );
-
-    const image =
-        text(body.image);
-
-    const description =
-        text(body.description);
-
-    // ------------------------------------------------------
-    // DUPLICATE STOCK CHECK
-    // ------------------------------------------------------
-
-    const existing =
-        await Stock.findOne({
-            category,
-            subcategory,
-            isActive: true
-        });
-
-    if (existing) {
-
-        throw new Error(
-            `The subcategory "${subcategory}" already exists under the selected category. Select the existing stock record to update it.`
-        );
-
-    }
-
-    // ======================================================
-    // STAFF VALIDATION
-    // ======================================================
-
-    if (
-        user &&
-        user.role === "staff"
-    ) {
-
-        if (
-            !user.assignedSubstation ||
-            !mongoose.isValidObjectId(
-                user.assignedSubstation
-            )
-        ) {
-
-            throw new Error(
-                "Staff member has no valid assigned substation."
-            );
-
-        }
-
-    }
-
-    // ------------------------------------------------------
-    // SESSION
-    // ------------------------------------------------------
-
-    const session =
-        await mongoose.startSession();
-
-    let createdStock;
-    let createdProduct;
-
-    try {
-
-        await session.withTransaction(
-            async () => {
-
-                const isStaff =
-                    user &&
-                    user.role === "staff";
-
-                // ==================================================
-                // CREATE STOCK
-                // ==================================================
-
-                const stockResult =
-                    await Stock.create(
-                        [
-                            {
-                                name,
-                                category,
-                                subcategory,
-                                days,
-                                image,
-
-                                units:
-                                    isStaff
-                                        ? 0
-                                        : units,
-
-                                buyPrice:
-                                    isStaff
-                                        ? 0
-                                        : unitBuyPrice,
-
-                                unitBuyPrice:
-                                    isStaff
-                                        ? 0
-                                        : unitBuyPrice,
-
-                                purchaseBatches:
-                                    isStaff
-                                        ? []
-                                        : [
-                                            {
-                                                units,
-                                                buyPrice:
-                                                    unitBuyPrice,
-                                                purchasedAt:
-                                                    new Date()
-                                            }
-                                        ],
-
-                                description
-                            }
-                        ],
-                        {
-                            session
-                        }
-                    );
-
-                createdStock =
-                    stockResult[0];
-
-                // ==================================================
-                // CREATE PRODUCT
-                // ==================================================
-
-                const productResult =
-                    await Product.create(
-                        [
-                            {
-                                stock:
-                                    createdStock._id,
-
-                                name,
-
-                                category:
-                                    categoryDocument._id,
-
-                                subcategory,
-
-                                days,
-
-                                image,
-
-                                description,
-
-                                units:
-                                    isStaff
-                                        ? units
-                                        : 0,
-
-                                fifoBatches:
-                                    isStaff
-                                        ? [
-                                            {
-                                                units,
-                                                buyPrice:
-                                                    unitBuyPrice,
-                                                receivedAt:
-                                                    new Date()
-                                            }
-                                        ]
-                                        : [],
-
-                                unitBuyPrice:
-                                    isStaff
-                                        ? unitBuyPrice
-                                        : 0,
-
-                                buyPrice:
-                                    isStaff
-                                        ? unitBuyPrice
-                                        : 0,
-
-                                unitSellPrice
-                            }
-                        ],
-                        {
-                            session
-                        }
-                    );
-
-                createdProduct =
-                    productResult[0];
+const unitBuyPrice =  
+    totalPurchaseCost / units;  
 
-                // ==================================================
-                // STAFF SUBSTATION INVENTORY
-                // ==================================================
+if (!Number.isFinite(unitBuyPrice)) {  
+    throw new Error(  
+        "Unable to calculate the unit buy price."  
+    );  
+}  
 
-                if (isStaff) {
 
-                    const substation =
-                        await Substation.findById(
-                            user.assignedSubstation
-                        ).session(session);
-
-                    if (!substation) {
-
-                        throw new Error(
-                            "Assigned substation not found."
-                        );
-
-                    }
-
-                    if (
-                        !Array.isArray(
-                            substation.productInventory
-                        )
-                    ) {
-
-                        substation.productInventory = [];
-
-                    }
-
-                    const inventory =
-                        substation.productInventory.find(
-                            item =>
-                                String(
-                                    item.productId
-                                ) ===
-                                String(
-                                    createdProduct._id
-                                )
-                        );
-
-                    if (inventory) {
-
-                        inventory.units =
-                            Number(
-                                inventory.units || 0
-                            ) + units;
-
-                        inventory.productName =
-                            createdProduct.name;
-
-                        inventory.category =
-                            createdProduct.category;
-
-                        inventory.subcategory =
-                            createdProduct.subcategory;
-
-                        inventory.updatedAt =
-                            new Date();
-
-                    } else {
-
-                        substation.productInventory.push({
-
-                            productId:
-                                createdProduct._id,
-
-                            productName:
-                                createdProduct.name,
-
-                            category:
-                                createdProduct.category,
-
-                            subcategory:
-                                createdProduct.subcategory,
-
-                            units,
-
-                            updatedAt:
-                                new Date()
-
-                        });
-
-                    }
-
-                    await substation.save({
-                        session
-                    });
-
-                }
-
-            }
-        );
-
-        // ======================================================
-        // RECALCULATE GLOBAL STOCK TOTALS
-        // ======================================================
-
-        await recalculateStockTotals();
-
-        // ======================================================
-        // RETURN CREATED RECORDS
-        // ======================================================
-
-        const stock =
-            await Stock
-                .findById(
-                    createdStock._id
-                )
-                .lean();
-
-        const product =
-            await Product
-                .findById(
-                    createdProduct._id
-                )
-                .lean();
-
-        return {
-            stock,
-            product
-        };
-
-    } finally {
-
-        await session.endSession();
-
-    }
+// ------------------------------------------------------  
+// SELL PRICE  
+// ------------------------------------------------------  
+
+const unitSellPrice =  
+    number(  
+        body.unitSellPrice ?? body.sellPrice,  
+        "Selling price",  
+        true  
+    );  
+
+
+// ------------------------------------------------------  
+// OTHER STOCK DETAILS  
+// ------------------------------------------------------  
+
+const days =  
+    wholeNumber(  
+        body.days || 0,  
+        "Delivery days"  
+    );  
+
+const image =  
+    text(body.image);  
+
+const description =  
+    text(body.description);  
+
+
+// ------------------------------------------------------  
+// DUPLICATE STOCK CHECK  
+// ------------------------------------------------------  
+
+const existing =  
+    await Stock.findOne({  
+        category,  
+        subcategory,  
+        isActive: true  
+    });  
+
+if (existing) {  
+
+    throw new Error(  
+        `The subcategory "${subcategory}" already exists under the selected category. Select the existing stock record to update it.`  
+    );  
+
+}  
+
+
+// ------------------------------------------------------  
+// FIRST FIFO BATCH  
+// ------------------------------------------------------  
+
+const purchaseBatches = [  
+
+    {  
+        units,  
+        buyPrice: unitBuyPrice,  
+        purchasedAt: new Date()  
+    }  
+
+];  
+
+
+const session =  
+    await mongoose.startSession();  
+
+let createdStock;  
+let createdProduct;  
+
+
+try {  
+
+    await session.withTransaction(  
+        async () => {  
+
+            // ==================================================  
+            // CREATE STOCK  
+            // ==================================================  
+
+            const stockResult =  
+                await Stock.create(  
+                    [  
+                        {  
+                            name,  
+                            category,  
+                            subcategory,  
+                            days,  
+                            image,  
+                            units,  
+
+                            // Existing behavior preserved.  
+                            buyPrice:  
+                                unitBuyPrice,  
+
+                            unitBuyPrice,  
+
+                            purchaseBatches,  
+
+                            description  
+                        }  
+                    ],  
+                    { session }  
+                );  
+
+
+            createdStock =  
+                stockResult[0];  
+
+
+            // ==================================================  
+            // CREATE PRODUCT  
+            // ==================================================  
+
+            const productResult =  
+                await Product.create(  
+                    [  
+                        {  
+                            stock:  
+                                createdStock._id,  
+
+                            name,  
+
+                            category:  
+                                categoryDocument._id,  
+
+                            subcategory,  
+
+                            days,  
+
+                            image,  
+
+                            description,  
+
+                            units: 0,  
+
+                            fifoBatches: [],  
+
+                            unitBuyPrice: 0,  
+
+                            buyPrice: 0,  
+
+                            unitSellPrice  
+                        }  
+                    ],  
+                    { session }  
+                );  
+
+
+            createdProduct =  
+                productResult[0];  
+
+        }  
+    );  
+
+
+    await recalculateStockTotals();  
+
+
+    const stock =  
+        await Stock  
+            .findById(createdStock._id)  
+            .lean();  
+
+
+    const product =  
+        await Product  
+            .findById(createdProduct._id)  
+            .lean();  
+
+
+    return {  
+        stock,  
+        product  
+    };  
+
+
+} finally {  
+
+    await session.endSession();  
+
+}
+
 }
 
 // ==========================================================
@@ -606,655 +452,486 @@ async function createStock(body, user) {
 // sellPrice:
 //     updated selling price
 //
-// ADMIN:
-//     Additional units go into Stock.purchaseBatches.
-//
-// STAFF:
-//     Stock remains at ZERO.
-//     Additional units go into Product.fifoBatches.
-//     Assigned substation inventory is increased.
+// Existing FIFO batches are NEVER repriced.
 // ==========================================================
 
 async function updateStockEntry(
-    stockId,
-    body,
-    user
+stockId,
+body
 ) {
 
-    // ------------------------------------------------------
-    // VALIDATE STOCK ID
-    // ------------------------------------------------------
+// ------------------------------------------------------  
+// VALIDATE STOCK ID  
+// ------------------------------------------------------  
 
-    if (
-        !mongoose.isValidObjectId(stockId)
-    ) {
+if (  
+    !mongoose.isValidObjectId(stockId)  
+) {  
 
-        throw new Error(
-            "Invalid stock."
-        );
+    throw new Error(  
+        "Invalid stock."  
+    );  
 
-    }
+}  
 
-    // ======================================================
-    // STAFF VALIDATION
-    // ======================================================
 
-    const isStaff =
-        user &&
-        user.role === "staff";
+const session =  
+    await mongoose.startSession();  
 
-    if (isStaff) {
 
-        if (
-            !user.assignedSubstation ||
-            !mongoose.isValidObjectId(
-                user.assignedSubstation
-            )
-        ) {
+try {  
 
-            throw new Error(
-                "Staff member has no valid assigned substation."
-            );
+    let updatedStock;  
 
-        }
 
-    }
+    await session.withTransaction(  
+        async () => {  
 
-    const session =
-        await mongoose.startSession();
+            // ==================================================  
+            // LOAD STOCK  
+            // ==================================================  
 
-    try {
+            const stock =  
+                await Stock  
+                    .findOne({  
+                        _id: stockId,  
+                        isActive: true  
+                    })  
+                    .session(session);  
 
-        let updatedStock;
 
-        await session.withTransaction(
-            async () => {
+            if (!stock) {  
 
-                // ==================================================
-                // LOAD STOCK
-                // ==================================================
+                throw new Error(  
+                    "Stock not found."  
+                );  
 
-                const stock =
-                    await Stock
-                        .findOne({
-                            _id: stockId,
-                            isActive: true
-                        })
-                        .session(session);
+            }  
 
-                if (!stock) {
 
-                    throw new Error(
-                        "Stock not found."
-                    );
+            // ==================================================  
+            // RECONCILE CURRENT FIFO STATE  
+            // ==================================================  
 
-                }
+            await reconcilePurchaseBatches(  
+                stock,  
+                session  
+            );  
 
-                // ==================================================
-                // RECONCILE CURRENT FIFO STATE
-                // ==================================================
 
-                await reconcilePurchaseBatches(
-                    stock,
-                    session
-                );
+            // ==================================================  
+            // CURRENT WAREHOUSE UNITS  
+            // ==================================================  
 
-                // ==================================================
-                // CURRENT WAREHOUSE UNITS
-                // ==================================================
+            const currentUnits =  
+                wholeNumber(  
+                    stock.units || 0,  
+                    "Current warehouse units"  
+                );  
 
-                const currentUnits =
-                    wholeNumber(
-                        stock.units || 0,
-                        "Current warehouse units"
-                    );
 
-                // ==================================================
-                // ADDITIONAL UNITS
-                // ==================================================
+            // ==================================================  
+            // ADDITIONAL UNITS  
+            //  
+            // In edit mode the form submits:  
+            //  
+            // blank = 0 additional units  
+            // number = additional units  
+            // ==================================================  
 
-                const rawUnits =
-                    text(body.units);
+            const rawUnits =  
+                text(body.units);  
 
-                const additionalUnits =
-                    rawUnits === ""
-                        ? 0
-                        : wholeNumber(
-                            rawUnits,
-                            "Additional units",
-                            true
-                        );
 
-                // ==================================================
-                // CATEGORY
-                // ==================================================
+            const additionalUnits =  
+                rawUnits === ""  
+                    ? 0  
+                    : wholeNumber(  
+                        rawUnits,  
+                        "Additional warehouse units",  
+                        true  
+                    );  
 
-                let category;
 
-                if (text(body.category)) {
+            // ==================================================  
+            // CATEGORY  
+            // ==================================================  
 
-                    category =
-                        await validateCategory(
-                            body.category,
-                            session
-                        );
+            let category;  
 
-                } else {
+            if (text(body.category)) {  
 
-                    category =
-                        text(
-                            stock.category
-                        ).toLowerCase();
+                category =  
+                    await validateCategory(  
+                        body.category,  
+                        session  
+                    );  
 
-                }
+            } else {  
 
-                if (!category) {
+                category =  
+                    text(  
+                        stock.category  
+                    ).toLowerCase();  
 
-                    throw new Error(
-                        "Stock category is missing."
-                    );
+            }  
 
-                }
 
-                // ==================================================
-                // SUBCATEGORY
-                // ==================================================
+            if (!category) {  
 
-                const subcategory =
-                    cleanSubcategory(
-                        body.subcategory ||
-                        stock.subcategory
-                    );
+                throw new Error(  
+                    "Stock category is missing."  
+                );  
 
-                if (!subcategory) {
+            }  
 
-                    throw new Error(
-                        "Subcategory is required."
-                    );
 
-                }
+            // ==================================================  
+            // SUBCATEGORY  
+            // ==================================================  
 
-                // ==================================================
-                // STOCK NAME
-                // ==================================================
+            const subcategory =  
+                cleanSubcategory(  
+                    body.subcategory ||  
+                    stock.subcategory  
+                );  
 
-                const stockName =
-                    cleanSubcategory(
-                        body.name ||
-                        stock.name ||
-                        subcategory
-                    );
 
-                if (!stockName) {
+            if (!subcategory) {  
 
-                    throw new Error(
-                        "Stock name is required."
-                    );
+                throw new Error(  
+                    "Subcategory is required."  
+                );  
 
-                }
+            }  
 
-                // ==================================================
-                // SELL PRICE
-                // ==================================================
 
-                const unitSellPrice =
-                    number(
-                        body.unitSellPrice ??
-                        body.sellPrice ??
-                        0,
-                        "Selling price"
-                    );
+            // ==================================================  
+            // STOCK NAME  
+            // ==================================================  
 
-                // ==================================================
-                // OTHER DETAILS
-                // ==================================================
+            const stockName =  
+                cleanSubcategory(  
+                    body.name ||  
+                    stock.name ||  
+                    subcategory  
+                );  
 
-                const days =
-                    wholeNumber(
-                        body.days ??
-                        stock.days ??
-                        0,
-                        "Delivery days"
-                    );
 
-                const image =
-                    text(body.image);
+            if (!stockName) {  
 
-                const description =
-                    text(body.description);
+                throw new Error(  
+                    "Stock name is required."  
+                );  
 
-                // ==================================================
-                // DUPLICATE STOCK CHECK
-                // ==================================================
+            }  
 
-                const duplicate =
-                    await Stock.findOne({
 
-                        _id: {
-                            $ne: stock._id
-                        },
+            // ==================================================  
+            // SELL PRICE  
+            //  
+            // IMPORTANT:  
+            // The form always submits sellPrice.  
+            //  
+            // It must update whether additional stock  
+            // is being added or not.  
+            // ==================================================  
 
-                        category,
+            const unitSellPrice =  
+                number(  
+                    body.unitSellPrice ??  
+                    body.sellPrice ??  
+                    0,  
+                    "Selling price"  
+                );  
 
-                        subcategory,
 
-                        isActive: true
+            // ==================================================  
+            // OTHER DETAILS  
+            // ==================================================  
 
-                    }).session(session);
+            const days =  
+                wholeNumber(  
+                    body.days ??  
+                    stock.days ??  
+                    0,  
+                    "Delivery days"  
+                );  
 
-                if (duplicate) {
 
-                    throw new Error(
-                        `The subcategory "${subcategory}" already belongs to another stock record under the selected category.`
-                    );
+            const image =  
+                text(body.image);  
 
-                }
 
-                // ==================================================
-                // UPDATE STOCK DETAILS
-                // ==================================================
+            const description =  
+                text(body.description);  
 
-                stock.name =
-                    stockName;
 
-                stock.category =
-                    category;
+            // ==================================================  
+            // DUPLICATE STOCK CHECK  
+            // ==================================================  
 
-                stock.subcategory =
-                    subcategory;
+            const duplicate =  
+                await Stock.findOne({  
 
-                stock.days =
-                    days;
+                    _id: {  
+                        $ne: stock._id  
+                    },  
 
-                stock.description =
-                    description;
+                    category,  
 
-                stock.image =
-                    image;
+                    subcategory,  
 
-                // ==================================================
-                // ADDITIONAL STOCK
-                // ==================================================
+                    isActive: true  
 
-                if (additionalUnits > 0) {
+                }).session(session);  
 
-                    // ------------------------------------------------
-                    // buyPrice is TOTAL purchase cost for this
-                    // additional FIFO batch.
-                    // ------------------------------------------------
 
-                    const totalPurchaseCost =
-                        number(
-                            body.buyPrice,
-                            "Total purchase cost for additional units",
-                            true
-                        );
+            if (duplicate) {  
 
-                    const additionalUnitBuyPrice =
-                        totalPurchaseCost /
-                        additionalUnits;
+                throw new Error(  
+                    `The subcategory "${subcategory}" already belongs to another stock record under the selected category.`  
+                );  
 
-                    if (
-                        !Number.isFinite(
-                            additionalUnitBuyPrice
-                        )
-                    ) {
+            }  
 
-                        throw new Error(
-                            "Unable to calculate the unit buy price for the additional stock."
-                        );
 
-                    }
+            // ==================================================  
+            // UPDATE STOCK DETAILS  
+            // ==================================================  
 
-                    // ==================================================
-                    // STAFF
-                    // ==================================================
+            stock.name =  
+                stockName;  
 
-                    if (isStaff) {
+            stock.category =  
+                category;  
 
-                        const product =
-                            await Product
-                                .findOne({
-                                    stock: stock._id,
-                                    isActive: true
-                                })
-                                .session(session);
+            stock.subcategory =  
+                subcategory;  
 
-                        if (!product) {
+            stock.days =  
+                days;  
 
-                            throw new Error(
-                                "Product linked to this stock was not found."
-                            );
+            stock.description =  
+                description;  
 
-                        }
+            stock.image =  
+                image;  
 
-                        if (
-                            !Array.isArray(
-                                product.fifoBatches
-                            )
-                        ) {
 
-                            product.fifoBatches = [];
+            // ==================================================  
+            // ADDITIONAL FIFO STOCK  
+            //  
+            // ONLY create a new purchase batch when  
+            // additionalUnits > 0.  
+            //  
+            // Existing batches are untouched.  
+            // ==================================================  
 
-                        }
+            if (additionalUnits > 0) {  
 
-                        product.fifoBatches.push({
+                // ------------------------------------------------  
+                // Buy price is REQUIRED for a new batch.  
+                // ------------------------------------------------  
 
-                            units:
-                                additionalUnits,
+                const totalPurchaseCost =  
+                    number(  
+                        body.buyPrice,  
+                        "Total purchase cost for additional units",  
+                        true  
+                    );  
 
-                            buyPrice:
-                                additionalUnitBuyPrice,
 
-                            receivedAt:
-                                new Date()
+                const additionalUnitBuyPrice =  
+                    totalPurchaseCost /  
+                    additionalUnits;  
 
-                        });
 
-                        product.fifoBatches =
-                            sortProductFifo(
-                                product.fifoBatches
-                            );
+                if (  
+                    !Number.isFinite(  
+                        additionalUnitBuyPrice  
+                    )  
+                ) {  
 
-                        let productUnits = 0;
+                    throw new Error(  
+                        "Unable to calculate the unit buy price for the additional stock."  
+                    );  
 
-                        for (
-                            const batch
-                            of product.fifoBatches
-                        ) {
+                }  
 
-                            const batchUnits =
-                                Number(
-                                    batch.units
-                                );
 
-                            if (
-                                Number.isFinite(
-                                    batchUnits
-                                ) &&
-                                batchUnits > 0
-                            ) {
+                // ------------------------------------------------  
+                // Add NEW FIFO batch.  
+                // Existing batches retain their prices.  
+                // ------------------------------------------------  
 
-                                productUnits +=
-                                    batchUnits;
+                stock.purchaseBatches.push({  
 
-                            }
+                    units:  
+                        additionalUnits,  
 
-                        }
+                    buyPrice:  
+                        additionalUnitBuyPrice,  
 
-                        product.units =
-                            productUnits;
+                    purchasedAt:  
+                        new Date()  
 
-                        const weightedBuyPrice =
-                            weightedProductBuyPrice(
-                                product
-                            );
+                });  
 
-                        product.unitBuyPrice =
-                            weightedBuyPrice;
 
-                        product.buyPrice =
-                            weightedBuyPrice;
+                // ------------------------------------------------  
+                // Increase warehouse quantity.  
+                // ------------------------------------------------  
 
-                        await product.save({
-                            session
-                        });
+                stock.units =  
+                    currentUnits +  
+                    additionalUnits;  
 
-                        // ------------------------------------------------
-                        // Staff Stock remains ZERO.
-                        // ------------------------------------------------
 
-                        stock.units = 0;
+                // ------------------------------------------------  
+                // Keep FIFO ordering.  
+                // ------------------------------------------------  
 
-                        stock.purchaseBatches = [];
+                stock.purchaseBatches =  
+                    sortFifoBatches(  
+                        stock.purchaseBatches  
+                    );  
 
-                        stock.buyPrice = 0;
 
-                        stock.unitBuyPrice = 0;
+                // ------------------------------------------------  
+                // Preserve existing unit-buy-price behavior.  
+                // ------------------------------------------------  
 
-                        // ==================================================
-                        // UPDATE ASSIGNED SUBSTATION INVENTORY
-                        // ==================================================
+                stock.unitBuyPrice =  
+                    calculateUnitBuyPrice(  
+                        stock  
+                    );  
 
-                        const substation =
-                            await Substation.findById(
-                                user.assignedSubstation
-                            ).session(session);
+            }  
 
-                        if (!substation) {
 
-                            throw new Error(
-                                "Assigned substation not found."
-                            );
+            // ==================================================  
+            // SAVE STOCK  
+            // ==================================================  
 
-                        }
+            await stock.save({  
+                session  
+            });  
 
-                        if (
-                            !Array.isArray(
-                                substation.productInventory
-                            )
-                        ) {
 
-                            substation.productInventory = [];
+            // ==================================================  
+            // CATEGORY DOCUMENT  
+            // ==================================================  
 
-                        }
+            const categoryDocument =  
+                await getCategoryByName(  
+                    stock.category,  
+                    session  
+                );  
 
-                        const inventory =
-                            substation.productInventory.find(
-                                item =>
-                                    String(
-                                        item.productId
-                                    ) ===
-                                    String(
-                                        product._id
-                                    )
-                            );
 
-                        if (inventory) {
+            if (!categoryDocument) {  
 
-                            inventory.units =
-                                Number(
-                                    inventory.units || 0
-                                ) +
-                                additionalUnits;
+                throw new Error(  
+                    "The selected category no longer exists or is inactive."  
+                );  
 
-                            inventory.productName =
-                                product.name;
+            }  
 
-                            inventory.category =
-                                product.category;
 
-                            inventory.subcategory =
-                                product.subcategory;
+            // ==================================================  
+            // UPDATE PRODUCT  
+            // ==================================================  
 
-                            inventory.updatedAt =
-                                new Date();
+            const product =  
+                await Product  
+                    .findOne({  
+                        stock: stock._id,  
+                        isActive: true  
+                    })  
+                    .session(session);  
 
-                        } else {
 
-                            substation.productInventory.push({
+            if (product) {  
 
-                                productId:
-                                    product._id,
+                product.name =  
+                    productNameFromStock(  
+                        stock  
+                    );  
 
-                                productName:
-                                    product.name,
 
-                                category:
-                                    product.category,
+                product.category =  
+                    categoryDocument._id;  
 
-                                subcategory:
-                                    product.subcategory,
 
-                                units:
-                                    additionalUnits,
+                product.subcategory =  
+                    stock.subcategory;  
 
-                                updatedAt:
-                                    new Date()
 
-                            });
+                product.days =  
+                    Number(  
+                        stock.days || 0  
+                    );  
 
-                        }
 
-                        await substation.save({
-                            session
-                        });
+                product.image =  
+                    stock.image || "";  
 
-                    } else {
 
-                        // ==================================================
-                        // ADMIN / NON-STAFF
-                        // ==================================================
+                product.description =  
+                    stock.description || "";  
 
-                        stock.purchaseBatches.push({
 
-                            units:
-                                additionalUnits,
+                // ------------------------------------------------  
+                // SELL PRICE ALWAYS UPDATES.  
+                //  
+                // This is the key edit-mode correction.  
+                // It must not depend on whether new FIFO  
+                // stock was added.  
+                // ------------------------------------------------  
 
-                            buyPrice:
-                                additionalUnitBuyPrice,
+                product.unitSellPrice =  
+                    unitSellPrice;  
 
-                            purchasedAt:
-                                new Date()
 
-                        });
+                await product.save({  
+                    session  
+                });  
 
-                        stock.units =
-                            currentUnits +
-                            additionalUnits;
+            }  
 
-                        stock.purchaseBatches =
-                            sortFifoBatches(
-                                stock.purchaseBatches
-                            );
 
-                        stock.unitBuyPrice =
-                            calculateUnitBuyPrice(
-                                stock
-                            );
+            updatedStock =  
+                stock;  
 
-                    }
+        }  
+    );  
 
-                }
 
-                // ==================================================
-                // STAFF STOCK MUST REMAIN ZERO
-                // ==================================================
+    // ======================================================  
+    // RECALCULATE GLOBAL STOCK TOTALS  
+    // ======================================================  
 
-                if (isStaff) {
+    await recalculateStockTotals();  
 
-                    stock.units = 0;
 
-                    stock.purchaseBatches = [];
+    // ======================================================  
+    // RETURN UPDATED STOCK  
+    // ======================================================  
 
-                    stock.buyPrice = 0;
+    return Stock  
+        .findById(  
+            updatedStock._id  
+        )  
+        .lean();  
 
-                    stock.unitBuyPrice = 0;
 
-                }
+} finally {  
 
-                // ==================================================
-                // SAVE STOCK
-                // ==================================================
+    await session.endSession();  
 
-                await stock.save({
-                    session
-                });
+}
 
-                // ==================================================
-                // CATEGORY DOCUMENT
-                // ==================================================
-
-                const categoryDocument =
-                    await getCategoryByName(
-                        stock.category,
-                        session
-                    );
-
-                if (!categoryDocument) {
-
-                    throw new Error(
-                        "The selected category no longer exists or is inactive."
-                    );
-
-                }
-
-                // ==================================================
-                // UPDATE PRODUCT
-                // ==================================================
-
-                const product =
-                    await Product
-                        .findOne({
-                            stock: stock._id,
-                            isActive: true
-                        })
-                        .session(session);
-
-                if (product) {
-
-                    product.name =
-                        productNameFromStock(
-                            stock
-                        );
-
-                    product.category =
-                        categoryDocument._id;
-
-                    product.subcategory =
-                        stock.subcategory;
-
-                    product.days =
-                        Number(
-                            stock.days || 0
-                        );
-
-                    product.image =
-                        stock.image || "";
-
-                    product.description =
-                        stock.description || "";
-
-                    // ------------------------------------------------
-                    // SELL PRICE ALWAYS UPDATES.
-                    // ------------------------------------------------
-
-                    product.unitSellPrice =
-                        unitSellPrice;
-
-                    await product.save({
-                        session
-                    });
-
-                }
-
-                updatedStock =
-                    stock;
-
-            }
-        );
-
-        // ======================================================
-        // RECALCULATE GLOBAL STOCK TOTALS
-        // ======================================================
-
-        await recalculateStockTotals();
-
-        // ======================================================
-        // RETURN UPDATED STOCK
-        // ======================================================
-
-        return Stock
-            .findById(
-                updatedStock._id
-            )
-            .lean();
-
-    } finally {
-
-        await session.endSession();
-
-    }
 }
 
 // ==========================================================
@@ -1263,10 +940,10 @@ async function updateStockEntry(
 
 module.exports = {
 
-    recalculateStockTotals,
+recalculateStockTotals,  
 
-    createStock,
+createStock,  
 
-    updateStockEntry
+updateStockEntry
 
 };
