@@ -11,7 +11,7 @@ const requireAccess =
 
 
 const requireAdminOrStaff =
-    require("../middleware/requireAdminOrStaff");
+    require("../middleware/requireStaffOrAdmin");
 
 
 // ==========================================================
