@@ -4,7 +4,10 @@
 // SECURITY KEY ACCESS MIDDLEWARE
 // ==========================================================
 
+const mongoose = require("mongoose");
+
 const SecurityKey = require("../models/securityKey");
+const Substation = require("../models/substations");
 
 // ==========================================================
 // REQUIRE ACCESS
@@ -20,11 +23,18 @@ const SecurityKey = require("../models/securityKey");
 //
 // Behaviour:
 //
-// 1. User visits the restricted page.
-// 2. Security-key modal is rendered.
-// 3. User enters the security key.
-// 4. Correct key -> continue to restricted page.
-// 5. Wrong key -> modal is rendered again with an error.
+// ADMIN:
+//
+//     Uses SecurityKey.securityKey
+//
+// STAFF:
+//
+//     Uses Substation.substationKey from the substation
+//     assigned to req.user.assignedSubstation
+//
+// OTHER ROLES:
+//
+//     Access denied.
 //
 // ==========================================================
 
@@ -33,11 +43,140 @@ async function requireAccess(req, res, next) {
     try {
 
         // --------------------------------------------------
+        // REQUIRE AUTHENTICATED USER
+        // --------------------------------------------------
+
+        if (!req.user) {
+
+            return res.status(403).send(
+                "Access denied."
+            );
+        }
+
+        // --------------------------------------------------
         // ALREADY VERIFIED
         // --------------------------------------------------
 
-        if (req.session && req.session.securityKeyVerified) {
+        if (
+            req.session &&
+            req.session.securityKeyVerified
+        ) {
+
             return next();
+        }
+
+        // --------------------------------------------------
+        // GET USER ROLE
+        // --------------------------------------------------
+
+        const role = req.user.role;
+
+        // --------------------------------------------------
+        // DETERMINE EXPECTED SECURITY KEY
+        // --------------------------------------------------
+
+        let expectedKey = null;
+
+        // ==================================================
+        // ADMIN
+        // ==================================================
+        //
+        // Admin uses the global SecurityKey.
+        //
+        // ==================================================
+
+        if (role === "admin") {
+
+            const securityKey =
+                await SecurityKey.findOne()
+                    .select("securityKey")
+                    .lean();
+
+            if (securityKey) {
+
+                expectedKey =
+                    securityKey.securityKey;
+            }
+        }
+
+        // ==================================================
+        // STAFF
+        // ==================================================
+        //
+        // Staff uses the key belonging to their assigned
+        // substation.
+        //
+        // ==================================================
+
+        else if (role === "staff") {
+
+            const assignedSubstation =
+                req.user.assignedSubstation;
+
+            // ----------------------------------------------
+            // STAFF MUST HAVE AN ASSIGNED SUBSTATION
+            // ----------------------------------------------
+
+            if (!assignedSubstation) {
+
+                return res.status(403).send(
+                    "Access denied. No substation assigned."
+                );
+            }
+
+            // ----------------------------------------------
+            // VALIDATE OBJECT ID
+            // ----------------------------------------------
+
+            if (
+                !mongoose.Types.ObjectId.isValid(
+                    assignedSubstation
+                )
+            ) {
+
+                return res.status(403).send(
+                    "Access denied. Invalid assigned substation."
+                );
+            }
+
+            // ----------------------------------------------
+            // GET SUBSTATION KEY
+            // ----------------------------------------------
+
+            const substation =
+                await Substation.findById(
+                    assignedSubstation
+                )
+                    .select("substationKey")
+                    .lean();
+
+            if (substation) {
+
+                expectedKey =
+                    substation.substationKey;
+            }
+        }
+
+        // ==================================================
+        // OTHER ROLES
+        // ==================================================
+
+        else {
+
+            return res.status(403).send(
+                "Access denied."
+            );
+        }
+
+        // --------------------------------------------------
+        // SECURITY KEY NOT FOUND
+        // --------------------------------------------------
+
+        if (!expectedKey) {
+
+            return res.status(403).send(
+                "Access denied. Security key is not configured."
+            );
         }
 
         // --------------------------------------------------
@@ -51,19 +190,16 @@ async function requireAccess(req, res, next) {
 
         if (submittedKey) {
 
-            const securityKey =
-                await SecurityKey.findOne({
-                    securityKey: submittedKey
-                }).lean();
-
             // ------------------------------------------------
             // CORRECT KEY
             // ------------------------------------------------
 
-            if (securityKey) {
+            if (submittedKey === expectedKey) {
 
                 if (req.session) {
-                    req.session.securityKeyVerified = true;
+
+                    req.session.securityKeyVerified =
+                        true;
                 }
 
                 return next();
