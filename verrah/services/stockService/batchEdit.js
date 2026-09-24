@@ -16,13 +16,28 @@ const Product =
 const Substation =
     require("../../models/substations");
 
+const {
+    weightedProductBuyPrice,
+    sortProductFifo,
+    sortFifoBatches,
+    calculateUnitBuyPrice
+} = require("./helpers");
 
 // ==========================================================
 // GET FIFO BATCHES
 // ==========================================================
+//
+// STAFF:
+//     Returns Product.fifoBatches.
+//
+// OTHER USERS:
+//     Returns Stock.purchaseBatches.
+//
+// ==========================================================
 
 async function getFifoBatches(
-    stockId
+    stockId,
+    user
 ) {
 
     if (
@@ -36,7 +51,6 @@ async function getFifoBatches(
         );
     }
 
-
     const stock =
         await Stock.findOne({
             _id: stockId,
@@ -45,7 +59,6 @@ async function getFifoBatches(
             }
         });
 
-
     if (!stock) {
 
         throw new Error(
@@ -53,42 +66,55 @@ async function getFifoBatches(
         );
     }
 
+    // ======================================================
+    // STAFF
+    // ======================================================
+
+    if (
+        user &&
+        user.role === "staff"
+    ) {
+
+        const product =
+            await Product.findOne({
+                stock: stock._id,
+                isActive: true
+            });
+
+        if (!product) {
+
+            throw new Error(
+                "Product linked to this stock was not found."
+            );
+        }
+
+        const batches =
+            Array.isArray(
+                product.fifoBatches
+            )
+                ? sortProductFifo(
+                    [...product.fifoBatches]
+                )
+                : [];
+
+        return {
+            stock,
+            batches
+        };
+    }
+
+    // ======================================================
+    // ADMIN / OTHER USERS
+    // ======================================================
 
     const batches =
         Array.isArray(
             stock.purchaseBatches
         )
-            ? [...stock.purchaseBatches]
+            ? sortFifoBatches(
+                [...stock.purchaseBatches]
+            )
             : [];
-
-
-    batches.sort(
-        (
-            a,
-            b
-        ) => {
-
-            const aTime =
-                a.purchasedAt
-                    ? new Date(
-                        a.purchasedAt
-                    ).getTime()
-                    : 0;
-
-            const bTime =
-                b.purchasedAt
-                    ? new Date(
-                        b.purchasedAt
-                    ).getTime()
-                    : 0;
-
-            return (
-                aTime -
-                bTime
-            );
-        }
-    );
-
 
     return {
         stock,
@@ -96,9 +122,29 @@ async function getFifoBatches(
     };
 }
 
-
 // ==========================================================
 // EDIT FIFO BATCH
+// ==========================================================
+//
+// STAFF:
+//     batchId refers to Product.fifoBatches._id.
+//
+//     Updates:
+//         Product.fifoBatches
+//         Product.units
+//         Product.unitBuyPrice
+//         Product.buyPrice
+//         assigned Substation.productInventory.units
+//
+//     Does NOT update:
+//         Stock.purchaseBatches
+//         Stock.units
+//         Stock.buyPrice
+//         Stock.unitBuyPrice
+//
+// OTHER USERS:
+//     batchId refers to Stock.purchaseBatches._id.
+//
 // ==========================================================
 
 async function editFifoBatch(
@@ -123,7 +169,6 @@ async function editFifoBatch(
         );
     }
 
-
     // ======================================================
     // VALIDATE BATCH ID
     // ======================================================
@@ -139,6 +184,12 @@ async function editFifoBatch(
         );
     }
 
+    // ======================================================
+    // SAFELY READ BODY
+    // ======================================================
+
+    body =
+        body || {};
 
     // ======================================================
     // READ UNITS
@@ -148,7 +199,6 @@ async function editFifoBatch(
         Number(
             body.units
         );
-
 
     if (
         !Number.isFinite(
@@ -165,16 +215,20 @@ async function editFifoBatch(
         );
     }
 
-
     // ======================================================
     // READ BUY PRICE
+    //
+    // IMPORTANT:
+    //
+    // For FIFO batch editing, buyPrice is the
+    // PER-UNIT buy price stored on the FIFO batch.
+    //
     // ======================================================
 
     const buyPrice =
         Number(
             body.buyPrice
         );
-
 
     if (
         !Number.isFinite(
@@ -188,7 +242,6 @@ async function editFifoBatch(
         );
     }
 
-
     // ======================================================
     // START TRANSACTION
     // ======================================================
@@ -196,11 +249,9 @@ async function editFifoBatch(
     const session =
         await mongoose.startSession();
 
-
     try {
 
         let updatedStock;
-
 
         await session.withTransaction(
             async () => {
@@ -220,7 +271,6 @@ async function editFifoBatch(
                         session
                     );
 
-
                 if (!stock) {
 
                     throw new Error(
@@ -228,54 +278,8 @@ async function editFifoBatch(
                     );
                 }
 
-
-                if (
-                    !Array.isArray(
-                        stock.purchaseBatches
-                    )
-                ) {
-
-                    throw new Error(
-                        "Stock has no FIFO batches."
-                    );
-                }
-
-
-                // ==========================================
-                // FIND STOCK BATCH
-                // ==========================================
-
-                const batch =
-                    stock.purchaseBatches.id(
-                        batchId
-                    );
-
-
-                if (!batch) {
-
-                    throw new Error(
-                        "FIFO batch not found."
-                    );
-                }
-
-
                 // ==================================================
                 // STAFF
-                // ==================================================
-                //
-                // Staff do NOT modify:
-                //
-                //     Stock.purchaseBatches
-                //     Stock.units
-                //
-                // Instead:
-                //
-                //     Product.fifoBatches
-                //     Product.units
-                //     assigned Substation.productInventory.units
-                //
-                // are updated.
-                //
                 // ==================================================
 
                 if (
@@ -299,19 +303,18 @@ async function editFifoBatch(
                         );
                     }
 
-
                     // ======================================
                     // FIND LINKED PRODUCT
                     // ======================================
 
                     const product =
                         await Product.findOne({
-                            stock: stock._id
+                            stock: stock._id,
+                            isActive: true
                         })
                         .session(
                             session
                         );
-
 
                     if (!product) {
 
@@ -319,7 +322,6 @@ async function editFifoBatch(
                             "Product linked to this stock was not found."
                         );
                     }
-
 
                     // ======================================
                     // ENSURE PRODUCT FIFO ARRAY
@@ -335,54 +337,29 @@ async function editFifoBatch(
                             [];
                     }
 
-
                     // ======================================
-                    // FIND CORRESPONDING PRODUCT FIFO
+                    // FIND PRODUCT FIFO BATCH DIRECTLY
+                    //
+                    // IMPORTANT:
+                    //
+                    // Staff FIFO batches belong to Product.
+                    // Therefore batchId is the Product FIFO
+                    // subdocument _id.
+                    //
+                    // Do NOT map by array index to Stock.
                     // ======================================
-                    //
-                    // Product FIFO batches follow the same
-                    // FIFO sequence as the stock batches.
-                    //
-                    // Find the position of the stock batch
-                    // and use that position on Product FIFO.
-                    //
-                    // ======================================
-
-                    const stockBatchIndex =
-                        stock.purchaseBatches.findIndex(
-                            currentBatch =>
-                                String(
-                                    currentBatch._id
-                                ) ===
-                                String(
-                                    batchId
-                                )
-                        );
-
-
-                    if (
-                        stockBatchIndex < 0
-                    ) {
-
-                        throw new Error(
-                            "Unable to locate FIFO batch position."
-                        );
-                    }
-
 
                     const productBatch =
-                        product.fifoBatches[
-                            stockBatchIndex
-                        ];
-
+                        product.fifoBatches.id(
+                            batchId
+                        );
 
                     if (!productBatch) {
 
                         throw new Error(
-                            "Corresponding product FIFO batch was not found."
+                            "FIFO batch not found."
                         );
                     }
-
 
                     // ======================================
                     // OLD PRODUCT BATCH UNITS
@@ -393,7 +370,6 @@ async function editFifoBatch(
                             productBatch.units || 0
                         );
 
-
                     // ======================================
                     // CALCULATE UNIT DIFFERENCE
                     // ======================================
@@ -401,7 +377,6 @@ async function editFifoBatch(
                     const unitDifference =
                         units -
                         oldUnits;
-
 
                     // ======================================
                     // UPDATE PRODUCT FIFO BATCH
@@ -413,19 +388,33 @@ async function editFifoBatch(
                     productBatch.buyPrice =
                         buyPrice;
 
+                    // ======================================
+                    // REMOVE ZERO-UNIT BATCHES
+                    // ======================================
+
+                    product.fifoBatches =
+                        product.fifoBatches.filter(
+                            currentBatch =>
+                                Number(
+                                    currentBatch.units
+                                ) > 0
+                        );
 
                     // ======================================
-                    // UPDATE PRODUCT TOTAL UNITS
+                    // KEEP PRODUCT FIFO ORDER
                     // ======================================
-                    //
-                    // Product.units represents the total
-                    // units across its FIFO batches.
-                    //
+
+                    product.fifoBatches =
+                        sortProductFifo(
+                            product.fifoBatches
+                        );
+
+                    // ======================================
+                    // RECALCULATE PRODUCT UNITS
                     // ======================================
 
                     let productUnits =
                         0;
-
 
                     for (
                         const currentBatch
@@ -437,7 +426,6 @@ async function editFifoBatch(
                                 currentBatch.units
                             );
 
-
                         if (
                             Number.isFinite(
                                 currentUnits
@@ -447,26 +435,29 @@ async function editFifoBatch(
 
                             productUnits +=
                                 currentUnits;
-                        }
-                    }
 
+                        }
+
+                    }
 
                     product.units =
                         productUnits;
 
-
                     // ======================================
-                    // REMOVE ZERO PRODUCT FIFO BATCH
+                    // RECALCULATE PRODUCT BUY PRICE
+                    // FROM PRODUCT FIFO
                     // ======================================
 
-                    product.fifoBatches =
-                        product.fifoBatches.filter(
-                            currentBatch =>
-                                Number(
-                                    currentBatch.units
-                                ) > 0
+                    const unitBuyPrice =
+                        weightedProductBuyPrice(
+                            product
                         );
 
+                    product.unitBuyPrice =
+                        unitBuyPrice;
+
+                    product.buyPrice =
+                        unitBuyPrice;
 
                     // ======================================
                     // SAVE PRODUCT
@@ -475,7 +466,6 @@ async function editFifoBatch(
                     await product.save({
                         session
                     });
-
 
                     // ======================================
                     // LOAD ASSIGNED SUBSTATION
@@ -489,7 +479,6 @@ async function editFifoBatch(
                             session
                         );
 
-
                     if (!substation) {
 
                         throw new Error(
@@ -497,9 +486,8 @@ async function editFifoBatch(
                         );
                     }
 
-
                     // ======================================
-                    // FIND PRODUCT INVENTORY
+                    // ENSURE INVENTORY ARRAY
                     // ======================================
 
                     if (
@@ -510,8 +498,12 @@ async function editFifoBatch(
 
                         substation.productInventory =
                             [];
+
                     }
 
+                    // ======================================
+                    // FIND PRODUCT INVENTORY
+                    // ======================================
 
                     const inventory =
                         substation.productInventory.find(
@@ -524,7 +516,6 @@ async function editFifoBatch(
                                 )
                         );
 
-
                     if (!inventory) {
 
                         throw new Error(
@@ -532,23 +523,8 @@ async function editFifoBatch(
                         );
                     }
 
-
                     // ======================================
-                    // UPDATE SUBSTATION UNITS
-                    // ======================================
-                    //
-                    // Only apply the difference between the
-                    // old and new product FIFO batch.
-                    //
-                    // Example:
-                    //
-                    // Old batch = 100
-                    // New batch = 80
-                    //
-                    // Difference = -20
-                    //
-                    // Substation inventory decreases by 20.
-                    //
+                    // CALCULATE NEW INVENTORY UNITS
                     // ======================================
 
                     const currentInventoryUnits =
@@ -556,11 +532,9 @@ async function editFifoBatch(
                             inventory.units || 0
                         );
 
-
                     const newInventoryUnits =
                         currentInventoryUnits +
                         unitDifference;
-
 
                     if (
                         newInventoryUnits < 0
@@ -571,13 +545,24 @@ async function editFifoBatch(
                         );
                     }
 
+                    // ======================================
+                    // UPDATE SUBSTATION INVENTORY
+                    // ======================================
 
                     inventory.units =
                         newInventoryUnits;
 
+                    inventory.productName =
+                        product.name;
+
+                    inventory.category =
+                        product.category;
+
+                    inventory.subcategory =
+                        product.subcategory;
+
                     inventory.updatedAt =
                         new Date();
-
 
                     // ======================================
                     // SAVE SUBSTATION
@@ -587,10 +572,9 @@ async function editFifoBatch(
                         session
                     });
 
-
                     // ======================================
                     // IMPORTANT:
-                    // STOCK IS NOT UPDATED FOR STAFF
+                    // STOCK IS NOT MODIFIED FOR STAFF
                     // ======================================
 
                     updatedStock =
@@ -599,11 +583,37 @@ async function editFifoBatch(
                     return;
                 }
 
-
                 // ==================================================
                 // NON-STAFF
-                // EXISTING BEHAVIOR
+                // EXISTING STOCK FIFO BEHAVIOR
                 // ==================================================
+
+                if (
+                    !Array.isArray(
+                        stock.purchaseBatches
+                    )
+                ) {
+
+                    throw new Error(
+                        "Stock has no FIFO batches."
+                    );
+                }
+
+                // ==============================================
+                // FIND STOCK FIFO BATCH
+                // ==============================================
+
+                const batch =
+                    stock.purchaseBatches.id(
+                        batchId
+                    );
+
+                if (!batch) {
+
+                    throw new Error(
+                        "FIFO batch not found."
+                    );
+                }
 
                 // ==============================================
                 // UPDATE STOCK BATCH
@@ -614,43 +624,6 @@ async function editFifoBatch(
 
                 batch.buyPrice =
                     buyPrice;
-
-
-                // ==============================================
-                // RECALCULATE STOCK UNITS
-                // ==============================================
-
-                let totalUnits =
-                    0;
-
-
-                for (
-                    const currentBatch
-                    of stock.purchaseBatches
-                ) {
-
-                    const currentUnits =
-                        Number(
-                            currentBatch.units
-                        );
-
-
-                    if (
-                        Number.isFinite(
-                            currentUnits
-                        ) &&
-                        currentUnits > 0
-                    ) {
-
-                        totalUnits +=
-                            currentUnits;
-                    }
-                }
-
-
-                stock.units =
-                    totalUnits;
-
 
                 // ==============================================
                 // REMOVE ZERO-UNIT BATCHES
@@ -664,6 +637,60 @@ async function editFifoBatch(
                             ) > 0
                     );
 
+                // ==============================================
+                // KEEP STOCK FIFO ORDER
+                // ==============================================
+
+                stock.purchaseBatches =
+                    sortFifoBatches(
+                        stock.purchaseBatches
+                    );
+
+                // ==============================================
+                // RECALCULATE STOCK UNITS
+                // ==============================================
+
+                let totalUnits =
+                    0;
+
+                for (
+                    const currentBatch
+                    of stock.purchaseBatches
+                ) {
+
+                    const currentUnits =
+                        Number(
+                            currentBatch.units
+                        );
+
+                    if (
+                        Number.isFinite(
+                            currentUnits
+                        ) &&
+                        currentUnits > 0
+                    ) {
+
+                        totalUnits +=
+                            currentUnits;
+
+                    }
+
+                }
+
+                stock.units =
+                    totalUnits;
+
+                // ==============================================
+                // RECALCULATE STOCK UNIT BUY PRICE
+                // ==============================================
+
+                stock.unitBuyPrice =
+                    calculateUnitBuyPrice(
+                        stock
+                    );
+
+                stock.buyPrice =
+                    stock.unitBuyPrice;
 
                 // ==============================================
                 // SAVE STOCK
@@ -673,21 +700,19 @@ async function editFifoBatch(
                     session
                 });
 
-
                 updatedStock =
                     stock;
             }
         );
-
 
         return updatedStock;
 
     } finally {
 
         await session.endSession();
+
     }
 }
-
 
 // ==========================================================
 // EXPORTS
