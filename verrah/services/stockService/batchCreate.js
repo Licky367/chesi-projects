@@ -1,21 +1,14 @@
 const mongoose = require("mongoose");
-
 const Stock = require("../../models/stock");
 const Product = require("../../models/products");
 const Substation = require("../../models/substations");
 
 const {
-    batchUnits,
-    wholeNumber,
     weightedProductBuyPrice,
-    addLayersToProductFifo
+    sortProductFifo
 } = require("./helpers");
 
 async function createFifoBatch(stockId, body, user) {
-
-    // ---------------------------------------------------------
-    // VALIDATE STOCK ID
-    // ---------------------------------------------------------
 
     if (!mongoose.Types.ObjectId.isValid(stockId)) {
         throw new Error("Invalid stock ID.");
@@ -23,57 +16,31 @@ async function createFifoBatch(stockId, body, user) {
 
     body = body || {};
 
-    // ---------------------------------------------------------
-    // VALIDATE UNITS
-    // ---------------------------------------------------------
+    const units = Number(body.units);
 
-    const units = wholeNumber(
-        body.units,
-        "Units"
-    );
-
-    if (units <= 0) {
+    if (!Number.isFinite(units) || !Number.isInteger(units) || units <= 0) {
         throw new Error("Units must be a whole number greater than 0.");
     }
 
-    // ---------------------------------------------------------
-    // VALIDATE BUYING PRICE
-    // ---------------------------------------------------------
-
     const totalBuyingPrice = Number(body.totalBuyingPrice);
 
-    if (
-        !Number.isFinite(totalBuyingPrice) ||
-        totalBuyingPrice < 0
-    ) {
-        throw new Error(
-            "Total buying price must be a valid number greater than or equal to 0."
-        );
+    if (!Number.isFinite(totalBuyingPrice) || totalBuyingPrice < 0) {
+        throw new Error("Total buying price must be a valid number greater than or equal to 0.");
     }
 
     const buyPrice = totalBuyingPrice / units;
 
     if (!Number.isFinite(buyPrice)) {
-        throw new Error(
-            "Unable to calculate buy price per unit."
-        );
+        throw new Error("Unable to calculate buy price per unit.");
     }
 
-    // ---------------------------------------------------------
-    // PURCHASE DATE
-    // ---------------------------------------------------------
-
-    const purchasedAt = body.purchasedAt
+    let purchasedAt = body.purchasedAt
         ? new Date(body.purchasedAt)
         : new Date();
 
     if (Number.isNaN(purchasedAt.getTime())) {
         throw new Error("Invalid purchase date.");
     }
-
-    // ---------------------------------------------------------
-    // SESSION
-    // ---------------------------------------------------------
 
     const session = await mongoose.startSession();
 
@@ -82,10 +49,6 @@ async function createFifoBatch(stockId, body, user) {
         let updatedStock;
 
         await session.withTransaction(async () => {
-
-            // -------------------------------------------------
-            // GET STOCK
-            // -------------------------------------------------
 
             const stock = await Stock.findOne({
                 _id: stockId,
@@ -99,21 +62,8 @@ async function createFifoBatch(stockId, body, user) {
             // =================================================
             // STAFF
             // =================================================
-            //
-            // Staff stock creation goes directly into:
-            //
-            // Product.fifoBatches
-            // Product.units
-            // Substation.productInventory.units
-            //
-            // Stock itself is NOT changed.
-            // =================================================
 
             if (user && user.role === "staff") {
-
-                // ---------------------------------------------
-                // VALIDATE ASSIGNED SUBSTATION
-                // ---------------------------------------------
 
                 if (
                     !user.assignedSubstation ||
@@ -126,9 +76,9 @@ async function createFifoBatch(stockId, body, user) {
                     );
                 }
 
-                // ---------------------------------------------
-                // FIND PRODUCT LINKED TO STOCK
-                // ---------------------------------------------
+                // -------------------------------------------------
+                // FIND PRODUCT LINKED TO THIS STOCK
+                // -------------------------------------------------
 
                 const product = await Product.findOne({
                     stock: stock._id
@@ -140,34 +90,51 @@ async function createFifoBatch(stockId, body, user) {
                     );
                 }
 
-                // ---------------------------------------------
-                // ADD FIFO LAYER
-                // ---------------------------------------------
+                // -------------------------------------------------
+                // ADD NEW PRODUCT FIFO BATCH
+                // -------------------------------------------------
 
-                addLayersToProductFifo(product, [
-                    {
-                        units,
-                        buyPrice,
-                        receivedAt: purchasedAt
-                    }
-                ]);
+                if (!Array.isArray(product.fifoBatches)) {
+                    product.fifoBatches = [];
+                }
 
-                // ---------------------------------------------
-                // RECALCULATE PRODUCT UNITS
-                // ---------------------------------------------
+                product.fifoBatches.push({
+                    units,
+                    buyPrice,
+                    receivedAt: purchasedAt
+                });
 
-                const productUnits = product.fifoBatches.reduce(
-                    (total, batch) => {
-                        return total + batchUnits(batch);
-                    },
-                    0
+                // -------------------------------------------------
+                // SORT PRODUCT FIFO
+                // -------------------------------------------------
+
+                product.fifoBatches = sortProductFifo(
+                    product.fifoBatches
                 );
+
+                // -------------------------------------------------
+                // PRODUCT UNITS = FIFO UNITS
+                // -------------------------------------------------
+
+                let productUnits = 0;
+
+                for (const batch of product.fifoBatches) {
+
+                    const batchUnits = Number(batch.units);
+
+                    if (
+                        Number.isFinite(batchUnits) &&
+                        batchUnits > 0
+                    ) {
+                        productUnits += batchUnits;
+                    }
+                }
 
                 product.units = productUnits;
 
-                // ---------------------------------------------
-                // RECALCULATE PRODUCT BUY PRICE
-                // ---------------------------------------------
+                // -------------------------------------------------
+                // UPDATE PRODUCT BUY PRICE FROM FIFO
+                // -------------------------------------------------
 
                 const unitBuyPrice =
                     weightedProductBuyPrice(product);
@@ -175,15 +142,15 @@ async function createFifoBatch(stockId, body, user) {
                 product.unitBuyPrice = unitBuyPrice;
                 product.buyPrice = unitBuyPrice;
 
-                // ---------------------------------------------
+                // -------------------------------------------------
                 // SAVE PRODUCT
-                // ---------------------------------------------
+                // -------------------------------------------------
 
                 await product.save({ session });
 
-                // ---------------------------------------------
-                // GET ASSIGNED SUBSTATION
-                // ---------------------------------------------
+                // -------------------------------------------------
+                // FIND ASSIGNED SUBSTATION
+                // -------------------------------------------------
 
                 const substation = await Substation.findById(
                     user.assignedSubstation
@@ -195,17 +162,17 @@ async function createFifoBatch(stockId, body, user) {
                     );
                 }
 
-                // ---------------------------------------------
-                // ENSURE INVENTORY ARRAY
-                // ---------------------------------------------
+                // -------------------------------------------------
+                // ENSURE PRODUCT INVENTORY
+                // -------------------------------------------------
 
                 if (!Array.isArray(substation.productInventory)) {
                     substation.productInventory = [];
                 }
 
-                // ---------------------------------------------
+                // -------------------------------------------------
                 // FIND PRODUCT INVENTORY
-                // ---------------------------------------------
+                // -------------------------------------------------
 
                 const inventory =
                     substation.productInventory.find(
@@ -214,9 +181,9 @@ async function createFifoBatch(stockId, body, user) {
                             String(product._id)
                     );
 
-                // ---------------------------------------------
+                // -------------------------------------------------
                 // UPDATE EXISTING INVENTORY
-                // ---------------------------------------------
+                // -------------------------------------------------
 
                 if (inventory) {
 
@@ -228,13 +195,11 @@ async function createFifoBatch(stockId, body, user) {
                     inventory.subcategory = product.subcategory;
                     inventory.updatedAt = new Date();
 
-                }
+                } else {
 
-                // ---------------------------------------------
-                // CREATE INVENTORY ENTRY
-                // ---------------------------------------------
-
-                else {
+                    // -------------------------------------------------
+                    // CREATE INVENTORY ENTRY
+                    // -------------------------------------------------
 
                     substation.productInventory.push({
                         productId: product._id,
@@ -247,15 +212,16 @@ async function createFifoBatch(stockId, body, user) {
 
                 }
 
-                // ---------------------------------------------
+                // -------------------------------------------------
                 // SAVE SUBSTATION
-                // ---------------------------------------------
+                // -------------------------------------------------
 
                 await substation.save({ session });
 
-                // ---------------------------------------------
-                // STOCK REMAINS UNTOUCHED
-                // ---------------------------------------------
+                // -------------------------------------------------
+                // IMPORTANT:
+                // STOCK IS NOT MODIFIED FOR STAFF
+                // -------------------------------------------------
 
                 updatedStock = stock;
 
@@ -264,9 +230,7 @@ async function createFifoBatch(stockId, body, user) {
 
             // =================================================
             // ADMIN / NON-STAFF
-            // =================================================
-            //
-            // Preserve normal warehouse Stock FIFO behavior.
+            // ORIGINAL STOCK FIFO LOGIC
             // =================================================
 
             if (!Array.isArray(stock.purchaseBatches)) {
@@ -279,29 +243,21 @@ async function createFifoBatch(stockId, body, user) {
                 purchasedAt
             });
 
-            // ---------------------------------------------
-            // RECALCULATE STOCK UNITS
-            // ---------------------------------------------
-
             let totalUnits = 0;
 
             for (const batch of stock.purchaseBatches) {
 
-                const batchUnitCount = Number(batch.units);
+                const batchUnits = Number(batch.units);
 
                 if (
-                    Number.isFinite(batchUnitCount) &&
-                    batchUnitCount > 0
+                    Number.isFinite(batchUnits) &&
+                    batchUnits > 0
                 ) {
-                    totalUnits += batchUnitCount;
+                    totalUnits += batchUnits;
                 }
             }
 
             stock.units = totalUnits;
-
-            // ---------------------------------------------
-            // SAVE STOCK
-            // ---------------------------------------------
 
             await stock.save({ session });
 
