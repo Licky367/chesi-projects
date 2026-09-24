@@ -41,6 +41,30 @@ const batchDate =
         ? new Date(batch.purchasedAt)
         : null;
 
+
+/*
+ * Keep the existing batch units as a string.
+ *
+ * Do NOT use Number() here.
+ *
+ * The value is going directly into the
+ * HTML form field.
+ */
+const currentUnits =
+    batch &&
+    batch.units !== undefined &&
+    batch.units !== null
+        ? String(batch.units)
+        : "";
+
+
+const currentBuyPrice =
+    batch &&
+    batch.buyPrice !== undefined &&
+    batch.buyPrice !== null
+        ? String(batch.buyPrice)
+        : "";
+
 %>
 
 
@@ -149,7 +173,7 @@ const batchDate =
 
 
     <!-- =====================================================
-         BATCH FORM
+         CONTENT
     ====================================================== -->
 
     <div class="sales-content">
@@ -171,16 +195,20 @@ const batchDate =
                 </div>
 
 
+                <!-- =================================================
+                     FORM
+                ================================================== -->
+
                 <form
+                    id="stockBatchEditForm"
                     method="POST"
                     action="/stock/<%= stockId %>/batches/<%= batchId %>"
                     class="sales-liability-form"
                 >
 
-
-                    <!-- =====================================
+                    <!-- =============================================
                          PURCHASE DATE
-                    ====================================== -->
+                    ============================================== -->
 
                     <div class="sales-liability-field">
 
@@ -198,7 +226,9 @@ const batchDate =
 
                                 <% if (
                                     batchDate &&
-                                    !isNaN(batchDate.getTime())
+                                    !isNaN(
+                                        batchDate.getTime()
+                                    )
                                 ) { %>
 
                                     <%= batchDate.toLocaleDateString(
@@ -223,9 +253,9 @@ const batchDate =
                     </div>
 
 
-                    <!-- =====================================
+                    <!-- =============================================
                          BATCH ID
-                    ====================================== -->
+                    ============================================== -->
 
                     <div class="sales-liability-field">
 
@@ -248,9 +278,9 @@ const batchDate =
                     </div>
 
 
-                    <!-- =====================================
+                    <!-- =============================================
                          UNITS
-                    ====================================== -->
+                    ============================================== -->
 
                     <div class="sales-liability-field">
 
@@ -262,18 +292,20 @@ const batchDate =
                             type="number"
                             id="units"
                             name="units"
-                            value="<%= Number(batch.units || 0) %>"
+                            value="<%= currentUnits %>"
                             min="0"
                             step="1"
+                            inputmode="numeric"
+                            autocomplete="off"
                             required
                         >
 
                     </div>
 
 
-                    <!-- =====================================
+                    <!-- =============================================
                          BUY PRICE
-                    ====================================== -->
+                    ============================================== -->
 
                     <div class="sales-liability-field">
 
@@ -285,18 +317,20 @@ const batchDate =
                             type="number"
                             id="buyPrice"
                             name="buyPrice"
-                            value="<%= Number(batch.buyPrice || 0) %>"
+                            value="<%= currentBuyPrice %>"
                             min="0"
                             step="0.01"
+                            inputmode="decimal"
+                            autocomplete="off"
                             required
                         >
 
                     </div>
 
 
-                    <!-- =====================================
+                    <!-- =============================================
                          ACTIONS
-                    ====================================== -->
+                    ============================================== -->
 
                     <div class="sales-liability-form-actions">
 
@@ -334,3 +368,228 @@ const batchDate =
     </div>
 
 </div>
+
+
+<!-- ==========================================================
+     FORM SUBMISSION
+=========================================================== -->
+
+<script>
+
+(function () {
+
+    const form =
+        document.getElementById(
+            "stockBatchEditForm"
+        );
+
+
+    if (!form) {
+        return;
+    }
+
+
+    form.addEventListener(
+        "submit",
+        function (event) {
+
+            const unitsInput =
+                document.getElementById(
+                    "units"
+                );
+
+            const buyPriceInput =
+                document.getElementById(
+                    "buyPrice"
+                );
+
+
+            if (!unitsInput) {
+
+                event.preventDefault();
+
+                return;
+            }
+
+
+            /*
+             * Read the actual input value.
+             */
+            const rawUnits =
+                String(
+                    unitsInput.value || ""
+                ).trim();
+
+
+            /*
+             * If the browser somehow gives us
+             * an empty value, stop submission.
+             */
+            if (!rawUnits) {
+
+                event.preventDefault();
+
+                unitsInput.focus();
+
+                return;
+            }
+
+
+            /*
+             * Convert only after confirming
+             * that a value exists.
+             */
+            const units =
+                Number(rawUnits);
+
+
+            /*
+             * Units must be a non-negative
+             * whole number.
+             */
+            if (
+                !Number.isSafeInteger(
+                    units
+                ) ||
+                units < 0
+            ) {
+
+                event.preventDefault();
+
+                unitsInput.focus();
+
+                return;
+            }
+
+
+            /*
+             * IMPORTANT:
+             *
+             * Explicitly put the normalized
+             * integer back into the input.
+             *
+             * Because the input has:
+             *
+             *     name="units"
+             *
+             * the browser will submit:
+             *
+             *     units=25
+             *
+             * for example.
+             */
+            unitsInput.value =
+                String(units);
+
+
+            /*
+             * Normalize buy price too.
+             */
+            if (buyPriceInput) {
+
+                const rawBuyPrice =
+                    String(
+                        buyPriceInput.value || ""
+                    ).trim();
+
+
+                if (!rawBuyPrice) {
+
+                    event.preventDefault();
+
+                    buyPriceInput.focus();
+
+                    return;
+                }
+
+
+                const buyPrice =
+                    Number(
+                        rawBuyPrice
+                    );
+
+
+                if (
+                    !Number.isFinite(
+                        buyPrice
+                    ) ||
+                    buyPrice < 0
+                ) {
+
+                    event.preventDefault();
+
+                    buyPriceInput.focus();
+
+                    return;
+                }
+
+
+                buyPriceInput.value =
+                    String(buyPrice);
+
+            }
+
+
+            /*
+             * Final safety check:
+             *
+             * Create/update a hidden field
+             * containing the exact `units`
+             * parameter expected by Express.
+             *
+             * Remove an existing one first so
+             * duplicate `units` parameters are
+             * never submitted.
+             */
+            const existingHidden =
+                form.querySelector(
+                    'input[type="hidden"][data-stock-units]'
+                );
+
+
+            if (existingHidden) {
+
+                existingHidden.remove();
+
+            }
+
+
+            const hiddenUnits =
+                document.createElement(
+                    "input"
+                );
+
+
+            hiddenUnits.type =
+                "hidden";
+
+            hiddenUnits.name =
+                "units";
+
+            hiddenUnits.value =
+                String(units);
+
+            hiddenUnits.dataset.stockUnits =
+                "true";
+
+
+            form.appendChild(
+                hiddenUnits
+            );
+
+
+            /*
+             * Keep the visible input as well.
+             *
+             * The hidden field is appended last,
+             * so Express receives the same value.
+             */
+            unitsInput.value =
+                String(units);
+
+        }
+    );
+
+})();
+
+</script>
