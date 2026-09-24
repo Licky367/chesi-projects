@@ -1,427 +1,354 @@
 <%
 function number(value) {
-    return Number(value || 0).toLocaleString("en-KE");
+return Number(value || 0).toLocaleString("en-KE");
 }
 
-
 /*
- * ==========================================================
- * SELL INPUT VISIBILITY
- * ==========================================================
- *
- * Admin:
- * No substation selected
- *     -> Hide Sell input
- *
- * Specific substation selected
- *     -> Show Sell input
- *
- * Non-admin:
- * -> Always show Sell input
- *
- * ==========================================================
- */
+
+* ==========================================================
+* SELL INPUT VISIBILITY
+* ==========================================================
+* 
+* Admin:
+* No substation selected
+* -> Hide Sell input
+* 
+* Specific substation selected
+* -> Show Sell input
+* 
+* Non-admin:
+* -> Always show Sell input
+* 
+* ==========================================================
+  */
 
 const isAdmin =
-    user &&
-    user.role === "admin";
+user &&
+user.role === "admin";
 
 const hasSelectedSubstation =
-    activeSubstationId &&
-    String(activeSubstationId).trim() !== "";
+activeSubstationId &&
+String(activeSubstationId).trim() !== "";
 
 const hideSellInput =
-    isAdmin &&
-    !hasSelectedSubstation;
-
+isAdmin &&
+!hasSelectedSubstation;
 
 /*
- * ==========================================================
- * ACTIVE SUBSTATION ID
- * ==========================================================
- *
- * IMPORTANT:
- *
- * activeSubstationId is the actual MongoDB _id of the
- * currently selected substation.
- *
- * It is passed directly to the cart service.
- *
- * DO NOT convert this value to the substation name.
- *
- * The cart service will store this ID as cartSubstation.
- *
- * ==========================================================
- */
+
+* ==========================================================
+* ACTIVE SUBSTATION ID
+* ==========================================================
+* 
+* IMPORTANT:
+* 
+* activeSubstationId is the actual MongoDB _id of the
+* currently selected substation.
+* 
+* It is passed directly to the cart service.
+* 
+* DO NOT convert this value to the substation name.
+* 
+* The cart service will store this ID as cartSubstation.
+* 
+* ==========================================================
+  */
 
 const selectedSubstationId =
-    hasSelectedSubstation
-        ? String(activeSubstationId).trim()
-        : "";
-
+hasSelectedSubstation
+? String(activeSubstationId).trim()
+: "";
 
 /*
- * ==========================================================
- * MARKET AVAILABLE EDIT VISIBILITY
- * ==========================================================
- *
- * Admin + selected substation:
- *     -> Editable
- *
- * Otherwise:
- *     -> Normal displayed number
- *
- * ==========================================================
- */
+
+* ==========================================================
+* MARKET AVAILABLE EDIT VISIBILITY
+* ==========================================================
+* 
+* Admin + selected substation:
+* -> Editable
+* 
+* Otherwise:
+* -> Normal displayed number
+* 
+* ==========================================================
+  */
 
 const canEditMarketAvailable =
-    isAdmin &&
-    hasSelectedSubstation;
+isAdmin &&
+hasSelectedSubstation;
 %>
 
+<div class="sales-section"><!-- ======================================================
+     SECTION HEADING
+======================================================= -->
 
-<div class="sales-section">
+<div class="sales-section-heading">
 
+    <div>
 
-    <!-- ======================================================
-         SECTION HEADING
-    ======================================================= -->
+        <h2>
+            Product Analytics
+        </h2>
 
-    <div class="sales-section-heading">
-
-        <div>
-
-            <h2>
-                Product Analytics
-            </h2>
-
-            <p>
-                <%= filterLabel %>
-            </p>
-
-        </div>
+        <p>
+            <%= filterLabel %>
+        </p>
 
     </div>
 
-
-    <!-- ======================================================
-         ADD MANY PRODUCTS TO CART FORM
-    ======================================================= -->
-
-    <% if (!hideSellInput) { %>
-
-        <form
-            action="/products/addManyToCart"
-            method="POST"
-            id="addManyToCartForm"
-        >
-
-            <% if (hasSelectedSubstation) { %>
-
-                <!--
-                    IMPORTANT:
-
-                    This is the ACTIVE SUBSTATION ID.
-
-                    It is submitted unchanged as
-                    activeSubstationId.
-
-                    The cart service must save this ID as
-                    cartSubstation.
-
-                    No substation name is submitted here.
-                -->
-
-                <input
-                    type="hidden"
-                    name="activeSubstationId"
-                    value="<%= selectedSubstationId %>"
-                >
-
-            <% } %>
-
-        </form>
+</div>
 
 
-        <div
-            id="addManyToCartActions"
-            style="
-                display: none;
-                margin-bottom: 12px;
-            "
-        >
+<!-- ======================================================
+     ADD MANY PRODUCTS TO CART FORM
+======================================================= -->
 
-            <button
-                type="submit"
-                form="addManyToCartForm"
-                class="sales-filter-button"
-            >
+<% if (!hideSellInput) { %>
 
-                <i class="fas fa-cart-plus"></i>
+    <form
+        action="/products/addManyToCart"
+        method="POST"
+        id="addManyToCartForm"
+    >
 
-                Add Selected Products to Cart
-
-            </button>
-
-        </div>
-
-    <% } %>
-
-
-    <!-- ======================================================
-         UPDATE MARKET AVAILABLE FORM
-    ======================================================= -->
-
-    <% if (canEditMarketAvailable) { %>
-
-        <form
-            action="/substations/productsUpdate/<%= selectedSubstationId %>"
-            method="POST"
-            id="updateMarketAvailableForm"
-        >
+        <% if (hasSelectedSubstation) { %>
 
             <input
                 type="hidden"
-                name="substationId"
+                name="activeSubstationId"
                 value="<%= selectedSubstationId %>"
             >
 
-        </form>
+        <% } %>
+
+    </form>
 
 
-        <div
-            id="updateMarketAvailableActions"
-            style="
-                display: none;
-                margin-bottom: 12px;
-            "
+    <div
+        id="addManyToCartActions"
+        style="
+            display: none;
+            margin-bottom: 12px;
+        "
+    >
+
+        <button
+            type="submit"
+            form="addManyToCartForm"
+            class="sales-filter-button"
         >
 
-            <button
-                type="submit"
-                form="updateMarketAvailableForm"
-                class="sales-filter-button"
-            >
+            <i class="fas fa-cart-plus"></i>
 
-                <i class="fas fa-save"></i>
+            Add Selected Products to Cart
 
-                Update Market Units
+        </button>
 
-            </button>
+    </div>
 
-        </div>
-
-    <% } %>
+<% } %>
 
 
-    <!-- ======================================================
-         PRODUCT TABLE
-    ======================================================= -->
+<!-- ======================================================
+     UPDATE MARKET AVAILABLE FORM
+======================================================= -->
 
-    <div class="sales-table-wrapper">
+<% if (canEditMarketAvailable) { %>
 
+    <form
+        action="/substations/productsUpdate/<%= selectedSubstationId %>"
+        method="POST"
+        id="updateMarketAvailableForm"
+    >
 
-        <table class="sales-table">
+        <input
+            type="hidden"
+            name="substationId"
+            value="<%= selectedSubstationId %>"
+        >
 
-
-            <thead>
-
-                <tr>
-
-                    <th>
-                        #
-                    </th>
-
-                    <th>
-                        Product Name
-                    </th>
-
-                    <th>
-                        Items Available in Market
-                    </th>
-
-                    <th>
-                        Items Available in Stock
-                    </th>
-
-                    <th>
-                        Number of Sales
-                    </th>
-
-                </tr>
-
-            </thead>
+    </form>
 
 
-            <tbody>
+    <div
+        id="updateMarketAvailableActions"
+        style="
+            display: none;
+            margin-bottom: 12px;
+        "
+    >
+
+        <button
+            type="submit"
+            form="updateMarketAvailableForm"
+            class="sales-filter-button"
+        >
+
+            <i class="fas fa-save"></i>
+
+            Update Market Units
+
+        </button>
+
+    </div>
+
+<% } %>
 
 
-                <% if (
-                    Array.isArray(productAnalytics) &&
-                    productAnalytics.length
-                ) { %>
+<!-- ======================================================
+     PRODUCT TABLE
+======================================================= -->
+
+<div class="sales-table-wrapper">
 
 
-                    <% productAnalytics.forEach(
-                        function(product, index)
-                    { %>
+    <table class="sales-table">
 
 
-                        <tr
-                            class="sales-product-row"
-                            onclick="
+        <thead>
+
+            <tr>
+
+                <th>
+                    #
+                </th>
+
+                <th>
+                    Product Name
+                </th>
+
+                <th>
+                    Items Available in Market
+                </th>
+
+                <th>
+                    Items Available in Stock
+                </th>
+
+                <th>
+                    Number of Sales
+                </th>
+
+            </tr>
+
+        </thead>
+
+
+        <tbody>
+
+
+            <% if (
+                Array.isArray(productAnalytics) &&
+                productAnalytics.length
+            ) { %>
+
+
+                <% productAnalytics.forEach(
+                    function(product, index)
+                { %>
+
+
+                    <tr
+                        class="sales-product-row"
+                        onclick="
+                            window.location.href =
+                            '/branch/<%= selectedSubstationId %>/products/<%= product._id %>'
+                        "
+                        onkeydown="
+                            if (
+                                event.key === 'Enter' ||
+                                event.key === ' '
+                            ) {
+                                event.preventDefault();
+
                                 window.location.href =
-                                '/substations/product/<%= product._id %>'
-                            "
-                            onkeydown="
-                                if (
-                                    event.key === 'Enter' ||
-                                    event.key === ' '
-                                ) {
-                                    event.preventDefault();
-
-                                    window.location.href =
-                                    '/substations/product/<%= product._id %>';
-                                }
-                            "
-                            tabindex="0"
-                            role="link"
-                        >
+                                '/branch/<%= selectedSubstationId %>/products/<%= product._id %>';
+                            }
+                        "
+                        tabindex="0"
+                        role="link"
+                    >
 
 
-                            <!-- ==================================================
-                                 #
-                            =================================================== -->
+                        <!-- ==================================================
+                             #
+                        =================================================== -->
 
-                            <td>
+                        <td>
 
-                                <%= index + 1 %>
+                            <%= index + 1 %>
 
-                            </td>
-
-
-                            <!-- ==================================================
-                                 PRODUCT NAME
-                            =================================================== -->
-
-                            <td>
-
-                                <div
-                                    style="
-                                        display: flex;
-                                        align-items: center;
-                                        justify-content: space-between;
-                                        gap: 15px;
-                                    "
-                                >
-
-                                    <div>
-
-                                        <strong>
-                                            <%= product.name %>
-                                        </strong>
+                        </td>
 
 
-                                        <small
-                                            style="
-                                                display: block;
-                                                margin-top: 3px;
-                                                font-size: 0.75rem;
-                                                opacity: 0.7;
-                                            "
-                                        >
+                        <!-- ==================================================
+                             PRODUCT NAME
+                        =================================================== -->
 
-                                            KSh
+                        <td>
 
-                                            <%= number(
-                                                product.unitSellPrice
-                                            ) %>
-
-                                        </small>
-
-                                    </div>
-
-
-                                    <!-- ==================================================
-                                         SELL INPUT
-                                    =================================================== -->
-
-                                    <% if (!hideSellInput) { %>
-
-                                        <div
-                                            onclick="
-                                                event.stopPropagation();
-                                            "
-                                            onkeydown="
-                                                event.stopPropagation();
-                                            "
-                                        >
-
-                                            <input
-                                                type="number"
-                                                name="products[<%= index %>][qty]"
-                                                form="addManyToCartForm"
-                                                min="1"
-                                                max="<%= product.marketAvailable || 0 %>"
-                                                step="1"
-                                                placeholder="Sell"
-                                                class="product-cart-qty"
-                                                aria-label="Units for <%= product.name %>"
-                                            >
-
-
-                                            <input
-                                                type="hidden"
-                                                name="products[<%= index %>][productId]"
-                                                value="<%= product._id %>"
-                                                form="addManyToCartForm"
-                                            >
-
-                                        </div>
-
-                                    <% } %>
-
-
-                                </div>
-
-                            </td>
-
-
-                            <!-- ==================================================
-                                 MARKET AVAILABLE
-                            =================================================== -->
-
-                            <td
-                                onclick="
-                                    event.stopPropagation();
-                                "
-                                onkeydown="
-                                    event.stopPropagation();
+                            <div
+                                style="
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: space-between;
+                                    gap: 15px;
                                 "
                             >
 
-                                <% if (canEditMarketAvailable) { %>
+                                <div>
+
+                                    <strong>
+                                        <%= product.name %>
+                                    </strong>
+
+
+                                    <small
+                                        style="
+                                            display: block;
+                                            margin-top: 3px;
+                                            font-size: 0.75rem;
+                                            opacity: 0.7;
+                                        "
+                                    >
+
+                                        KSh
+
+                                        <%= number(
+                                            product.unitSellPrice
+                                        ) %>
+
+                                    </small>
+
+                                </div>
+
+
+                                <!-- ==================================================
+                                     SELL INPUT
+                                =================================================== -->
+
+                                <% if (!hideSellInput) { %>
 
                                     <div
-                                        style="
-                                            display: flex;
-                                            align-items: center;
-                                            justify-content: flex-end;
-                                            gap: 8px;
-                                            width: 100%;
+                                        onclick="
+                                            event.stopPropagation();
+                                        "
+                                        onkeydown="
+                                            event.stopPropagation();
                                         "
                                     >
 
                                         <input
                                             type="number"
-                                            name="products[<%= index %>][units]"
-                                            value="<%= product.marketAvailable || 0 %>"
-                                            form="updateMarketAvailableForm"
-                                            min="0"
+                                            name="products[<%= index %>][qty]"
+                                            form="addManyToCartForm"
+                                            min="1"
+                                            max="<%= product.marketAvailable || 0 %>"
                                             step="1"
-                                            class="market-units-input"
-                                            data-original-value="<%= product.marketAvailable || 0 %>"
-                                            aria-label="Market units for <%= product.name %>"
+                                            placeholder="Sell"
+                                            class="product-cart-qty"
+                                            aria-label="Units for <%= product.name %>"
                                         >
 
 
@@ -429,92 +356,141 @@ const canEditMarketAvailable =
                                             type="hidden"
                                             name="products[<%= index %>][productId]"
                                             value="<%= product._id %>"
-                                            form="updateMarketAvailableForm"
+                                            form="addManyToCartForm"
                                         >
 
                                     </div>
 
-                                <% } else { %>
-
-                                    <%= number(
-                                        product.marketAvailable
-                                    ) %>
-
                                 <% } %>
 
-                            </td>
 
-
-                            <!-- ==================================================
-                                 STOCK AVAILABLE
-                            =================================================== -->
-
-                            <td>
-
-                                <%= number(
-                                    product.stockAvailable
-                                ) %>
-
-                            </td>
-
-
-                            <!-- ==================================================
-                                 SALES
-                            =================================================== -->
-
-                            <td>
-
-                                <%= number(
-                                    product.sales
-                                ) %>
-
-                            </td>
-
-
-                        </tr>
-
-
-                    <% }); %>
-
-
-                <% } else { %>
-
-
-                    <tr>
-
-                        <td
-                            colspan="5"
-                            class="sales-empty"
-                        >
-
-                            No product analytics found
-                            for this period.
+                            </div>
 
                         </td>
+
+
+                        <!-- ==================================================
+                             MARKET AVAILABLE
+                        =================================================== -->
+
+                        <td
+                            onclick="
+                                event.stopPropagation();
+                            "
+                            onkeydown="
+                                event.stopPropagation();
+                            "
+                        >
+
+                            <% if (canEditMarketAvailable) { %>
+
+                                <div
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: flex-end;
+                                        gap: 8px;
+                                        width: 100%;
+                                    "
+                                >
+
+                                    <input
+                                        type="number"
+                                        name="products[<%= index %>][units]"
+                                        value="<%= product.marketAvailable || 0 %>"
+                                        form="updateMarketAvailableForm"
+                                        min="0"
+                                        step="1"
+                                        class="market-units-input"
+                                        data-original-value="<%= product.marketAvailable || 0 %>"
+                                        aria-label="Market units for <%= product.name %>"
+                                    >
+
+
+                                    <input
+                                        type="hidden"
+                                        name="products[<%= index %>][productId]"
+                                        value="<%= product._id %>"
+                                        form="updateMarketAvailableForm"
+                                    >
+
+                                </div>
+
+                            <% } else { %>
+
+                                <%= number(
+                                    product.marketAvailable
+                                ) %>
+
+                            <% } %>
+
+                        </td>
+
+
+                        <!-- ==================================================
+                             STOCK AVAILABLE
+                        =================================================== -->
+
+                        <td>
+
+                            <%= number(
+                                product.stockAvailable
+                            ) %>
+
+                        </td>
+
+
+                        <!-- ==================================================
+                             SALES
+                        =================================================== -->
+
+                        <td>
+
+                            <%= number(
+                                product.sales
+                            ) %>
+
+                        </td>
+
 
                     </tr>
 
 
-                <% } %>
+                <% }); %>
 
 
-            </tbody>
+            <% } else { %>
 
 
-        </table>
+                <tr>
+
+                    <td
+                        colspan="5"
+                        class="sales-empty"
+                    >
+
+                        No product analytics found
+                        for this period.
+
+                    </td>
+
+                </tr>
 
 
-    </div>
+            <% } %>
+
+
+        </tbody>
+
+
+    </table>
 
 
 </div>
 
-
-<!-- ======================================================
+</div><!-- ======================================================
      ADD MANY TO CART SCRIPT
-======================================================= -->
-
-<% if (!hideSellInput) { %>
+======================================================= --><% if (!hideSellInput) { %>
 
 <script>
 
@@ -634,16 +610,11 @@ document.addEventListener(
     }
 );
 
-</script>
-
-<% } %>
-
+</script><% } %>
 
 <!-- ======================================================
      UPDATE MARKET AVAILABLE SCRIPT
-======================================================= -->
-
-<% if (canEditMarketAvailable) { %>
+======================================================= --><% if (canEditMarketAvailable) { %>
 
 <script>
 
@@ -785,6 +756,4 @@ document.addEventListener(
     }
 );
 
-</script>
-
-<% } %>
+</script><% } %>
