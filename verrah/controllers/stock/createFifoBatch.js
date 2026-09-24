@@ -1,23 +1,22 @@
+// ==========================================================
+// verrah/controllers/stock/createFifoBatch.js
+// CREATE FIFO BATCH
+// ==========================================================
+
 const {
     createFifoBatch
 } = require("../../services/stockService");
 
 
 // ==========================================================
-// CREATE NEW FIFO BATCH
+// CREATE FIFO BATCH
 // ==========================================================
 
-exports.createFifoBatch =
-async (
-    req,
-    res
-) => {
+exports.createFifoBatch = async (req, res) => {
 
     try {
 
-        const stockId =
-            req.params.id;
-
+        const stockId = req.params.id;
 
         await createFifoBatch(
             stockId,
@@ -25,25 +24,20 @@ async (
             req.user
         );
 
-
-        // ==================================================
-        // STAFF -> PRODUCTS
-        // ==================================================
+        // ------------------------------------------------------
+        // STAFF
+        // ------------------------------------------------------
 
         if (
             req.user &&
             req.user.role === "staff"
         ) {
-
-            return res.redirect(
-                "/products"
-            );
+            return res.redirect("/products");
         }
 
-
-        // ==================================================
-        // OTHER ROLES -> EXISTING REDIRECT
-        // ==================================================
+        // ------------------------------------------------------
+        // ADMIN / OTHER ROLES
+        // ------------------------------------------------------
 
         return res.redirect(
             `/stock/${stockId}`
@@ -56,16 +50,14 @@ async (
             error
         );
 
-
-        // ==================================================
-        // STAFF -> PRODUCTS WITH ERROR
-        // ==================================================
+        // ------------------------------------------------------
+        // STAFF ERROR
+        // ------------------------------------------------------
 
         if (
             req.user &&
             req.user.role === "staff"
         ) {
-
             return res.redirect(
                 `/products?error=${encodeURIComponent(
                     error.message
@@ -73,10 +65,9 @@ async (
             );
         }
 
-
-        // ==================================================
-        // OTHER ROLES -> EXISTING ERROR REDIRECT
-        // ==================================================
+        // ------------------------------------------------------
+        // ADMIN / OTHER ROLES ERROR
+        // ------------------------------------------------------
 
         return res.redirect(
             `/stock/${req.params.id}?error=${encodeURIComponent(
