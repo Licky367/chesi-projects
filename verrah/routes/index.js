@@ -5,6 +5,8 @@ const router = express.Router();
 const indexController =
     require("../controllers/indexController");
 
+const requireLogin = require("../middleware/requireLogin");
+
 
 /* ========================================================
    HOME PAGE
@@ -12,6 +14,7 @@ const indexController =
 
 router.get(
     "/",
+    reqireLogin,
     indexController.getHome
 );
 
