@@ -3,22 +3,6 @@
 // STOCK FIFO BATCH SERVICE
 // VERRAH COSMETICS
 // ==========================================================
-//
-// Handles:
-//
-//     1. Retrieving FIFO purchase batches
-//     2. Editing an existing FIFO batch
-//     3. Keeping Stock.units equal to the total remaining
-//        units across purchaseBatches
-//
-// purchaseBatches.units represents CURRENT REMAINING STOCK.
-//
-// Therefore:
-//
-//     Stock.units
-//         = SUM(purchaseBatches.units)
-//
-// ==========================================================
 
 const mongoose =
     require("mongoose");
@@ -26,31 +10,20 @@ const mongoose =
 const Stock =
     require("../../models/stock");
 
+const Product =
+    require("../../models/products");
+
+const Substation =
+    require("../../models/substations");
+
 
 // ==========================================================
 // GET FIFO BATCHES
-// ==========================================================
-//
-// Returns:
-//
-// {
-//     stock,
-//     batches
-// }
-//
-// Batches are returned oldest-first so the service preserves
-// FIFO ordering.
-//
-// The EJS can sort them differently for display.
 // ==========================================================
 
 async function getFifoBatches(
     stockId
 ) {
-
-    // ======================================================
-    // VALIDATE STOCK ID
-    // ======================================================
 
     if (
         !mongoose.Types.ObjectId.isValid(
@@ -63,10 +36,6 @@ async function getFifoBatches(
         );
     }
 
-
-    // ======================================================
-    // FIND ACTIVE STOCK
-    // ======================================================
 
     const stock =
         await Stock.findOne({
@@ -85,10 +54,6 @@ async function getFifoBatches(
     }
 
 
-    // ======================================================
-    // GET PURCHASE BATCHES
-    // ======================================================
-
     const batches =
         Array.isArray(
             stock.purchaseBatches
@@ -96,16 +61,6 @@ async function getFifoBatches(
             ? [...stock.purchaseBatches]
             : [];
 
-
-    // ======================================================
-    // FIFO ORDER
-    // ======================================================
-    //
-    // Oldest purchase first.
-    //
-    // This is the natural order used when consuming stock
-    // through FIFO.
-    // ======================================================
 
     batches.sort(
         (
@@ -145,47 +100,12 @@ async function getFifoBatches(
 // ==========================================================
 // EDIT FIFO BATCH
 // ==========================================================
-//
-// Updates:
-//
-//     purchaseBatches.units
-//     purchaseBatches.buyPrice
-//
-// purchasedAt is deliberately NOT changed.
-//
-// IMPORTANT:
-//
-// After changing the batch units:
-//
-//     Stock.units
-//         = SUM(all purchaseBatches.units)
-//
-// This means:
-//
-// Example:
-//
-// Batch A = 100
-// Batch B = 50
-//
-// Stock.units = 150
-//
-// Edit Batch A:
-//
-// 100 -> 80
-//
-// Result:
-//
-// Batch A = 80
-// Batch B = 50
-//
-// Stock.units = 130
-//
-// ==========================================================
 
 async function editFifoBatch(
     stockId,
     batchId,
-    body
+    body,
+    user
 ) {
 
     // ======================================================
@@ -286,7 +206,7 @@ async function editFifoBatch(
             async () => {
 
                 // ==========================================
-                // LOAD ACTIVE STOCK
+                // LOAD STOCK
                 // ==========================================
 
                 const stock =
@@ -309,8 +229,20 @@ async function editFifoBatch(
                 }
 
 
+                if (
+                    !Array.isArray(
+                        stock.purchaseBatches
+                    )
+                ) {
+
+                    throw new Error(
+                        "Stock has no FIFO batches."
+                    );
+                }
+
+
                 // ==========================================
-                // FIND FIFO BATCH
+                // FIND STOCK BATCH
                 // ==========================================
 
                 const batch =
@@ -327,9 +259,355 @@ async function editFifoBatch(
                 }
 
 
-                // ==========================================
-                // UPDATE BATCH
-                // ==========================================
+                // ==================================================
+                // STAFF
+                // ==================================================
+                //
+                // Staff do NOT modify:
+                //
+                //     Stock.purchaseBatches
+                //     Stock.units
+                //
+                // Instead:
+                //
+                //     Product.fifoBatches
+                //     Product.units
+                //     assigned Substation.productInventory.units
+                //
+                // are updated.
+                //
+                // ==================================================
+
+                if (
+                    user &&
+                    user.role === "staff"
+                ) {
+
+                    // ======================================
+                    // VALIDATE ASSIGNED SUBSTATION
+                    // ======================================
+
+                    if (
+                        !user.assignedSubstation ||
+                        !mongoose.Types.ObjectId.isValid(
+                            user.assignedSubstation
+                        )
+                    ) {
+
+                        throw new Error(
+                            "Staff member has no valid assigned substation."
+                        );
+                    }
+
+
+                    // ======================================
+                    // FIND LINKED PRODUCT
+                    // ======================================
+
+                    const product =
+                        await Product.findOne({
+                            stock: stock._id
+                        })
+                        .session(
+                            session
+                        );
+
+
+                    if (!product) {
+
+                        throw new Error(
+                            "Product linked to this stock was not found."
+                        );
+                    }
+
+
+                    // ======================================
+                    // ENSURE PRODUCT FIFO ARRAY
+                    // ======================================
+
+                    if (
+                        !Array.isArray(
+                            product.fifoBatches
+                        )
+                    ) {
+
+                        product.fifoBatches =
+                            [];
+                    }
+
+
+                    // ======================================
+                    // FIND CORRESPONDING PRODUCT FIFO
+                    // ======================================
+                    //
+                    // Product FIFO batches follow the same
+                    // FIFO sequence as the stock batches.
+                    //
+                    // Find the position of the stock batch
+                    // and use that position on Product FIFO.
+                    //
+                    // ======================================
+
+                    const stockBatchIndex =
+                        stock.purchaseBatches.findIndex(
+                            currentBatch =>
+                                String(
+                                    currentBatch._id
+                                ) ===
+                                String(
+                                    batchId
+                                )
+                        );
+
+
+                    if (
+                        stockBatchIndex < 0
+                    ) {
+
+                        throw new Error(
+                            "Unable to locate FIFO batch position."
+                        );
+                    }
+
+
+                    const productBatch =
+                        product.fifoBatches[
+                            stockBatchIndex
+                        ];
+
+
+                    if (!productBatch) {
+
+                        throw new Error(
+                            "Corresponding product FIFO batch was not found."
+                        );
+                    }
+
+
+                    // ======================================
+                    // OLD PRODUCT BATCH UNITS
+                    // ======================================
+
+                    const oldUnits =
+                        Number(
+                            productBatch.units || 0
+                        );
+
+
+                    // ======================================
+                    // CALCULATE UNIT DIFFERENCE
+                    // ======================================
+
+                    const unitDifference =
+                        units -
+                        oldUnits;
+
+
+                    // ======================================
+                    // UPDATE PRODUCT FIFO BATCH
+                    // ======================================
+
+                    productBatch.units =
+                        units;
+
+                    productBatch.buyPrice =
+                        buyPrice;
+
+
+                    // ======================================
+                    // UPDATE PRODUCT TOTAL UNITS
+                    // ======================================
+                    //
+                    // Product.units represents the total
+                    // units across its FIFO batches.
+                    //
+                    // ======================================
+
+                    let productUnits =
+                        0;
+
+
+                    for (
+                        const currentBatch
+                        of product.fifoBatches
+                    ) {
+
+                        const currentUnits =
+                            Number(
+                                currentBatch.units
+                            );
+
+
+                        if (
+                            Number.isFinite(
+                                currentUnits
+                            ) &&
+                            currentUnits > 0
+                        ) {
+
+                            productUnits +=
+                                currentUnits;
+                        }
+                    }
+
+
+                    product.units =
+                        productUnits;
+
+
+                    // ======================================
+                    // REMOVE ZERO PRODUCT FIFO BATCH
+                    // ======================================
+
+                    product.fifoBatches =
+                        product.fifoBatches.filter(
+                            currentBatch =>
+                                Number(
+                                    currentBatch.units
+                                ) > 0
+                        );
+
+
+                    // ======================================
+                    // SAVE PRODUCT
+                    // ======================================
+
+                    await product.save({
+                        session
+                    });
+
+
+                    // ======================================
+                    // LOAD ASSIGNED SUBSTATION
+                    // ======================================
+
+                    const substation =
+                        await Substation.findById(
+                            user.assignedSubstation
+                        )
+                        .session(
+                            session
+                        );
+
+
+                    if (!substation) {
+
+                        throw new Error(
+                            "Assigned substation not found."
+                        );
+                    }
+
+
+                    // ======================================
+                    // FIND PRODUCT INVENTORY
+                    // ======================================
+
+                    if (
+                        !Array.isArray(
+                            substation.productInventory
+                        )
+                    ) {
+
+                        substation.productInventory =
+                            [];
+                    }
+
+
+                    const inventory =
+                        substation.productInventory.find(
+                            item =>
+                                String(
+                                    item.productId
+                                ) ===
+                                String(
+                                    product._id
+                                )
+                        );
+
+
+                    if (!inventory) {
+
+                        throw new Error(
+                            "Product inventory was not found in the assigned substation."
+                        );
+                    }
+
+
+                    // ======================================
+                    // UPDATE SUBSTATION UNITS
+                    // ======================================
+                    //
+                    // Only apply the difference between the
+                    // old and new product FIFO batch.
+                    //
+                    // Example:
+                    //
+                    // Old batch = 100
+                    // New batch = 80
+                    //
+                    // Difference = -20
+                    //
+                    // Substation inventory decreases by 20.
+                    //
+                    // ======================================
+
+                    const currentInventoryUnits =
+                        Number(
+                            inventory.units || 0
+                        );
+
+
+                    const newInventoryUnits =
+                        currentInventoryUnits +
+                        unitDifference;
+
+
+                    if (
+                        newInventoryUnits < 0
+                    ) {
+
+                        throw new Error(
+                            "Substation inventory cannot become negative."
+                        );
+                    }
+
+
+                    inventory.units =
+                        newInventoryUnits;
+
+                    inventory.updatedAt =
+                        new Date();
+
+
+                    // ======================================
+                    // SAVE SUBSTATION
+                    // ======================================
+
+                    await substation.save({
+                        session
+                    });
+
+
+                    // ======================================
+                    // IMPORTANT:
+                    // STOCK IS NOT UPDATED FOR STAFF
+                    // ======================================
+
+                    updatedStock =
+                        stock;
+
+                    return;
+                }
+
+
+                // ==================================================
+                // NON-STAFF
+                // EXISTING BEHAVIOR
+                // ==================================================
+
+                // ==============================================
+                // UPDATE STOCK BATCH
+                // ==============================================
 
                 batch.units =
                     units;
@@ -338,19 +616,12 @@ async function editFifoBatch(
                     buyPrice;
 
 
-                // ==========================================
-                // RECALCULATE TOTAL STOCK UNITS
-                // ==========================================
-                //
-                // Do NOT simply add/subtract from the old
-                // Stock.units value.
-                //
-                // Recalculate from the actual batches so
-                // Stock.units remains the source of the
-                // aggregate total.
-                // ==========================================
+                // ==============================================
+                // RECALCULATE STOCK UNITS
+                // ==============================================
 
-                let totalUnits = 0;
+                let totalUnits =
+                    0;
 
 
                 for (
@@ -377,25 +648,13 @@ async function editFifoBatch(
                 }
 
 
-                // ==========================================
-                // UPDATE STOCK TOTAL
-                // ==========================================
-
                 stock.units =
                     totalUnits;
 
 
-                // ==========================================
+                // ==============================================
                 // REMOVE ZERO-UNIT BATCHES
-                // ==========================================
-                //
-                // If the edited batch is set to zero,
-                // remove it from the embedded batch list.
-                //
-                // This matches the existing FIFO stock
-                // behaviour where consumed/empty batches are
-                // no longer retained as active batches.
-                // ==========================================
+                // ==============================================
 
                 stock.purchaseBatches =
                     stock.purchaseBatches.filter(
@@ -406,9 +665,9 @@ async function editFifoBatch(
                     );
 
 
-                // ==========================================
-                // SAVE
-                // ==========================================
+                // ==============================================
+                // SAVE STOCK
+                // ==============================================
 
                 await stock.save({
                     session
