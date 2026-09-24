@@ -12,6 +12,9 @@ const controller =
 const requireAdmin =
     require("../middleware/requireAdmin");
 
+const requireAdminOrStaff =
+    require("../middleware/requireStaffOrAdmin");
+
 const substationsUpload =
     require("../middleware/substationsUpload");
 
