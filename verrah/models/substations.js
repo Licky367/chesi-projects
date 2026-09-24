@@ -4,57 +4,55 @@
 // ==========================================================
 
 const mongoose = require("mongoose");
-const securityKey = require("./securityKey");
 
 // ==========================================================
 // PRODUCT INVENTORY SCHEMA
 // ==========================================================
 
 const productInventorySchema = new mongoose.Schema(
-{
-productId: {
-type: mongoose.Schema.Types.ObjectId,
-ref: "Product",
-required: true
-},
+    {
+        productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true
+        },
 
-productName: {
-        type: String,
-        required: true,
-        trim: true
-    },
+        productName: {
+            type: String,
+            required: true,
+            trim: true
+        },
 
-    category: {
-        type: String,
-        default: "",
-        trim: true
-    },
+        category: {
+            type: String,
+            default: "",
+            trim: true
+        },
 
-    subcategory: {
-        type: String,
-        default: "",
-        trim: true
-    },
+        subcategory: {
+            type: String,
+            default: "",
+            trim: true
+        },
 
-    days: {
-        type: Number,
-        min: 0,
-        default: 0
-    },
+        days: {
+            type: Number,
+            min: 0,
+            default: 0
+        },
 
-    units: {
-        type: Number,
-        required: true,
-        min: 0,
-        default: 0
-    },
+        units: {
+            type: Number,
+            required: true,
+            min: 0,
+            default: 0
+        },
 
-    updatedAt: {
-        type: Date,
-        default: Date.now
+        updatedAt: {
+            type: Date,
+            default: Date.now
+        }
     }
-},
-
 );
 
 // ==========================================================
@@ -62,92 +60,116 @@ productName: {
 // ==========================================================
 
 const substationProductReductionSchema = new mongoose.Schema(
-{
-productId: {
-type: mongoose.Schema.Types.ObjectId,
-ref: "Product",
-required: true
-},
+    {
+        productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true
+        },
 
-productName: {
-        type: String,
-        required: true,
-        trim: true
+        productName: {
+            type: String,
+            required: true,
+            trim: true
+        },
+
+        category: {
+            type: String,
+            default: "",
+            trim: true
+        },
+
+        unitsReduced: {
+            type: Number,
+            required: true,
+            min: 0,
+            default: 0
+        },
+
+        lastReducedAt: {
+            type: Date,
+            default: null
+        }
     },
-
-    category: {
-        type: String,
-        default: "",
-        trim: true
-    },
-
-    unitsReduced: {
-        type: Number,
-        required: true,
-        min: 0,
-        default: 0
-    },
-
-    lastReducedAt: {
-        type: Date,
-        default: null
+    {
+        _id: false
     }
-},
-{
-    _id: false
-}
-
 );
 
 // ==========================================================
 // DAILY CASH SALES SCHEMA
 // ==========================================================
+//
+// Each record represents one day's cumulative cash sales.
+//
+// Mongoose automatically creates an _id for every record.
+//
+// Example:
+//
+// {
+//     _id: ObjectId("..."),
+//     amount: 18500,
+//     date: Date("2026-09-21"),
+//     isDeposited: false
+// }
+//
+// ==========================================================
 
 const dailyCashSaleSchema = new mongoose.Schema(
-{
-amount: {
-type: Number,
-required: true,
-default: 0
-},
+    {
+        amount: {
+            type: Number,
+            required: true,
+            default: 0
+        },
 
-date: {
-        type: Date,
-        required: true
-    },
+        date: {
+            type: Date,
+            required: true
+        },
 
-    isDeposited: {
-        type: Boolean,
-        default: false
+        isDeposited: {
+            type: Boolean,
+            default: false
+        }
     }
-}
-
 );
 
 // ==========================================================
 // GPS SCHEMA
 // ==========================================================
+//
+// Stores the exact geographical coordinates of the
+// substation.
+//
+// Example:
+// latitude:  -1.28333
+// longitude: 36.81667
+//
+// These coordinates can later be used to generate a
+// Google Maps "Get Directions" link.
+//
+// ==========================================================
 
 const gpsSchema = new mongoose.Schema(
-{
-latitude: {
-type: Number,
-default: null,
-min: -90,
-max: 90
-},
+    {
+        latitude: {
+            type: Number,
+            default: null,
+            min: -90,
+            max: 90
+        },
 
-longitude: {
-        type: Number,
-        default: null,
-        min: -180,
-        max: 180
+        longitude: {
+            type: Number,
+            default: null,
+            min: -180,
+            max: 180
+        }
+    },
+    {
+        _id: false
     }
-},
-{
-    _id: false
-}
-
 );
 
 // ==========================================================
@@ -155,125 +177,144 @@ longitude: {
 // ==========================================================
 
 const substationSchema = new mongoose.Schema(
-{
-// ------------------------------------------------
-// BASIC INFORMATION
-// ------------------------------------------------
+    {
+        // ------------------------------------------------
+        // BASIC INFORMATION
+        // ------------------------------------------------
 
-name: {
-        type: String,
-        required: true,
-        trim: true,
-        unique: true,
-        index: true
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+            unique: true,
+            index: true
+        },
+
+        substationKey: {
+            type: String,
+            trim: true,
+            default: "Verrah@123"
+        },
+
+        location: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+
+        phoneNumber: {
+            type: Number,
+            default: null
+        },
+
+        // ------------------------------------------------
+        // SUBSTATION MEDIA
+        // ------------------------------------------------
+
+        substationIcon: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+
+        images: {
+            type: [String],
+            default: []
+        },
+
+        // ------------------------------------------------
+        // DESCRIPTION
+        // ------------------------------------------------
+
+        description: {
+            type: String,
+            default: ""
+        },
+
+        // ------------------------------------------------
+        // DIRECTIONS
+        // ------------------------------------------------
+
+        // Can contain human-readable directions or a
+        // directions/map URL.
+        //
+        // Example:
+        // "Next to the main shopping centre"
+        //
+        // Or:
+        // "https://www.google.com/maps/..."
+        // ------------------------------------------------
+
+        directions: {
+            type: String,
+            trim: true,
+            default: ""
+        },
+
+        // ------------------------------------------------
+        // GPS LOCATION
+        // ------------------------------------------------
+
+        // Stores the actual coordinates separately from
+        // the human-readable location/directions.
+        // ------------------------------------------------
+
+        gps: {
+            type: gpsSchema,
+            default: () => ({
+                latitude: null,
+                longitude: null
+            })
+        },
+
+        // ------------------------------------------------
+        // STATUS
+        // ------------------------------------------------
+
+        isActive: {
+            type: Boolean,
+            default: true
+        },
+
+        // ------------------------------------------------
+        // DAILY CASH SALES
+        // ------------------------------------------------
+        //
+        // Each item represents one day.
+        //
+        // The amount is the cumulative cash sales total
+        // for that particular date.
+        //
+        // Each item automatically receives an _id.
+        //
+        // ------------------------------------------------
+
+        dailyCashSales: {
+            type: [dailyCashSaleSchema],
+            default: []
+        },
+
+        // ------------------------------------------------
+        // PRODUCT INVENTORY
+        // ------------------------------------------------
+
+        productInventory: {
+            type: [productInventorySchema],
+            default: []
+        },
+
+        // ------------------------------------------------
+        // PRODUCT REDUCTIONS
+        // ------------------------------------------------
+
+        productReductions: {
+            type: [substationProductReductionSchema],
+            default: []
+        }
     },
-
-    location: {
-        type: String,
-        trim: true,
-        default: ""
-    },
-
-    phoneNumber: {
-        type: Number,
-        default: null
-    },
-
-    // ------------------------------------------------
-    // SUBSTATION MEDIA
-    // ------------------------------------------------
-
-    substationIcon: {
-        type: String,
-        trim: true,
-        default: ""
-    },
-
-    images: {
-        type: [String],
-        default: []
-    },
-
-    // ------------------------------------------------
-    // DESCRIPTION
-    // ------------------------------------------------
-
-    description: {
-        type: String,
-        default: ""
-    },
-
-    // ------------------------------------------------
-    // DIRECTIONS
-    // ------------------------------------------------
-
-    directions: {
-        type: String,
-        trim: true,
-        default: ""
-    },
-
-    // ------------------------------------------------
-    // GPS LOCATION
-    // ------------------------------------------------
-
-    gps: {
-        type: gpsSchema,
-        default: () => ({
-            latitude: null,
-            longitude: null
-        })
-    },
-
-    // ------------------------------------------------
-    // SUBSTATION KEY
-    // ------------------------------------------------
-
-    substationKey: {
-        type: String,
-        default: securityKey
-    },
-
-    // ------------------------------------------------
-    // STATUS
-    // ------------------------------------------------
-
-    isActive: {
-        type: Boolean,
-        default: true
-    },
-
-    // ------------------------------------------------
-    // DAILY CASH SALES
-    // ------------------------------------------------
-
-    dailyCashSales: {
-        type: [dailyCashSaleSchema],
-        default: []
-    },
-
-    // ------------------------------------------------
-    // PRODUCT INVENTORY
-    // ------------------------------------------------
-
-    productInventory: {
-        type: [productInventorySchema],
-        default: []
-    },
-
-    // ------------------------------------------------
-    // PRODUCT REDUCTIONS
-    // ------------------------------------------------
-
-    productReductions: {
-        type: [substationProductReductionSchema],
-        default: []
+    {
+        timestamps: true
     }
-},
-{
-    timestamps: true
-}
-
 );
 
 // ==========================================================
@@ -281,6 +322,6 @@ name: {
 // ==========================================================
 
 module.exports = mongoose.model(
-"Substation",
-substationSchema
+    "Substation",
+    substationSchema
 );
