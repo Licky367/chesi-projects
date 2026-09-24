@@ -16,7 +16,7 @@ const depositController =
 const depositToggle =
     require("../controllers/depositToggle");
 
-const requireAdmin = require("../middleware/requireAdmin");
+const requireAccess = require("../middleware/requireAccess");
 
 
 // ==========================================================
@@ -63,7 +63,7 @@ router.post(
 
 router.post(
     "/:id/toggleDeposit",
-    requireAdmin,
+    requireAccess,
     depositToggle.toggleDailyCashSaleDeposit
 );
 
