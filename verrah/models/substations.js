@@ -4,6 +4,7 @@
 // ==========================================================
 
 const mongoose = require("mongoose");
+const securityKey = require("./securityKey");
 
 // ==========================================================
 // PRODUCT INVENTORY SCHEMA
@@ -17,41 +18,41 @@ ref: "Product",
 required: true
 },
 
-productName: {  
-        type: String,  
-        required: true,  
-        trim: true  
-    },  
+productName: {
+        type: String,
+        required: true,
+        trim: true
+    },
 
-    category: {  
-        type: String,  
-        default: "",  
-        trim: true  
-    },  
+    category: {
+        type: String,
+        default: "",
+        trim: true
+    },
 
-    subcategory: {  
-        type: String,  
-        default: "",  
-        trim: true  
-    },  
+    subcategory: {
+        type: String,
+        default: "",
+        trim: true
+    },
 
-    days: {  
-        type: Number,  
-        min: 0,  
-        default: 0  
-    },  
+    days: {
+        type: Number,
+        min: 0,
+        default: 0
+    },
 
-    units: {  
-        type: Number,  
-        required: true,  
-        min: 0,  
-        default: 0  
-    },  
+    units: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0
+    },
 
-    updatedAt: {  
-        type: Date,  
-        default: Date.now  
-    }  
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    }
 },
 
 );
@@ -68,53 +69,38 @@ ref: "Product",
 required: true
 },
 
-productName: {  
-        type: String,  
-        required: true,  
-        trim: true  
-    },  
+productName: {
+        type: String,
+        required: true,
+        trim: true
+    },
 
-    category: {  
-        type: String,  
-        default: "",  
-        trim: true  
-    },  
+    category: {
+        type: String,
+        default: "",
+        trim: true
+    },
 
-    unitsReduced: {  
-        type: Number,  
-        required: true,  
-        min: 0,  
-        default: 0  
-    },  
+    unitsReduced: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0
+    },
 
-    lastReducedAt: {  
-        type: Date,  
-        default: null  
-    }  
-},  
-{  
-    _id: false  
+    lastReducedAt: {
+        type: Date,
+        default: null
+    }
+},
+{
+    _id: false
 }
 
 );
 
 // ==========================================================
 // DAILY CASH SALES SCHEMA
-// ==========================================================
-//
-// Each record represents one day's cumulative cash sales.
-//
-// Mongoose automatically creates an _id for every record.
-//
-// Example:
-//
-// {
-//     _id: ObjectId("..."),
-//     amount: 18500,
-//     date: Date("2026-09-21"),
-//     isDeposited: false
-// }
-//
 // ==========================================================
 
 const dailyCashSaleSchema = new mongoose.Schema(
@@ -125,33 +111,21 @@ required: true,
 default: 0
 },
 
-date: {  
-        type: Date,  
-        required: true  
-    },  
+date: {
+        type: Date,
+        required: true
+    },
 
-    isDeposited: {  
-        type: Boolean,  
-        default: false  
-    }  
+    isDeposited: {
+        type: Boolean,
+        default: false
+    }
 }
 
 );
 
 // ==========================================================
 // GPS SCHEMA
-// ==========================================================
-
-// Stores the exact geographical coordinates of the
-// substation.
-//
-// Example:
-// latitude:  -1.28333
-// longitude: 36.81667
-//
-// These coordinates can later be used to generate a
-// Google Maps "Get Directions" link.
-
 // ==========================================================
 
 const gpsSchema = new mongoose.Schema(
@@ -163,15 +137,15 @@ min: -90,
 max: 90
 },
 
-longitude: {  
-        type: Number,  
-        default: null,  
-        min: -180,  
-        max: 180  
-    }  
-},  
-{  
-    _id: false  
+longitude: {
+        type: Number,
+        default: null,
+        min: -180,
+        max: 180
+    }
+},
+{
+    _id: false
 }
 
 );
@@ -186,132 +160,118 @@ const substationSchema = new mongoose.Schema(
 // BASIC INFORMATION
 // ------------------------------------------------
 
-name: {  
-        type: String,  
-        required: true,  
-        trim: true,  
-        unique: true,  
-        index: true  
-    },  
+name: {
+        type: String,
+        required: true,
+        trim: true,
+        unique: true,
+        index: true
+    },
 
-    location: {  
-        type: String,  
-        trim: true,  
-        default: ""  
-    },  
+    location: {
+        type: String,
+        trim: true,
+        default: ""
+    },
 
-    phoneNumber: {  
-        type: Number,  
-        default: null  
-    },  
+    phoneNumber: {
+        type: Number,
+        default: null
+    },
 
-    // ------------------------------------------------  
-    // SUBSTATION MEDIA  
-    // ------------------------------------------------  
+    // ------------------------------------------------
+    // SUBSTATION MEDIA
+    // ------------------------------------------------
 
-    substationIcon: {  
-        type: String,  
-        trim: true,  
-        default: ""  
-    },  
+    substationIcon: {
+        type: String,
+        trim: true,
+        default: ""
+    },
 
-    images: {  
-        type: [String],  
-        default: []  
-    },  
+    images: {
+        type: [String],
+        default: []
+    },
 
-    // ------------------------------------------------  
-    // DESCRIPTION  
-    // ------------------------------------------------  
+    // ------------------------------------------------
+    // DESCRIPTION
+    // ------------------------------------------------
 
-    description: {  
-        type: String,  
-        default: ""  
-    },  
+    description: {
+        type: String,
+        default: ""
+    },
 
-    // ------------------------------------------------  
-    // DIRECTIONS  
-    // ------------------------------------------------  
+    // ------------------------------------------------
+    // DIRECTIONS
+    // ------------------------------------------------
 
-    // Can contain human-readable directions or a  
-    // directions/map URL.  
-    //  
-    // Example:  
-    // "Next to the main shopping centre"  
-    //  
-    // Or:  
-    // "https://www.google.com/maps/..."  
-    // ------------------------------------------------  
+    directions: {
+        type: String,
+        trim: true,
+        default: ""
+    },
 
-    directions: {  
-        type: String,  
-        trim: true,  
-        default: ""  
-    },  
+    // ------------------------------------------------
+    // GPS LOCATION
+    // ------------------------------------------------
 
-    // ------------------------------------------------  
-    // GPS LOCATION  
-    // ------------------------------------------------  
+    gps: {
+        type: gpsSchema,
+        default: () => ({
+            latitude: null,
+            longitude: null
+        })
+    },
 
-    // Stores the actual coordinates separately from  
-    // the human-readable location/directions.  
-    // ------------------------------------------------  
+    // ------------------------------------------------
+    // SUBSTATION KEY
+    // ------------------------------------------------
 
-    gps: {  
-        type: gpsSchema,  
-        default: () => ({  
-            latitude: null,  
-            longitude: null  
-        })  
-    },  
+    substationKey: {
+        type: String,
+        default: securityKey
+    },
 
-    // ------------------------------------------------  
-    // STATUS  
-    // ------------------------------------------------  
+    // ------------------------------------------------
+    // STATUS
+    // ------------------------------------------------
 
-    isActive: {  
-        type: Boolean,  
-        default: true  
-    },  
+    isActive: {
+        type: Boolean,
+        default: true
+    },
 
-    // ------------------------------------------------  
-    // DAILY CASH SALES  
-    // ------------------------------------------------  
-    //  
-    // Each item represents one day.  
-    //  
-    // The amount is the cumulative cash sales total  
-    // for that particular date.  
-    //  
-    // Each item automatically receives an _id.  
-    //  
-    // ------------------------------------------------  
+    // ------------------------------------------------
+    // DAILY CASH SALES
+    // ------------------------------------------------
 
-    dailyCashSales: {  
-        type: [dailyCashSaleSchema],  
-        default: []  
-    },  
+    dailyCashSales: {
+        type: [dailyCashSaleSchema],
+        default: []
+    },
 
-    // ------------------------------------------------  
-    // PRODUCT INVENTORY  
-    // ------------------------------------------------  
+    // ------------------------------------------------
+    // PRODUCT INVENTORY
+    // ------------------------------------------------
 
-    productInventory: {  
-        type: [productInventorySchema],  
-        default: []  
-    },  
+    productInventory: {
+        type: [productInventorySchema],
+        default: []
+    },
 
-    // ------------------------------------------------  
-    // PRODUCT REDUCTIONS  
-    // ------------------------------------------------  
+    // ------------------------------------------------
+    // PRODUCT REDUCTIONS
+    // ------------------------------------------------
 
-    productReductions: {  
-        type: [substationProductReductionSchema],  
-        default: []  
-    }  
-},  
-{  
-    timestamps: true  
+    productReductions: {
+        type: [substationProductReductionSchema],
+        default: []
+    }
+},
+{
+    timestamps: true
 }
 
 );
