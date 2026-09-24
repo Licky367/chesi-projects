@@ -22,7 +22,7 @@
 
 const {
     createFifoBatch
-} = require("../../services/stockService/createFifoBatch");
+} = require("../../services/stockService");
 
 
 // ==========================================================
