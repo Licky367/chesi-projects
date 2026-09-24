@@ -118,7 +118,7 @@ router.get(
 // POST /stock/:id - create/allocate product from stock.
 router.post(
     "/:id",
-    requireAdmin,
+    requireAdminOrStaff,
     controller.createProduct
 );
 
