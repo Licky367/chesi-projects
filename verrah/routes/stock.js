@@ -6,6 +6,10 @@ const controller =
 const requireAdmin =
     require("../middleware/requireAdmin");
 
+const requireAccess =
+    require("../middleware/requireAccess");
+
+
 
 // ==========================================================
 // STOCK LIST
