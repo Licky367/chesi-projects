@@ -87,7 +87,7 @@ router.get(
 
 router.get(
     "/product/:id",
-    requireAdmin,
+    requireAdminOrStaff,
     controller.productDetail
 );
 
