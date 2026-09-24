@@ -1,7 +1,11 @@
 const router = require("express").Router();
 
-const controller = require("../controllers/stock");
-const requireAdmin = require("../middleware/requireAdmin");
+const controller =
+    require("../controllers/stock");
+
+const requireAdmin =
+    require("../middleware/requireAdmin");
+
 
 // ==========================================================
 // STOCK LIST
@@ -14,6 +18,7 @@ router.get(
     controller.list
 );
 
+
 // ==========================================================
 // NEW STOCK
 // ==========================================================
@@ -24,6 +29,7 @@ router.get(
     requireAdmin,
     controller.newStockForm
 );
+
 
 // ==========================================================
 // CREATE / UPDATE STOCK
@@ -36,6 +42,7 @@ router.post(
     controller.createOrUpdateStock
 );
 
+
 // ==========================================================
 // FIFO BATCHES
 // ==========================================================
@@ -47,6 +54,34 @@ router.get(
     controller.batches
 );
 
+
+// ==========================================================
+// CREATE NEW FIFO BATCH
+// ==========================================================
+
+// POST /stock/:id/batches - create a new FIFO batch.
+//
+// The :id is the Stock._id.
+//
+// Expected body:
+//
+//     units
+//     totalBuyingPrice
+//     purchasedAt
+//
+// The service calculates buyPrice per unit.
+
+router.post(
+    "/:id/batches",
+    requireAdmin,
+    controller.createFifoBatch
+);
+
+
+// ==========================================================
+// EDIT FIFO BATCH
+// ==========================================================
+
 // GET /stock/:id/batch/:batchId - edit a specific FIFO batch.
 router.get(
     "/:id/batch/:batchId",
@@ -54,12 +89,14 @@ router.get(
     controller.batch
 );
 
-// POST /stock/:id/batches/:batchId - save changes to FIFO batches.
+
+// POST /stock/:id/batches/:batchId - save changes to FIFO batch.
 router.post(
     "/:id/batches/:batchId",
     requireAdmin,
     controller.editBatches
 );
+
 
 // ==========================================================
 // STOCK ENTRY / ALLOCATION
@@ -72,6 +109,7 @@ router.get(
     controller.entry
 );
 
+
 // POST /stock/:id - create/allocate product from stock.
 router.post(
     "/:id",
@@ -79,4 +117,6 @@ router.post(
     controller.createProduct
 );
 
+
 module.exports = router;
+
