@@ -8,7 +8,6 @@ STOCK FIFO BATCHES
 Displays all purchase batches belonging to a stock entry.
 
 Tabs:
-    Stock Details
     Batches
     New Batch
 
@@ -21,6 +20,16 @@ Latest batch appears first.
 
 Clicking a row opens:
     /stock/:stockId/batch/:batchId
+
+New batch form:
+
+    units
+    totalBuyingPrice
+    purchasedAt
+
+The service calculates:
+
+    buyPrice = totalBuyingPrice / units
 ==========================================================
 */
 
@@ -40,12 +49,17 @@ const sortedBatches =
         ? [...batches].sort((a, b) => {
 
             const aDate =
-                new Date(a.purchasedAt).getTime();
+                a.purchasedAt
+                    ? new Date(a.purchasedAt).getTime()
+                    : 0;
 
             const bDate =
-                new Date(b.purchasedAt).getTime();
+                b.purchasedAt
+                    ? new Date(b.purchasedAt).getTime()
+                    : 0;
 
             return bDate - aDate;
+
         })
         : [];
 
@@ -61,14 +75,20 @@ const sortedBatches =
     <div class="sales-header">
 
         <div class="sales-header-icon">
+
             <i class="fas fa-boxes-stacked"></i>
+
         </div>
+
 
         <div>
 
             <h1 class="sales-title">
+
                 Stock Batches
+
             </h1>
+
 
             <p class="sales-subtitle">
 
@@ -84,384 +104,521 @@ const sortedBatches =
 
 
     <!-- =====================================================
-         NAVIGATION
+         STOCK NAVIGATION
     ====================================================== -->
 
     <div class="sales-navigation">
+
+        <!-- ================================================
+             STOCK DETAILS
+        ================================================= -->
 
         <a
             href="/stock/<%= stockId %>"
             class="sales-navigation-tab"
         >
+
             <i class="fas fa-box"></i>
+
             Stock Details
+
         </a>
 
+
+        <!-- ================================================
+             BATCHES
+        ================================================= -->
 
         <a
             href="/stock/<%= stockId %>/batches"
             class="sales-navigation-tab active"
         >
+
             <i class="fas fa-layer-group"></i>
+
             Batches
-        </a>
 
-
-        <a
-            href="#new-batch"
-            class="sales-navigation-tab"
-            onclick="
-                document
-                    .getElementById('new-batch')
-                    .scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                return false;
-            "
-        >
-            <i class="fas fa-plus"></i>
-            New Batch
         </a>
 
     </div>
 
 
     <!-- =====================================================
-         BATCH CONTENT
+         TABS
     ====================================================== -->
 
-    <div class="sales-content">
+    <div class="verrah-tabs-container">
+
 
         <!-- =================================================
-             PURCHASE BATCHES
+             TAB BAR
         ================================================== -->
 
-        <section class="sales-section">
+        <div class="verrah-tabs">
 
-            <div class="sales-section-heading">
 
-                <div>
+            <!-- =============================================
+                 BATCHES TAB
+            ============================================== -->
 
-                    <h2>
-                        Purchase Batches
-                    </h2>
-
-                </div>
-
-            </div>
-
-
-            <!-- =================================================
-                 BATCH TABLE
-            ================================================== -->
-
-            <% if (sortedBatches.length > 0) { %>
-
-                <div class="sales-table-wrapper">
-
-                    <table class="sales-table">
-
-                        <thead>
-
-                            <tr>
-
-                                <th>
-                                    Date
-                                </th>
-
-                                <th>
-                                    Units
-                                </th>
-
-                                <th>
-                                    Buy Price
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-
-                        <tbody>
-
-                            <% sortedBatches.forEach(batch => { %>
-
-                                <tr
-                                    class="sales-product-row"
-                                    tabindex="0"
-                                    role="link"
-                                    onclick="window.location.href='/stock/<%= stockId %>/batch/<%= batch._id %>'"
-                                    onkeydown="
-                                        if (event.key === 'Enter' || event.key === ' ') {
-                                            event.preventDefault();
-                                            window.location.href='/stock/<%= stockId %>/batch/<%= batch._id %>';
-                                        }
-                                    "
-                                >
-
-                                    <!-- =================================
-                                         DATE
-                                    ================================== -->
-
-                                    <td>
-
-                                        <%
-                                        const batchDate =
-                                            batch.purchasedAt
-                                                ? new Date(batch.purchasedAt)
-                                                : null;
-                                        %>
-
-                                        <% if (batchDate && !isNaN(batchDate.getTime())) { %>
-
-                                            <%= batchDate.toLocaleDateString(
-                                                "en-KE",
-                                                {
-                                                    day: "2-digit",
-                                                    month: "short",
-                                                    year: "numeric"
-                                                }
-                                            ) %>
-
-                                        <% } else { %>
-
-                                            <span class="sales-muted">
-                                                —
-                                            </span>
-
-                                        <% } %>
-
-                                    </td>
-
-
-                                    <!-- =================================
-                                         UNITS
-                                    ================================== -->
-
-                                    <td>
-
-                                        <%= Number(
-                                            batch.units || 0
-                                        ).toLocaleString() %>
-
-                                    </td>
-
-
-                                    <!-- =================================
-                                         BUY PRICE
-                                    ================================== -->
-
-                                    <td>
-
-                                        KSh
-                                        <%= Number(
-                                            batch.buyPrice || 0
-                                        ).toLocaleString(
-                                            "en-KE",
-                                            {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2
-                                            }
-                                        ) %>
-
-                                    </td>
-
-                                </tr>
-
-                            <% }) %>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-
-            <% } else { %>
-
-
-                <!-- =================================================
-                     EMPTY STATE
-                ================================================== -->
-
-                <div class="sales-table-wrapper">
-
-                    <table class="sales-table">
-
-                        <tbody>
-
-                            <tr>
-
-                                <td
-                                    colspan="3"
-                                    class="sales-empty"
-                                >
-
-                                    <i class="fas fa-box-open"></i>
-
-                                    <br>
-
-                                    No purchase batches found for this stock.
-
-                                </td>
-
-                            </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            <% } %>
-
-        </section>
-
-
-        <!-- =====================================================
-             NEW BATCH
-        ====================================================== -->
-
-        <section
-            class="sales-section"
-            id="new-batch"
-        >
-
-            <div class="sales-section-heading">
-
-                <div>
-
-                    <h2>
-                        Create New Batch
-                    </h2>
-
-                    <p class="sales-subtitle">
-                        Add a new purchase batch to this stock.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <!-- =================================================
-                 NEW BATCH FORM
-            ================================================== -->
-
-            <form
-                action="/stock/<%= stockId %>/batches"
-                method="POST"
+            <button
+                type="button"
+                class="verrah-tab active"
+                data-tab="batches"
             >
 
-                <!-- =============================================
-                     UNITS
-                ============================================== -->
+                <i class="fas fa-layer-group"></i>
 
-                <div class="sales-form-group">
+                Batches
 
-                    <label for="units">
-                        Units
-                    </label>
-
-                    <input
-                        type="number"
-                        id="units"
-                        name="units"
-                        min="1"
-                        step="1"
-                        required
-                        inputmode="numeric"
-                        placeholder="Enter number of units"
-                    >
-
-                </div>
+            </button>
 
 
-                <!-- =============================================
-                     TOTAL BUYING PRICE
-                ============================================== -->
+            <!-- =============================================
+                 NEW BATCH TAB
+            ============================================== -->
 
-                <div class="sales-form-group">
+            <button
+                type="button"
+                class="verrah-tab"
+                data-tab="new-batch"
+            >
 
-                    <label for="totalBuyingPrice">
-                        Total Buying Price
-                    </label>
+                <i class="fas fa-plus"></i>
 
-                    <input
-                        type="number"
-                        id="totalBuyingPrice"
-                        name="totalBuyingPrice"
-                        min="0"
-                        step="0.01"
-                        required
-                        inputmode="decimal"
-                        placeholder="Enter total buying price"
-                    >
+                New Batch
 
-                    <small class="sales-muted">
-                        Enter the total amount paid for the entire batch.
-                    </small>
-
-                </div>
+            </button>
 
 
-                <!-- =============================================
-                     PURCHASE DATE
-                ============================================== -->
-
-                <div class="sales-form-group">
-
-                    <label for="purchasedAt">
-                        Purchase Date
-                    </label>
-
-                    <input
-                        type="date"
-                        id="purchasedAt"
-                        name="purchasedAt"
-                    >
-
-                </div>
+        </div>
 
 
-                <!-- =============================================
-                     CALCULATED BUY PRICE
-                ============================================== -->
+        <!-- =================================================
+             TAB CONTENT
+        ================================================== -->
 
-                <div class="sales-form-group">
+        <div class="verrah-tab-content">
 
-                    <label>
-                        Buy Price Per Unit
-                    </label>
 
-                    <div
-                        class="sales-muted"
-                        id="calculatedBuyPrice"
-                    >
-                        KSh 0.00
+            <!-- =================================================
+                 BATCHES PANEL
+            ================================================== -->
+
+            <div
+                class="verrah-tab-panel active"
+                data-panel="batches"
+            >
+
+
+                <section class="sales-section">
+
+
+                    <div class="sales-section-heading">
+
+                        <div>
+
+                            <h2>
+                                Purchase Batches
+                            </h2>
+
+                            <p class="sales-subtitle">
+
+                                Existing FIFO purchase batches
+                                for this stock.
+
+                            </p>
+
+                        </div>
+
                     </div>
 
-                </div>
+
+                    <!-- =========================================
+                         BATCH TABLE
+                    ========================================== -->
+
+                    <% if (sortedBatches.length > 0) { %>
 
 
-                <!-- =============================================
-                     SUBMIT
-                ============================================== -->
+                        <div class="sales-table-wrapper">
 
-                <button
-                    type="submit"
-                    class="sales-button"
-                >
+                            <table class="sales-table">
 
-                    <i class="fas fa-plus"></i>
+                                <thead>
 
-                    Create Batch
+                                    <tr>
 
-                </button>
+                                        <th>
+                                            Date
+                                        </th>
 
-            </form>
+                                        <th>
+                                            Units
+                                        </th>
 
-        </section>
+                                        <th>
+                                            Buy Price
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+
+                                <tbody>
+
+
+                                    <% sortedBatches.forEach(batch => { %>
+
+
+                                        <tr
+                                            class="sales-product-row"
+                                            tabindex="0"
+                                            role="link"
+                                            onclick="
+                                                window.location.href =
+                                                '/stock/<%= stockId %>/batch/<%= batch._id %>';
+                                            "
+                                            onkeydown="
+                                                if (
+                                                    event.key === 'Enter' ||
+                                                    event.key === ' '
+                                                ) {
+                                                    event.preventDefault();
+
+                                                    window.location.href =
+                                                    '/stock/<%= stockId %>/batch/<%= batch._id %>';
+                                                }
+                                            "
+                                        >
+
+
+                                            <!-- =================
+                                                 DATE
+                                            ================== -->
+
+                                            <td>
+
+                                                <%
+                                                const batchDate =
+                                                    batch.purchasedAt
+                                                        ? new Date(
+                                                            batch.purchasedAt
+                                                        )
+                                                        : null;
+                                                %>
+
+
+                                                <% if (
+                                                    batchDate &&
+                                                    !isNaN(
+                                                        batchDate.getTime()
+                                                    )
+                                                ) { %>
+
+
+                                                    <%= batchDate.toLocaleDateString(
+                                                        "en-KE",
+                                                        {
+                                                            day: "2-digit",
+                                                            month: "short",
+                                                            year: "numeric"
+                                                        }
+                                                    ) %>
+
+
+                                                <% } else { %>
+
+
+                                                    <span class="sales-muted">
+                                                        —
+                                                    </span>
+
+
+                                                <% } %>
+
+                                            </td>
+
+
+                                            <!-- =================
+                                                 UNITS
+                                            ================== -->
+
+                                            <td>
+
+                                                <%= Number(
+                                                    batch.units || 0
+                                                ).toLocaleString(
+                                                    "en-KE"
+                                                ) %>
+
+                                            </td>
+
+
+                                            <!-- =================
+                                                 BUY PRICE
+                                            ================== -->
+
+                                            <td>
+
+                                                KSh
+                                                <%= Number(
+                                                    batch.buyPrice || 0
+                                                ).toLocaleString(
+                                                    "en-KE",
+                                                    {
+                                                        minimumFractionDigits: 2,
+                                                        maximumFractionDigits: 2
+                                                    }
+                                                ) %>
+
+                                            </td>
+
+
+                                        </tr>
+
+
+                                    <% }) %>
+
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+
+                    <% } else { %>
+
+
+                        <!-- =====================================
+                             EMPTY STATE
+                        ====================================== -->
+
+                        <div class="sales-table-wrapper">
+
+                            <table class="sales-table">
+
+                                <tbody>
+
+                                    <tr>
+
+                                        <td
+                                            colspan="3"
+                                            class="sales-empty"
+                                        >
+
+                                            <i class="fas fa-box-open"></i>
+
+                                            <br>
+
+                                            No purchase batches found
+                                            for this stock.
+
+                                        </td>
+
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+
+                    <% } %>
+
+
+                </section>
+
+
+            </div>
+
+
+            <!-- =================================================
+                 NEW BATCH PANEL
+            ================================================== -->
+
+            <div
+                class="verrah-tab-panel"
+                data-panel="new-batch"
+            >
+
+
+                <section class="sales-section">
+
+
+                    <div class="sales-section-heading">
+
+                        <div>
+
+                            <h2>
+                                Create New Batch
+                            </h2>
+
+                            <p class="sales-subtitle">
+
+                                Add a new purchase batch to
+                                <%= stock && stock.name
+                                    ? stock.name
+                                    : "this stock" %>.
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =========================================
+                         NEW BATCH FORM
+                    ========================================== -->
+
+                    <form
+                        action="/stock/<%= stockId %>/batches"
+                        method="POST"
+                        class="sales-filter"
+                    >
+
+
+                        <!-- =====================================
+                             UNITS
+                        ====================================== -->
+
+                        <div class="sales-filter-field">
+
+                            <label for="units">
+
+                                Units
+
+                            </label>
+
+
+                            <input
+                                type="number"
+                                id="units"
+                                name="units"
+                                min="1"
+                                step="1"
+                                required
+                                inputmode="numeric"
+                                placeholder="Number of units"
+                            >
+
+                        </div>
+
+
+                        <!-- =====================================
+                             TOTAL BUYING PRICE
+                        ====================================== -->
+
+                        <div class="sales-filter-field">
+
+                            <label for="totalBuyingPrice">
+
+                                Total Buying Price
+
+                            </label>
+
+
+                            <input
+                                type="number"
+                                id="totalBuyingPrice"
+                                name="totalBuyingPrice"
+                                min="0"
+                                step="0.01"
+                                required
+                                inputmode="decimal"
+                                placeholder="Total amount paid"
+                            >
+
+                        </div>
+
+
+                        <!-- =====================================
+                             PURCHASE DATE
+                        ====================================== -->
+
+                        <div class="sales-filter-field">
+
+                            <label for="purchasedAt">
+
+                                Purchase Date
+
+                            </label>
+
+
+                            <input
+                                type="date"
+                                id="purchasedAt"
+                                name="purchasedAt"
+                            >
+
+                        </div>
+
+
+                        <!-- =====================================
+                             CALCULATED BUY PRICE
+                        ====================================== -->
+
+                        <div class="sales-filter-field">
+
+                            <label>
+
+                                Buy Price Per Unit
+
+                            </label>
+
+
+                            <div
+                                class="sales-liability-assigned"
+                            >
+
+                                <span
+                                    class="sales-liability-assigned-label"
+                                >
+                                    Calculated automatically
+                                </span>
+
+
+                                <strong
+                                    id="calculatedBuyPrice"
+                                >
+                                    KSh 0.00
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- =====================================
+                             SUBMIT
+                        ====================================== -->
+
+                        <button
+                            type="submit"
+                            class="sales-filter-button"
+                        >
+
+                            <i class="fas fa-plus"></i>
+
+                            Create Batch
+
+                        </button>
+
+
+                    </form>
+
+
+                </section>
+
+
+            </div>
+
+
+        </div>
 
     </div>
 
@@ -469,22 +626,119 @@ const sortedBatches =
 
 
 <!-- ==========================================================
-     BUY PRICE CALCULATION
+     TAB SWITCHING + BUY PRICE CALCULATION
 =========================================================== -->
 
 <script>
 
 (function () {
 
-    const unitsInput =
-        document.getElementById("units");
+    // ======================================================
+    // TABS
+    // ======================================================
 
-    const totalInput =
+    const tabs =
+        document.querySelectorAll(
+            ".verrah-tab"
+        );
+
+
+    const panels =
+        document.querySelectorAll(
+            ".verrah-tab-panel"
+        );
+
+
+    tabs.forEach(
+        tab => {
+
+            tab.addEventListener(
+                "click",
+                function () {
+
+                    const target =
+                        this.dataset.tab;
+
+
+                    // ======================================
+                    // DEACTIVATE ALL TABS
+                    // ======================================
+
+                    tabs.forEach(
+                        currentTab => {
+
+                            currentTab.classList.remove(
+                                "active"
+                            );
+
+                        }
+                    );
+
+
+                    // ======================================
+                    // HIDE ALL PANELS
+                    // ======================================
+
+                    panels.forEach(
+                        panel => {
+
+                            panel.classList.remove(
+                                "active"
+                            );
+
+                        }
+                    );
+
+
+                    // ======================================
+                    // ACTIVATE SELECTED TAB
+                    // ======================================
+
+                    this.classList.add(
+                        "active"
+                    );
+
+
+                    const targetPanel =
+                        document.querySelector(
+                            '[data-panel="' +
+                            target +
+                            '"]'
+                        );
+
+
+                    if (targetPanel) {
+
+                        targetPanel.classList.add(
+                            "active"
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+
+    // ======================================================
+    // BUY PRICE CALCULATION
+    // ======================================================
+
+    const unitsInput =
+        document.getElementById(
+            "units"
+        );
+
+
+    const totalBuyingPriceInput =
         document.getElementById(
             "totalBuyingPrice"
         );
 
-    const result =
+
+    const calculatedBuyPrice =
         document.getElementById(
             "calculatedBuyPrice"
         );
@@ -497,20 +751,23 @@ const sortedBatches =
                 unitsInput.value
             );
 
-        const total =
+
+        const totalBuyingPrice =
             Number(
-                totalInput.value
+                totalBuyingPriceInput.value
             );
 
 
         if (
             !Number.isFinite(units) ||
             units <= 0 ||
-            !Number.isFinite(total) ||
-            total < 0
+            !Number.isFinite(
+                totalBuyingPrice
+            ) ||
+            totalBuyingPrice < 0
         ) {
 
-            result.textContent =
+            calculatedBuyPrice.textContent =
                 "KSh 0.00";
 
             return;
@@ -518,10 +775,11 @@ const sortedBatches =
 
 
         const buyPrice =
-            total / units;
+            totalBuyingPrice /
+            units;
 
 
-        result.textContent =
+        calculatedBuyPrice.textContent =
             "KSh " +
             buyPrice.toLocaleString(
                 "en-KE",
@@ -530,19 +788,28 @@ const sortedBatches =
                     maximumFractionDigits: 2
                 }
             );
+
     }
 
 
-    unitsInput.addEventListener(
-        "input",
-        calculateBuyPrice
-    );
+    if (
+        unitsInput &&
+        totalBuyingPriceInput &&
+        calculatedBuyPrice
+    ) {
+
+        unitsInput.addEventListener(
+            "input",
+            calculateBuyPrice
+        );
 
 
-    totalInput.addEventListener(
-        "input",
-        calculateBuyPrice
-    );
+        totalBuyingPriceInput.addEventListener(
+            "input",
+            calculateBuyPrice
+        );
+
+    }
 
 })();
 
