@@ -1,176 +1,523 @@
-<% rowProducts.forEach((stock) => { %>
+<%
+/* ==========================================================
+   views/stock/stock.ejs
 
-    <a
-        href="<%= user && user.role === 'staff'
-            ? `/stock/${stock._id}/batches`
-            : `/stock/${stock._id}`
-        %>"
-        class="product-card stock-card"
-    >
+   VERRAH COSMETICS
+   STOCK MANAGEMENT
+   STOCK LISTING
+========================================================== */
+%>
 
-        <!-- ======================
-             STOCK IMAGE
-        ======================= -->
 
-        <div class="product-image">
+<section class="shop-page stock-page">
 
-            <% if (stock.image) { %>
 
-                <img
-                    src="<%= stock.image %>"
-                    alt="<%=
+    <!-- ======================================================
+         PAGE HEADING
+    ======================================================= -->
 
-                        stock.subcategory ||
+    <div class="products-heading page-head">
 
-                        stock.name ||
+        <div>
 
-                        'Stock item'
+            <h1 class="page-title">
+                Stock Management
+            </h1>
 
-                    %>"
-                    loading="lazy"
+            <p class="page-subtitle">
+                All active warehouse stock, grouped by category.
+            </p>
 
-                    onerror="
-                        this.style.display='none';
-                        this.nextElementSibling.style.display='flex';
-                    "
-                >
+        </div>
 
-                <div
-                    class="placeholder product-image-fallback stock-image-fallback"
-                    style="display:none;"
-                >
-                    <i class="fas fa-box"></i>
+
+        <a
+            href="/stock/new"
+            class="primary-btn"
+        >
+
+            <i class="fas fa-plus"></i>
+
+            Add / Update Stock
+
+        </a>
+
+    </div>
+
+
+    <!-- ======================================================
+         ERROR MESSAGE
+    ======================================================= -->
+
+    <% if (
+        typeof error !== "undefined" &&
+        error
+    ) { %>
+
+        <div class="message error">
+
+            <%= error %>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- ======================================================
+         SUCCESS MESSAGE
+    ======================================================= -->
+
+    <% if (
+        typeof saved !== "undefined" &&
+        saved === "1"
+    ) { %>
+
+        <div class="message success">
+
+            Stock saved successfully and is now listed below.
+
+        </div>
+
+    <% } %>
+
+
+    <!-- ======================================================
+         EMPTY STOCK STATE
+    ======================================================= -->
+
+    <% if (
+        !Array.isArray(stocks) ||
+        stocks.length === 0
+    ) { %>
+
+        <div class="empty stock-empty">
+
+            <i class="fas fa-warehouse"></i>
+
+            <div>
+
+                <strong>
+                    No stock records exist yet.
+                </strong>
+
+                <div class="empty-help">
+                    Add stock using the button above.
                 </div>
 
-            <% } else { %>
+            </div>
 
-                <div class="placeholder">
-                    <i class="fas fa-box"></i>
-                </div>
+        </div>
+
+
+    <% } else { %>
+
+
+        <!-- ==================================================
+             CATEGORY GROUPS
+        =================================================== -->
+
+        <% (stocks || []).forEach((group) => { %>
+
+
+            <%
+            let categoryName = "Other";
+
+
+            if (
+                group.category &&
+                typeof group.category === "object" &&
+                group.category.name
+            ) {
+
+                categoryName = group.category.name;
+
+            } else if (group.categoryName) {
+
+                categoryName = group.categoryName;
+
+            } else if (group.label) {
+
+                categoryName = group.label;
+
+            } else if (
+                group.category &&
+                typeof group.category === "string" &&
+                !/^[a-fA-F0-9]{24}$/.test(group.category)
+            ) {
+
+                categoryName = group.category;
+
+            }
+
+
+            const categoryProducts = [];
+
+
+            (group.rows || []).forEach((row) => {
+
+                if (Array.isArray(row.products)) {
+
+                    row.products.forEach((product) => {
+
+                        categoryProducts.push(product);
+
+                    });
+
+                }
+
+            });
+
+
+            if (
+                categoryProducts.length === 0 &&
+                Array.isArray(group.products)
+            ) {
+
+                group.products.forEach((product) => {
+
+                    categoryProducts.push(product);
+
+                });
+
+            }
+
+            %>
+
+
+            <% if (categoryProducts.length) { %>
+
+
+                <!-- ==========================================
+                     CATEGORY SECTION
+                =========================================== -->
+
+                <section class="category-section">
+
+
+                    <!-- ======================================
+                         CATEGORY HEADER
+                    ======================================= -->
+
+                    <div class="category-head">
+
+                        <h2>
+                            <%= categoryName %>
+                        </h2>
+
+
+                        <span class="category-count">
+
+                            <%= categoryProducts.length %>
+
+                            stock
+
+                            <%=
+
+                                categoryProducts.length === 1
+                                    ? "item"
+                                    : "items"
+
+                            %>
+
+                        </span>
+
+                    </div>
+
+
+                    <!-- ======================================
+                         PRODUCT / STOCK ROWS
+                    ======================================= -->
+
+                    <%
+                    for (
+                        let rowStart = 0;
+                        rowStart < categoryProducts.length;
+                        rowStart += 6
+                    ) {
+
+                        const rowProducts =
+                            categoryProducts.slice(
+                                rowStart,
+                                rowStart + 6
+                            );
+                    %>
+
+
+                        <div class="subcategory-row-block">
+
+
+                            <!-- ==================================
+                                 SUBCATEGORY / ROW HEADER
+                            =================================== -->
+
+                            <div class="subcategory-head">
+
+                                <h3>
+                                    <%= categoryName %>
+                                </h3>
+
+
+                                <% if (
+                                    categoryProducts.length > 6
+                                ) { %>
+
+                                    <span>
+                                        Swipe left/right
+                                    </span>
+
+                                <% } %>
+
+                            </div>
+
+
+                            <!-- ==================================
+                                 STOCK ROW
+                            =================================== -->
+
+                            <div
+                                class="product-row category-product-row stock-product-row"
+                                aria-label="<%= categoryName %> stock"
+                            >
+
+
+                                <% rowProducts.forEach((stock) => { %>
+
+
+                                    <a
+                                        href="<%=
+
+                                            user &&
+                                            user.role === "staff"
+
+                                                ? `/stock/${stock._id}/batches`
+
+                                                : `/stock/${stock._id}`
+
+                                        %>"
+                                        class="product-card stock-card"
+                                    >
+
+
+                                        <!-- ======================
+                                             STOCK IMAGE
+                                        ======================= -->
+
+                                        <div class="product-image">
+
+
+                                            <% if (stock.image) { %>
+
+
+                                                <img
+                                                    src="<%= stock.image %>"
+                                                    alt="<%=
+
+                                                        stock.subcategory ||
+
+                                                        stock.name ||
+
+                                                        'Stock item'
+
+                                                    %>"
+                                                    loading="lazy"
+
+                                                    onerror="
+                                                        this.style.display='none';
+                                                        this.nextElementSibling.style.display='flex';
+                                                    "
+                                                >
+
+
+                                                <div
+                                                    class="placeholder product-image-fallback stock-image-fallback"
+                                                    style="display:none;"
+                                                >
+
+                                                    <i class="fas fa-box"></i>
+
+                                                </div>
+
+
+                                            <% } else { %>
+
+
+                                                <div class="placeholder">
+
+                                                    <i class="fas fa-box"></i>
+
+                                                </div>
+
+
+                                            <% } %>
+
+
+                                        </div>
+
+
+                                        <!-- ======================
+                                             STOCK INFORMATION
+                                        ======================= -->
+
+                                        <div class="product-info">
+
+
+                                            <!-- PRODUCT / STOCK NAME -->
+
+                                            <div class="product-name">
+
+                                                <%=
+
+                                                    stock.name ||
+
+                                                    stock.subcategory ||
+
+                                                    "Unnamed stock"
+
+                                                %>
+
+                                            </div>
+
+
+                                            <!-- SUBCATEGORY -->
+
+                                            <div class="stock-meta-line">
+
+                                                Subcategory:
+
+                                                <strong>
+
+                                                    <%=
+
+                                                        stock.subcategory ||
+
+                                                        "Other"
+
+                                                    %>
+
+                                                </strong>
+
+                                            </div>
+
+
+                                            <!-- BUY PRICE -->
+
+                                            <div class="product-price">
+
+                                                KSh
+
+                                                <%=
+
+                                                    Number(
+                                                        stock.buyPrice || 0
+                                                    ).toLocaleString()
+
+                                                %>
+
+                                            </div>
+
+
+                                            <!-- AVAILABILITY -->
+
+                                            <div
+                                                class="stock-text <%=
+
+                                                    Number(
+                                                        stock.units || 0
+                                                    ) <= 0
+
+                                                        ? 'out'
+
+                                                        : ''
+
+                                                %>"
+                                            >
+
+
+                                                <% if (
+                                                    Number(
+                                                        stock.units || 0
+                                                    ) > 0
+                                                ) { %>
+
+
+                                                    <strong>
+
+                                                        <%=
+
+                                                            Number(
+                                                                stock.units
+                                                            ).toLocaleString()
+
+                                                        %>
+
+                                                    </strong>
+
+                                                    available
+
+
+                                                <% } else { %>
+
+
+                                                    Out of stock
+
+
+                                                <% } %>
+
+
+                                            </div>
+
+
+                                            <!-- WAREHOUSE UNITS -->
+
+                                            <div class="stock-text">
+
+                                                Warehouse units:
+
+                                                <strong>
+
+                                                    <%=
+
+                                                        Number(
+                                                            stock.units || 0
+                                                        ).toLocaleString()
+
+                                                    %>
+
+                                                </strong>
+
+                                            </div>
+
+
+                                        </div>
+
+
+                                    </a>
+
+
+                                <% }) %>
+
+
+                            </div>
+
+
+                        </div>
+
+
+                    <%
+                    }
+                    %>
+
+
+                </section>
+
 
             <% } %>
 
-        </div>
+
+        <% }) %>
 
 
-        <!-- ======================
-             STOCK INFORMATION
-        ======================= -->
-
-        <div class="product-info">
-
-            <div class="product-name">
-
-                <%=
-
-                    stock.name ||
-
-                    stock.subcategory ||
-
-                    "Unnamed stock"
-
-                %>
-
-            </div>
+    <% } %>
 
 
-            <div class="stock-meta-line">
-
-                Subcategory:
-
-                <strong>
-
-                    <%=
-
-                        stock.subcategory ||
-
-                        "Other"
-
-                    %>
-
-                </strong>
-
-            </div>
-
-
-            <div class="product-price">
-
-                KSh
-
-                <%=
-
-                    Number(
-                        stock.buyPrice || 0
-                    ).toLocaleString()
-
-                %>
-
-            </div>
-
-
-            <div
-                class="stock-text <%=
-
-                    Number(
-                        stock.units || 0
-                    ) <= 0
-
-                        ? 'out'
-
-                        : ''
-
-                %>"
-            >
-
-                <% if (
-                    Number(
-                        stock.units || 0
-                    ) > 0
-                ) { %>
-
-                    <strong>
-
-                        <%=
-
-                            Number(
-                                stock.units
-                            ).toLocaleString()
-
-                        %>
-
-                    </strong>
-
-                    available
-
-                <% } else { %>
-
-                    Out of stock
-
-                <% } %>
-
-            </div>
-
-
-            <div class="stock-text">
-
-                Warehouse units:
-
-                <strong>
-
-                    <%=
-
-                        Number(
-                            stock.units || 0
-                        ).toLocaleString()
-
-                    %>
-
-                </strong>
-
-            </div>
-
-        </div>
-
-    </a>
-
-<% }) %>
+</section>
