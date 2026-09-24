@@ -96,11 +96,7 @@ async function toggleDailyCashSaleDeposit(req, res) {
         // --------------------------------------------------
 
         return res.redirect(
-            `/deposit?success=${
-                dailySale.isDeposited
-                    ? "Daily%20cash%20sale%20marked%20as%20deposited"
-                    : "Daily%20cash%20sale%20marked%20as%20not%20deposited"
-            }`
+            `/deposit`
         );
 
 
