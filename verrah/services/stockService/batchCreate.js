@@ -1,357 +1,255 @@
-
 // ==========================================================
-// services/stockService/createFifoBatch.js
+// services/stockService/batchCreate.js
 // STOCK FIFO BATCH SERVICE
 // VERRAH COSMETICS
 // ==========================================================
-//
-// Creates a NEW FIFO purchase batch from scratch.
-//
-// The user provides:
-//
-//     units
-//     totalBuyingPrice
-//     purchasedAt
-//
-// The service calculates:
-//
-//     buyPrice
-//         = totalBuyingPrice / units
-//
-// Example:
-//
-//     units = 100
-//     totalBuyingPrice = 5000
-//
-//     buyPrice = 5000 / 100
-//              = 50
-//
-// The batch is then stored as:
-//
-//     units: 100
-//     buyPrice: 50
-//
-// purchaseBatches.units represents CURRENT REMAINING STOCK.
-//
-// Therefore:
-//
-//     Stock.units
-//         = SUM(purchaseBatches.units)
-//
-// ==========================================================
 
 const mongoose =
-require("mongoose");
+    require("mongoose");
 
 const Stock =
-require("../../models/stock");
+    require("../../models/stock");
+
+const {
+    wholeNumber,
+    number
+} =
+    require("./helpers");
+
 
 // ==========================================================
 // CREATE FIFO BATCH
 // ==========================================================
-//
-// Parameters:
-//
-//     stockId
-//     body
-//
-// Expected body:
-//
-//     {
-//         units,
-//         totalBuyingPrice,
-//         purchasedAt
-//     }
-//
-// purchasedAt is optional.
-//
-// If purchasedAt is not supplied, the current date/time is
-// used.
-//
-// Returns:
-//
-//     updated Stock document
-//
-// ==========================================================
 
 async function createFifoBatch(
-stockId,
-body
+    stockId,
+    body
 ) {
 
-// ======================================================  
-// VALIDATE STOCK ID  
-// ======================================================  
+    // ------------------------------------------------------
+    // VALIDATE STOCK ID
+    // ------------------------------------------------------
 
-if (  
-    !mongoose.Types.ObjectId.isValid(  
-        stockId  
-    )  
-) {  
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            stockId
+        )
+    ) {
 
-    throw new Error(  
-        "Invalid stock ID."  
-    );  
-}  
+        throw new Error(
+            "Invalid stock ID."
+        );
+    }
 
 
-// ======================================================  
-// SAFELY READ BODY  
-// ======================================================  
+    body =
+        body || {};
 
-body =  
-    body || {};  
 
+    // ------------------------------------------------------
+    // UNITS
+    // ------------------------------------------------------
 
-// ======================================================  
-// READ UNITS  
-// ======================================================  
+    const units =
+        wholeNumber(
+            body.units,
+            "Units",
+            true
+        );
 
-const units =  
-    Number(  
-        body.units  
-    );  
 
+    // ------------------------------------------------------
+    // TOTAL BUYING PRICE
+    // ------------------------------------------------------
 
-if (  
-    !Number.isFinite(  
-        units  
-    ) ||  
-    !Number.isInteger(  
-        units  
-    ) ||  
-    units <= 0  
-) {  
+    const totalBuyingPrice =
+        number(
+            body.totalBuyingPrice,
+            "Total buying price",
+            true
+        );
 
-    throw new Error(  
-        "Units must be a whole number greater than 0."  
-    );  
-}  
 
+    // ------------------------------------------------------
+    // BUY PRICE PER UNIT
+    // ------------------------------------------------------
 
-// ======================================================  
-// READ TOTAL BUYING PRICE  
-// ======================================================  
+    const buyPrice =
+        totalBuyingPrice /
+        units;
 
-const totalBuyingPrice =  
-    Number(  
-        body.totalBuyingPrice  
-    );  
 
+    if (
+        !Number.isFinite(
+            buyPrice
+        )
+    ) {
 
-if (  
-    !Number.isFinite(  
-        totalBuyingPrice  
-    ) ||  
-    totalBuyingPrice < 0  
-) {  
+        throw new Error(
+            "Unable to calculate buy price per unit."
+        );
+    }
 
-    throw new Error(  
-        "Total buying price must be a valid number greater than or equal to 0."  
-    );  
-}  
 
+    // ------------------------------------------------------
+    // PURCHASE DATE
+    // ------------------------------------------------------
 
-// ======================================================  
-// CALCULATE BUY PRICE PER UNIT  
-// ======================================================  
+    const purchasedAt =
+        body.purchasedAt
+            ? new Date(
+                body.purchasedAt
+            )
+            : new Date();
 
-const buyPrice =  
-    totalBuyingPrice /  
-    units;  
 
+    if (
+        Number.isNaN(
+            purchasedAt.getTime()
+        )
+    ) {
 
-if (  
-    !Number.isFinite(  
-        buyPrice  
-    )  
-) {  
+        throw new Error(
+            "Invalid purchase date."
+        );
+    }
 
-    throw new Error(  
-        "Unable to calculate buy price per unit."  
-    );  
-}  
 
+    // ------------------------------------------------------
+    // START TRANSACTION
+    // ------------------------------------------------------
 
-// ======================================================  
-// READ PURCHASE DATE  
-// ======================================================  
+    const session =
+        await mongoose.startSession();
 
-let purchasedAt =  
-    body.purchasedAt  
-        ? new Date(  
-            body.purchasedAt  
-        )  
-        : new Date();  
 
+    try {
 
-if (  
-    Number.isNaN(  
-        purchasedAt.getTime()  
-    )  
-) {  
+        let updatedStock;
 
-    throw new Error(  
-        "Invalid purchase date."  
-    );  
-}  
 
+        await session.withTransaction(
+            async () => {
 
-// ======================================================  
-// START TRANSACTION  
-// ======================================================  
+                // ------------------------------------------
+                // LOAD STOCK
+                // ------------------------------------------
 
-const session =  
-    await mongoose.startSession();  
+                const stock =
+                    await Stock.findOne({
+                        _id: stockId,
+                        isActive: {
+                            $ne: false
+                        }
+                    })
+                    .session(
+                        session
+                    );
 
 
-try {  
+                if (!stock) {
 
-    let updatedStock;  
+                    throw new Error(
+                        "Stock not found."
+                    );
+                }
 
 
-    await session.withTransaction(  
-        async () => {  
+                // ------------------------------------------
+                // ENSURE FIFO ARRAY
+                // ------------------------------------------
 
-            // ==========================================  
-            // LOAD ACTIVE STOCK  
-            // ==========================================  
+                if (
+                    !Array.isArray(
+                        stock.purchaseBatches
+                    )
+                ) {
 
-            const stock =  
-                await Stock.findOne({  
-                    _id: stockId,  
-                    isActive: {  
-                        $ne: false  
-                    }  
-                })  
-                .session(  
-                    session  
-                );  
+                    stock.purchaseBatches =
+                        [];
+                }
 
 
-            if (!stock) {  
+                // ------------------------------------------
+                // CREATE FIFO BATCH
+                // ------------------------------------------
 
-                throw new Error(  
-                    "Stock not found."  
-                );  
-            }  
+                stock.purchaseBatches.push({
 
+                    units,
 
-            // ==========================================  
-            // ENSURE PURCHASE BATCH ARRAY EXISTS  
-            // ==========================================  
+                    buyPrice,
 
-            if (  
-                !Array.isArray(  
-                    stock.purchaseBatches  
-                )  
-            ) {  
+                    purchasedAt
 
-                stock.purchaseBatches =  
-                    [];  
-            }  
+                });
 
 
-            // ==========================================  
-            // CREATE NEW FIFO BATCH  
-            // ==========================================  
+                // ------------------------------------------
+                // RECALCULATE STOCK UNITS
+                // ------------------------------------------
 
-            stock.purchaseBatches.push({  
+                let totalUnits = 0;
 
-                units,  
 
-                buyPrice,  
+                for (
+                    const batch
+                    of stock.purchaseBatches
+                ) {
 
-                purchasedAt  
+                    const batchUnits =
+                        Number(
+                            batch.units
+                        );
 
-            });  
 
+                    if (
+                        Number.isFinite(
+                            batchUnits
+                        ) &&
+                        batchUnits > 0
+                    ) {
 
-            // ==========================================  
-            // RECALCULATE TOTAL STOCK UNITS  
-            // ==========================================  
-            //  
-            // Recalculate from every purchase batch.  
-            //  
-            // Do not simply add `units` to stock.units.  
-            //  
-            // This guarantees:  
-            //  
-            //     Stock.units  
-            //         =  
-            //     SUM(purchaseBatches.units)  
-            //  
-            // ==========================================  
+                        totalUnits +=
+                            batchUnits;
+                    }
+                }
 
-            let totalUnits = 0;  
 
+                stock.units =
+                    totalUnits;
 
-            for (  
-                const batch  
-                of stock.purchaseBatches  
-            ) {  
 
-                const batchUnits =  
-                    Number(  
-                        batch.units  
-                    );  
+                // ------------------------------------------
+                // SAVE
+                // ------------------------------------------
 
+                await stock.save({
+                    session
+                });
 
-                if (  
-                    Number.isFinite(  
-                        batchUnits  
-                    ) &&  
-                    batchUnits > 0  
-                ) {  
 
-                    totalUnits +=  
-                        batchUnits;  
-                }  
-            }  
+                updatedStock =
+                    stock;
 
+            }
+        );
 
-            // ==========================================  
-            // UPDATE STOCK TOTAL  
-            // ==========================================  
 
-            stock.units =  
-                totalUnits;  
+        return updatedStock;
 
 
-            // ==========================================  
-            // SAVE STOCK  
-            // ==========================================  
+    } finally {
 
-            await stock.save({  
-                session  
-            });  
+        await session.endSession();
 
-
-            updatedStock =  
-                stock;  
-        }  
-    );  
-
-
-    // ==================================================  
-    // RETURN UPDATED STOCK  
-    // ==================================================  
-
-    return updatedStock;  
-
-} finally {  
-
-    await session.endSession();  
-}
+    }
 
 }
 
-// ==========================================================
-// EXPORTS
-// ==========================================================
 
 module.exports = {
 
-createFifoBatch
+    createFifoBatch
 
 };
