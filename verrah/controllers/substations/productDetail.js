@@ -11,6 +11,15 @@ const {
 } = require("./helpers");
 
 
+// ==========================================================
+// PRODUCT DETAIL
+// ==========================================================
+//
+// GET /substations/product/:id
+//
+// :id = PRODUCT ID
+// ==========================================================
+
 exports.productDetail =
 async (
     req,
@@ -20,31 +29,11 @@ async (
     try {
 
         // ----------------------------------------------------
-        // SUBSTATION ID
-        // ----------------------------------------------------
-        //
-        // Supports:
-        //
-        //     /branch/:substationId/products/:id
-        //
-        // and routes where the substation parameter is named
-        // `id`.
-        // ----------------------------------------------------
-
-        const substationId =
-            req.params.substationId ||
-            req.params.substation_id ||
-            req.params.substation ||
-            req.params.id;
-
-
-        // ----------------------------------------------------
         // PRODUCT ID
         // ----------------------------------------------------
 
         const productId =
-            req.params.productId ||
-            req.params.product;
+            req.params.id;
 
 
         // ----------------------------------------------------
@@ -64,7 +53,7 @@ async (
         if (!product) {
 
             return res.redirect(
-                `/branch/${substationId}/products?error=Product+not+found`
+                "/substations?error=Product+not+found"
             );
         }
 
@@ -92,12 +81,6 @@ async (
                 // ------------------------------------------------
 
                 product,
-
-                // ------------------------------------------------
-                // ACTIVE SUBSTATION
-                // ------------------------------------------------
-
-                substationId,
 
                 // ------------------------------------------------
                 // SUBSTATIONS
@@ -141,7 +124,7 @@ async (
 
 
         return res.redirect(
-            `/branch/${substationId || ""}/products?error=${encodeURIComponent(
+            `/substations?error=${encodeURIComponent(
                 e.message
             )}`
         );
