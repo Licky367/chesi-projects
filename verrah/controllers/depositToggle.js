@@ -96,7 +96,7 @@ async function toggleDailyCashSaleDeposit(req, res) {
         // --------------------------------------------------
 
         return res.redirect(
-            `/deposit`
+            `/sales?tab=daily-cash-sales`
         );
 
 
