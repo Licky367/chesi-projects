@@ -1,25 +1,3 @@
-// ==========================================================
-// verrah/controllers/stock/createFifoBatch.js
-// STOCK FIFO BATCH CONTROLLER
-// VERRAH COSMETICS
-// ==========================================================
-//
-// POST:
-//
-//     /stock/:id/batches
-//
-// The :id is the Stock._id.
-//
-// Expected form body:
-//
-//     units
-//     totalBuyingPrice
-//     purchasedAt
-//
-// The service calculates the buy price per unit.
-//
-// ==========================================================
-
 const {
     createFifoBatch
 } = require("../../services/stockService");
@@ -37,26 +15,34 @@ async (
 
     try {
 
-        // ==================================================
-        // STOCK ID
-        // ==================================================
-
         const stockId =
             req.params.id;
 
 
-        // ==================================================
-        // CREATE BATCH
-        // ==================================================
-
         await createFifoBatch(
             stockId,
-            req.body
+            req.body,
+            req.user
         );
 
 
         // ==================================================
-        // REDIRECT BACK TO STOCK
+        // STAFF -> PRODUCTS
+        // ==================================================
+
+        if (
+            req.user &&
+            req.user.role === "staff"
+        ) {
+
+            return res.redirect(
+                "/products"
+            );
+        }
+
+
+        // ==================================================
+        // OTHER ROLES -> EXISTING REDIRECT
         // ==================================================
 
         return res.redirect(
@@ -72,7 +58,24 @@ async (
 
 
         // ==================================================
-        // REDIRECT WITH ERROR
+        // STAFF -> PRODUCTS WITH ERROR
+        // ==================================================
+
+        if (
+            req.user &&
+            req.user.role === "staff"
+        ) {
+
+            return res.redirect(
+                `/products?error=${encodeURIComponent(
+                    error.message
+                )}`
+            );
+        }
+
+
+        // ==================================================
+        // OTHER ROLES -> EXISTING ERROR REDIRECT
         // ==================================================
 
         return res.redirect(
