@@ -79,7 +79,6 @@ router.get(
 
 router.post(
     "/:id/batches",
-    requireAccess,
     controller.createFifoBatch
 );
 
