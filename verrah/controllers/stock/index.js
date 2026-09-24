@@ -21,6 +21,14 @@ const {
     editBatches
 } = require("./batch");
 
+const {
+    createFifoBatch
+} = require("./createFifoBatch");
+
+
+// ==========================================================
+// EXPORTS
+// ==========================================================
 
 exports.list =
     list;
@@ -45,3 +53,6 @@ exports.batch =
 
 exports.editBatches =
     editBatches;
+
+exports.createFifoBatch =
+    createFifoBatch;
