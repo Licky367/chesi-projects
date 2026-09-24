@@ -32,7 +32,7 @@ exports.createFifoBatch = async (req, res) => {
             req.user &&
             req.user.role === "staff"
         ) {
-            return res.redirect("/products");
+            return res.redirect("/sales");
         }
 
         // ------------------------------------------------------
