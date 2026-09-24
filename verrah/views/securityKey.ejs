@@ -1,0 +1,173 @@
+<!-- ==========================================================
+     VERRAH
+     SECURITY KEY ACCESS MODAL
+     ========================================================== -->
+
+<div
+  class="checkout-message-modal checkout-message-error show"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="securityKeyTitle"
+>
+
+  <!-- ======================================================
+       OVERLAY
+       ======================================================= -->
+
+  <div class="checkout-message-overlay"></div>
+
+
+  <!-- ======================================================
+       MODAL BOX
+       ======================================================= -->
+
+  <div class="checkout-message-box">
+
+    <!-- ====================================================
+         CLOSE BUTTON
+         ===================================================== -->
+
+    <button
+      type="button"
+      class="checkout-message-close"
+      aria-label="Close"
+      onclick="document.getElementById('securityKey').focus();"
+    >
+      <i class="fas fa-times"></i>
+    </button>
+
+
+    <!-- ====================================================
+         ICON
+         ===================================================== -->
+
+    <div class="checkout-message-icon">
+
+      <i class="fas fa-lock"></i>
+
+    </div>
+
+
+    <!-- ====================================================
+         TITLE
+         ===================================================== -->
+
+    <h3 id="securityKeyTitle">
+      Restricted Access
+    </h3>
+
+
+    <!-- ====================================================
+         MESSAGE
+         ===================================================== -->
+
+    <p>
+      Enter the security key to access this page.
+    </p>
+
+
+    <!-- ====================================================
+         ERROR
+         ===================================================== -->
+
+    <% if (typeof error !== "undefined" && error) { %>
+
+      <p style="margin-top: 10px; color: #b42318;">
+        <%= error %>
+      </p>
+
+    <% } %>
+
+
+    <!-- ====================================================
+         SECURITY KEY FORM
+         ===================================================== -->
+
+    <form
+      method="POST"
+      action=""
+      autocomplete="off"
+    >
+
+      <div style="margin-top: 20px; text-align: left;">
+
+        <label
+          for="securityKey"
+          style="
+            display: block;
+            margin-bottom: 7px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #3d2418;
+          "
+        >
+          Security Key
+        </label>
+
+        <input
+          type="password"
+          id="securityKey"
+          name="securityKey"
+          placeholder="Enter security key"
+          required
+          autocomplete="off"
+          spellcheck="false"
+          style="
+            width: 100%;
+            box-sizing: border-box;
+            min-height: 46px;
+            padding: 11px 13px;
+            border: 1px solid #e5d9d1;
+            border-radius: 10px;
+            background: #fff;
+            color: #2b211c;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+          "
+        >
+
+      </div>
+
+
+      <!-- ==================================================
+           SUBMIT
+           =================================================== -->
+
+      <button
+        type="submit"
+        class="checkout-message-button"
+      >
+        <i class="fas fa-unlock-keyhole"></i>
+        Continue
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- ==========================================================
+     PREVENT BACKGROUND SCROLL
+     ========================================================== -->
+
+<script>
+
+  document.body.classList.add(
+    "checkout-message-modal-open"
+  );
+
+  const securityKeyInput =
+    document.getElementById("securityKey");
+
+  if (securityKeyInput) {
+
+    setTimeout(function () {
+      securityKeyInput.focus();
+    }, 100);
+
+  }
+
+</script>
