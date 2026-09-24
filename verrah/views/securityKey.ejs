@@ -24,20 +24,6 @@
   <div class="checkout-message-box">
 
     <!-- ====================================================
-         CLOSE BUTTON
-         ===================================================== -->
-
-    <button
-      type="button"
-      class="checkout-message-close"
-      aria-label="Close"
-      onclick="document.getElementById('securityKey').focus();"
-    >
-      <i class="fas fa-times"></i>
-    </button>
-
-
-    <!-- ====================================================
          ICON
          ===================================================== -->
 
@@ -165,7 +151,9 @@
   if (securityKeyInput) {
 
     setTimeout(function () {
+
       securityKeyInput.focus();
+
     }, 100);
 
   }
