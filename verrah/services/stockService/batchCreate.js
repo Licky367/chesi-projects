@@ -4,56 +4,17 @@
 // VERRAH COSMETICS
 // ==========================================================
 //
-// Creates a NEW FIFO purchase batch from scratch.
+// Creates a NEW FIFO purchase batch.
 //
-// The user provides:
+// STAFF:
+//     - Stock.purchaseBatches is NOT increased.
+//     - Stock.units remains 0.
+//     - A matching Product.fifoBatches entry is created.
+//     - Product.units is increased.
+//     - The staff user's assigned substation inventory is increased.
 //
-//     units
-//     totalBuyingPrice
-//     purchasedAt
-//
-// The service calculates:
-//
-//     buyPrice
-//         = totalBuyingPrice / units
-//
-// Example:
-//
-//     units = 100
-//     totalBuyingPrice = 5000
-//
-//     buyPrice = 5000 / 100
-//              = 50
-//
-// The batch is then stored as:
-//
-//     units: 100
-//     buyPrice: 50
-//
-// purchaseBatches.units represents CURRENT REMAINING STOCK.
-//
-// Therefore:
-//
-//     Stock.units
-//         = SUM(purchaseBatches.units)
-//
-// ==========================================================
-
-const mongoose =
-    require("mongoose");
-
-const Stock =
-    require("../../models/stock");
-
-
-// ==========================================================
-// CREATE FIFO BATCH
-// ==========================================================
-//
-// Parameters:
-//
-//     stockId
-//     body
+// OTHER USERS:
+//     - Existing Stock FIFO behavior remains unchanged.
 //
 // Expected body:
 //
@@ -63,20 +24,29 @@ const Stock =
 //         purchasedAt
 //     }
 //
-// purchasedAt is optional.
-//
-// If purchasedAt is not supplied, the current date/time is
-// used.
-//
-// Returns:
-//
-//     updated Stock document
-//
+// ==========================================================
+
+const mongoose =
+    require("mongoose");
+
+const Stock =
+    require("../../models/stock");
+
+const Product =
+    require("../../models/products");
+
+const Substation =
+    require("../../models/substations");
+
+
+// ==========================================================
+// CREATE FIFO BATCH
 // ==========================================================
 
 async function createFifoBatch(
     stockId,
-    body
+    body,
+    user
 ) {
 
     // ======================================================
@@ -238,8 +208,274 @@ async function createFifoBatch(
 
 
                 // ==========================================
-                // ENSURE PURCHASE BATCH ARRAY EXISTS
+                // STAFF
                 // ==========================================
+
+                if (
+                    user &&
+                    user.role === "staff"
+                ) {
+
+                    // ======================================
+                    // VALIDATE ASSIGNED SUBSTATION
+                    // ======================================
+
+                    if (
+                        !user.assignedSubstation ||
+                        !mongoose.Types.ObjectId.isValid(
+                            user.assignedSubstation
+                        )
+                    ) {
+
+                        throw new Error(
+                            "Staff member has no valid assigned substation."
+                        );
+                    }
+
+
+                    // ======================================
+                    // FIND LINKED PRODUCT
+                    // ======================================
+                    //
+                    // Product.stock links the Product
+                    // to this Stock record.
+                    //
+                    // ======================================
+
+                    const product =
+                        await Product.findOne({
+                            stock: stock._id
+                        })
+                        .session(
+                            session
+                        );
+
+
+                    if (!product) {
+
+                        throw new Error(
+                            "Product linked to this stock was not found."
+                        );
+                    }
+
+
+                    // ======================================
+                    // ENSURE PRODUCT FIFO ARRAY
+                    // ======================================
+
+                    if (
+                        !Array.isArray(
+                            product.fifoBatches
+                        )
+                    ) {
+
+                        product.fifoBatches =
+                            [];
+                    }
+
+
+                    // ======================================
+                    // CREATE PRODUCT FIFO BATCH
+                    // ======================================
+
+                    product.fifoBatches.push({
+
+                        units,
+
+                        buyPrice,
+
+                        receivedAt:
+                            purchasedAt
+
+                    });
+
+
+                    // ======================================
+                    // RECALCULATE PRODUCT UNITS
+                    // ======================================
+
+                    let productUnits =
+                        0;
+
+
+                    for (
+                        const batch
+                        of product.fifoBatches
+                    ) {
+
+                        const batchUnits =
+                            Number(
+                                batch.units
+                            );
+
+
+                        if (
+                            Number.isFinite(
+                                batchUnits
+                            ) &&
+                            batchUnits > 0
+                        ) {
+
+                            productUnits +=
+                                batchUnits;
+                        }
+                    }
+
+
+                    // ======================================
+                    // UPDATE PRODUCT UNITS
+                    // ======================================
+
+                    product.units =
+                        productUnits;
+
+
+                    // ======================================
+                    // SAVE PRODUCT
+                    // ======================================
+
+                    await product.save({
+                        session
+                    });
+
+
+                    // ======================================
+                    // UPDATE ASSIGNED SUBSTATION
+                    // ======================================
+
+                    const substation =
+                        await Substation.findById(
+                            user.assignedSubstation
+                        )
+                        .session(
+                            session
+                        );
+
+
+                    if (!substation) {
+
+                        throw new Error(
+                            "Assigned substation not found."
+                        );
+                    }
+
+
+                    // ======================================
+                    // ENSURE INVENTORY ARRAY
+                    // ======================================
+
+                    if (
+                        !Array.isArray(
+                            substation.productInventory
+                        )
+                    ) {
+
+                        substation.productInventory =
+                            [];
+                    }
+
+
+                    // ======================================
+                    // FIND PRODUCT INVENTORY ENTRY
+                    // ======================================
+
+                    const inventory =
+                        substation.productInventory
+                            .find(
+                                item =>
+                                    String(
+                                        item.productId
+                                    ) ===
+                                    String(
+                                        product._id
+                                    )
+                            );
+
+
+                    // ======================================
+                    // UPDATE EXISTING INVENTORY
+                    // ======================================
+
+                    if (inventory) {
+
+                        inventory.units =
+                            Number(
+                                inventory.units || 0
+                            ) +
+                            units;
+
+                        inventory.productName =
+                            product.name;
+
+                        inventory.category =
+                            product.category;
+
+                        inventory.subcategory =
+                            product.subcategory;
+
+                        inventory.updatedAt =
+                            new Date();
+
+                    }
+
+                    // ======================================
+                    // CREATE NEW INVENTORY ENTRY
+                    // ======================================
+
+                    else {
+
+                        substation.productInventory
+                            .push({
+
+                                productId:
+                                    product._id,
+
+                                productName:
+                                    product.name,
+
+                                category:
+                                    product.category,
+
+                                subcategory:
+                                    product.subcategory,
+
+                                units,
+
+                                updatedAt:
+                                    new Date()
+
+                            });
+                    }
+
+
+                    // ======================================
+                    // SAVE SUBSTATION
+                    // ======================================
+
+                    await substation.save({
+                        session
+                    });
+
+
+                    // ======================================
+                    // STAFF STOCK REMAINS ZERO
+                    // ======================================
+
+                    stock.units =
+                        0;
+
+
+                    updatedStock =
+                        stock;
+
+                    return;
+                }
+
+
+                // ==================================================
+                // NON-STAFF
+                // EXISTING BEHAVIOR
+                // ==================================================
 
                 if (
                     !Array.isArray(
@@ -252,9 +488,9 @@ async function createFifoBatch(
                 }
 
 
-                // ==========================================
-                // CREATE NEW FIFO BATCH
-                // ==========================================
+                // ==============================================
+                // CREATE STOCK FIFO BATCH
+                // ==============================================
 
                 stock.purchaseBatches.push({
 
@@ -267,23 +503,12 @@ async function createFifoBatch(
                 });
 
 
-                // ==========================================
+                // ==============================================
                 // RECALCULATE TOTAL STOCK UNITS
-                // ==========================================
-                //
-                // Recalculate from every purchase batch.
-                //
-                // Do not simply add `units` to stock.units.
-                //
-                // This guarantees:
-                //
-                //     Stock.units
-                //         =
-                //     SUM(purchaseBatches.units)
-                //
-                // ==========================================
+                // ==============================================
 
-                let totalUnits = 0;
+                let totalUnits =
+                    0;
 
 
                 for (
@@ -310,17 +535,17 @@ async function createFifoBatch(
                 }
 
 
-                // ==========================================
+                // ==============================================
                 // UPDATE STOCK TOTAL
-                // ==========================================
+                // ==============================================
 
                 stock.units =
                     totalUnits;
 
 
-                // ==========================================
+                // ==============================================
                 // SAVE STOCK
-                // ==========================================
+                // ==============================================
 
                 await stock.save({
                     session
