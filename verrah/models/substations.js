@@ -4,6 +4,7 @@
 // ==========================================================
 
 const mongoose = require("mongoose");
+const SecurityKey = require("./securityKey");
 
 // ==========================================================
 // PRODUCT INVENTORY SCHEMA
@@ -52,7 +53,7 @@ const productInventorySchema = new mongoose.Schema(
             type: Date,
             default: Date.now
         }
-    },
+    }
 );
 
 // ==========================================================
@@ -138,17 +139,18 @@ const dailyCashSaleSchema = new mongoose.Schema(
 // ==========================================================
 // GPS SCHEMA
 // ==========================================================
-
+//
 // Stores the exact geographical coordinates of the
 // substation.
 //
 // Example:
+//
 // latitude:  -1.28333
 // longitude: 36.81667
 //
 // These coordinates can later be used to generate a
 // Google Maps "Get Directions" link.
-
+//
 // ==========================================================
 
 const gpsSchema = new mongoose.Schema(
@@ -188,6 +190,24 @@ const substationSchema = new mongoose.Schema(
             trim: true,
             unique: true,
             index: true
+        },
+
+        // ------------------------------------------------
+        // SUBSTATION SECURITY KEY
+        // ------------------------------------------------
+        //
+        // Automatically receives the current global
+        // SecurityKey.securityKey when a new substation
+        // is created.
+        //
+        // An explicitly supplied substationKey is preserved.
+        //
+        // ------------------------------------------------
+
+        substationKey: {
+            type: String,
+            required: true,
+            trim: true
         },
 
         location: {
@@ -308,6 +328,54 @@ const substationSchema = new mongoose.Schema(
     },
     {
         timestamps: true
+    }
+);
+
+// ==========================================================
+// DEFAULT SUBSTATION KEY
+// ==========================================================
+//
+// For a NEW substation:
+//
+//     substationKey
+//         ↓
+//     SecurityKey.securityKey
+//
+// Existing substations are not modified.
+//
+// If a substationKey is explicitly supplied, it is preserved.
+//
+// ==========================================================
+
+substationSchema.pre(
+    "validate",
+    async function(next) {
+
+        try {
+
+            if (
+                this.isNew &&
+                !this.substationKey
+            ) {
+
+                const securityKey =
+                    await SecurityKey.findOne()
+                        .select("securityKey")
+                        .lean();
+
+                if (securityKey) {
+
+                    this.substationKey =
+                        securityKey.securityKey;
+                }
+            }
+
+            next();
+
+        } catch (error) {
+
+            next(error);
+        }
     }
 );
 
