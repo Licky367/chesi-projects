@@ -7,6 +7,11 @@ STOCK FIFO BATCHES
 
 Displays all purchase batches belonging to a stock entry.
 
+Tabs:
+    Stock Details
+    Batches
+    New Batch
+
 Columns:
     Date
     Units
@@ -101,14 +106,35 @@ const sortedBatches =
             Batches
         </a>
 
+
+        <a
+            href="#new-batch"
+            class="sales-navigation-tab"
+            onclick="
+                document
+                    .getElementById('new-batch')
+                    .scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                return false;
+            "
+        >
+            <i class="fas fa-plus"></i>
+            New Batch
+        </a>
+
     </div>
 
 
     <!-- =====================================================
-         CONTENT
+         BATCH CONTENT
     ====================================================== -->
 
     <div class="sales-content">
+
+        <!-- =================================================
+             PURCHASE BATCHES
+        ================================================== -->
 
         <section class="sales-section">
 
@@ -214,7 +240,9 @@ const sortedBatches =
 
                                     <td>
 
-                                        <%= Number(batch.units || 0).toLocaleString() %>
+                                        <%= Number(
+                                            batch.units || 0
+                                        ).toLocaleString() %>
 
                                     </td>
 
@@ -226,7 +254,9 @@ const sortedBatches =
                                     <td>
 
                                         KSh
-                                        <%= Number(batch.buyPrice || 0).toLocaleString(
+                                        <%= Number(
+                                            batch.buyPrice || 0
+                                        ).toLocaleString(
                                             "en-KE",
                                             {
                                                 minimumFractionDigits: 2,
@@ -287,6 +317,233 @@ const sortedBatches =
 
         </section>
 
+
+        <!-- =====================================================
+             NEW BATCH
+        ====================================================== -->
+
+        <section
+            class="sales-section"
+            id="new-batch"
+        >
+
+            <div class="sales-section-heading">
+
+                <div>
+
+                    <h2>
+                        Create New Batch
+                    </h2>
+
+                    <p class="sales-subtitle">
+                        Add a new purchase batch to this stock.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 NEW BATCH FORM
+            ================================================== -->
+
+            <form
+                action="/stock/<%= stockId %>/batches"
+                method="POST"
+            >
+
+                <!-- =============================================
+                     UNITS
+                ============================================== -->
+
+                <div class="sales-form-group">
+
+                    <label for="units">
+                        Units
+                    </label>
+
+                    <input
+                        type="number"
+                        id="units"
+                        name="units"
+                        min="1"
+                        step="1"
+                        required
+                        inputmode="numeric"
+                        placeholder="Enter number of units"
+                    >
+
+                </div>
+
+
+                <!-- =============================================
+                     TOTAL BUYING PRICE
+                ============================================== -->
+
+                <div class="sales-form-group">
+
+                    <label for="totalBuyingPrice">
+                        Total Buying Price
+                    </label>
+
+                    <input
+                        type="number"
+                        id="totalBuyingPrice"
+                        name="totalBuyingPrice"
+                        min="0"
+                        step="0.01"
+                        required
+                        inputmode="decimal"
+                        placeholder="Enter total buying price"
+                    >
+
+                    <small class="sales-muted">
+                        Enter the total amount paid for the entire batch.
+                    </small>
+
+                </div>
+
+
+                <!-- =============================================
+                     PURCHASE DATE
+                ============================================== -->
+
+                <div class="sales-form-group">
+
+                    <label for="purchasedAt">
+                        Purchase Date
+                    </label>
+
+                    <input
+                        type="date"
+                        id="purchasedAt"
+                        name="purchasedAt"
+                    >
+
+                </div>
+
+
+                <!-- =============================================
+                     CALCULATED BUY PRICE
+                ============================================== -->
+
+                <div class="sales-form-group">
+
+                    <label>
+                        Buy Price Per Unit
+                    </label>
+
+                    <div
+                        class="sales-muted"
+                        id="calculatedBuyPrice"
+                    >
+                        KSh 0.00
+                    </div>
+
+                </div>
+
+
+                <!-- =============================================
+                     SUBMIT
+                ============================================== -->
+
+                <button
+                    type="submit"
+                    class="sales-button"
+                >
+
+                    <i class="fas fa-plus"></i>
+
+                    Create Batch
+
+                </button>
+
+            </form>
+
+        </section>
+
     </div>
 
 </div>
+
+
+<!-- ==========================================================
+     BUY PRICE CALCULATION
+=========================================================== -->
+
+<script>
+
+(function () {
+
+    const unitsInput =
+        document.getElementById("units");
+
+    const totalInput =
+        document.getElementById(
+            "totalBuyingPrice"
+        );
+
+    const result =
+        document.getElementById(
+            "calculatedBuyPrice"
+        );
+
+
+    function calculateBuyPrice() {
+
+        const units =
+            Number(
+                unitsInput.value
+            );
+
+        const total =
+            Number(
+                totalInput.value
+            );
+
+
+        if (
+            !Number.isFinite(units) ||
+            units <= 0 ||
+            !Number.isFinite(total) ||
+            total < 0
+        ) {
+
+            result.textContent =
+                "KSh 0.00";
+
+            return;
+        }
+
+
+        const buyPrice =
+            total / units;
+
+
+        result.textContent =
+            "KSh " +
+            buyPrice.toLocaleString(
+                "en-KE",
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            );
+    }
+
+
+    unitsInput.addEventListener(
+        "input",
+        calculateBuyPrice
+    );
+
+
+    totalInput.addEventListener(
+        "input",
+        calculateBuyPrice
+    );
+
+})();
+
+</script>
