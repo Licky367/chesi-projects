@@ -33,6 +33,22 @@
 // When filter.substation is null:
 //
 //     All substations are included.
+//
+// ASSET VALUE:
+//
+// Product asset value
+//     -> Sum of remaining Product.fifoBatches
+//        (units × buyPrice)
+//
+// Stock asset value
+//     -> Sum of remaining Stock.purchaseBatches
+//        (units × buyPrice)
+//
+// Total asset value
+//     -> Product asset value + Stock asset value
+//
+// Legacy Product.buyPrice and Stock.buyPrice are NOT used
+// for FIFO asset valuation.
 // ==========================================================
 
 
@@ -333,6 +349,20 @@ async function getSummary(
     // ======================================================
     // ASSET COST
     // ======================================================
+    //
+    // Asset value is calculated independently of the
+    // selected sales date range.
+    //
+    // Product:
+    //     fifoBatches
+    //
+    // Stock:
+    //     purchaseBatches
+    //
+    // Each remaining batch contributes:
+    //
+    //     units × buyPrice
+    // ======================================================
 
     let productAssetCost =
         0;
@@ -471,6 +501,14 @@ async function getSummary(
 
     // ======================================================
     // LOAD BUYING PRICES FOR SOLD PRODUCTS
+    // ======================================================
+    //
+    // NOTE:
+    //
+    // This is separate from ASSET VALUE.
+    //
+    // Existing sales buying-cost logic continues to use
+    // Product.buyPrice exactly as before.
     // ======================================================
 
     const productMap =
@@ -619,14 +657,26 @@ async function getSummary(
 
 
     // ======================================================
-    // LOAD PRODUCTS FOR ASSET COST
+    // LOAD PRODUCTS FOR ASSET VALUE
     // ======================================================
     //
-    // Product asset cost is calculated from active global
-    // product inventory.
+    // Product inventory is global.
     //
-    // Products remain global product records and therefore
-    // are not restricted by substation.
+    // Therefore Product asset value is NOT restricted by
+    // the selected substation.
+    //
+    // IMPORTANT:
+    //
+    // Do NOT use:
+    //
+    //     Product.buyPrice
+    //     Product.units
+    //
+    // for FIFO asset valuation.
+    //
+    // Use:
+    //
+    //     Product.fifoBatches
     // ==========================================================
 
     const allProducts =
@@ -638,14 +688,28 @@ async function getSummary(
         })
 
             .select(
-                "buyPrice units"
+                "fifoBatches"
             )
 
             .lean();
 
 
     // ======================================================
-    // CALCULATE PRODUCT ASSET COST
+    // CALCULATE PRODUCT ASSET VALUE
+    // ======================================================
+    //
+    // Every remaining FIFO batch contributes:
+    //
+    //     batch.units × batch.buyPrice
+    //
+    // Example:
+    //
+    // fifoBatches:
+    //
+    //     100 × 50 = 5,000
+    //      50 × 60 = 3,000
+    //
+    // Product asset value = 8,000
     // ======================================================
 
     for (
@@ -653,30 +717,66 @@ async function getSummary(
         of allProducts
     ) {
 
-        const buyPrice =
-            Number(
-                product.buyPrice || 0
-            );
+        if (
+            !Array.isArray(
+                product.fifoBatches
+            )
+        ) {
+
+            continue;
+
+        }
 
 
-        const units =
-            Number(
-                product.units || 0
-            );
+        for (
+            const batch
+            of product.fifoBatches
+        ) {
+
+            const units =
+                Number(
+                    batch.units || 0
+                );
 
 
-        productAssetCost +=
-            buyPrice * units;
+            const buyPrice =
+                Number(
+                    batch.buyPrice || 0
+                );
+
+
+            productAssetCost +=
+                units *
+                buyPrice;
+
+        }
 
     }
 
 
     // ======================================================
-    // LOAD STOCK FOR ASSET COST
+    // LOAD STOCK FOR ASSET VALUE
     // ======================================================
     //
     // Stock is substation-specific when a substation filter
     // is selected.
+    //
+    // When no substation is selected:
+    //
+    //     All active stock is included.
+    //
+    // IMPORTANT:
+    //
+    // Do NOT use:
+    //
+    //     Stock.buyPrice
+    //     Stock.units
+    //
+    // for FIFO asset valuation.
+    //
+    // Use:
+    //
+    //     Stock.purchaseBatches
     // ======================================================
 
     const stockQuery = {
@@ -698,14 +798,28 @@ async function getSummary(
         )
 
             .select(
-                "buyPrice units substation"
+                "purchaseBatches substation"
             )
 
             .lean();
 
 
     // ======================================================
-    // CALCULATE STOCK ASSET COST
+    // CALCULATE STOCK ASSET VALUE
+    // ======================================================
+    //
+    // Every remaining purchase batch contributes:
+    //
+    //     batch.units × batch.buyPrice
+    //
+    // Example:
+    //
+    // purchaseBatches:
+    //
+    //     100 × 50 = 5,000
+    //      50 × 60 = 3,000
+    //
+    // Stock asset value = 8,000
     // ======================================================
 
     for (
@@ -713,26 +827,55 @@ async function getSummary(
         of allStock
     ) {
 
-        const buyPrice =
-            Number(
-                stock.buyPrice || 0
-            );
+        if (
+            !Array.isArray(
+                stock.purchaseBatches
+            )
+        ) {
+
+            continue;
+
+        }
 
 
-        const units =
-            Number(
-                stock.units || 0
-            );
+        for (
+            const batch
+            of stock.purchaseBatches
+        ) {
+
+            const units =
+                Number(
+                    batch.units || 0
+                );
 
 
-        stockAssetCost +=
-            buyPrice * units;
+            const buyPrice =
+                Number(
+                    batch.buyPrice || 0
+                );
+
+
+            stockAssetCost +=
+                units *
+                buyPrice;
+
+        }
 
     }
 
 
     // ======================================================
-    // TOTAL ASSET COST
+    // TOTAL ASSET VALUE
+    // ======================================================
+    //
+    // Product FIFO asset value
+    //     +
+    //
+    // Stock FIFO asset value
+    //
+    //     =
+    //
+    // Total asset value
     // ======================================================
 
     const assetCost =
