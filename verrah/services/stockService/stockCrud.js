@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Stock = require("../../models/stock");
 const Product = require("../../models/products");
+const Substation = require("../../models/substations");
 
 const {
     text,
@@ -147,18 +148,327 @@ async function recalculateStockTotals(session = null) {
 
 
 // ==========================================================
-// CREATE STOCK
+// RECALCULATE PRODUCT FIFO TOTALS
 //
-// Form meaning:
+// Used for staff inventory.
 //
-// units     = initial warehouse quantity
-// buyPrice  = total purchase cost of that initial batch
-// sellPrice = selling price per unit
+// Product.units
+//     = total remaining units in Product.fifoBatches
 //
-// A new stock record receives exactly ONE FIFO batch.
+// Product.unitBuyPrice
+//     = FIFO/current calculated unit buy price
+//
+// Product.buyPrice
+//     = same calculated unit buy price for compatibility
 // ==========================================================
 
-async function createStock(body) {
+function recalculateProductFifo(product) {
+
+    const fifoBatches =
+        Array.isArray(product.fifoBatches)
+            ? product.fifoBatches
+            : [];
+
+
+    let totalUnits = 0;
+
+
+    for (const batch of fifoBatches) {
+
+        const units =
+            Number(batch.units || 0);
+
+        if (units > 0) {
+            totalUnits += units;
+        }
+
+    }
+
+
+    product.units =
+        totalUnits;
+
+
+    if (totalUnits <= 0) {
+
+        product.unitBuyPrice = 0;
+        product.buyPrice = 0;
+
+        return product;
+
+    }
+
+
+    // ------------------------------------------------------
+    // FIFO/current unit buy price
+    //
+    // Oldest remaining batch determines the current
+    // product unit buy price.
+    // ------------------------------------------------------
+
+    const sorted =
+        [...fifoBatches]
+            .filter(
+                batch =>
+                    Number(batch.units || 0) > 0
+            )
+            .sort(
+                (a, b) =>
+                    new Date(a.createdAt || a.purchasedAt || 0) -
+                    new Date(b.createdAt || b.purchasedAt || 0)
+            );
+
+
+    const oldest =
+        sorted[0];
+
+
+    const unitBuyPrice =
+        Number(
+            oldest?.buyPrice || 0
+        );
+
+
+    product.unitBuyPrice =
+        Number.isFinite(unitBuyPrice)
+            ? unitBuyPrice
+            : 0;
+
+
+    product.buyPrice =
+        product.unitBuyPrice;
+
+
+    return product;
+}
+
+
+// ==========================================================
+// ADD STAFF PRODUCT FIFO BATCH
+// ==========================================================
+
+function addStaffProductFifoBatch(
+    product,
+    units,
+    unitBuyPrice
+) {
+
+    if (!Array.isArray(product.fifoBatches)) {
+        product.fifoBatches = [];
+    }
+
+
+    product.fifoBatches.push({
+
+        units,
+
+        buyPrice:
+            unitBuyPrice,
+
+        purchasedAt:
+            new Date()
+
+    });
+
+
+    // ------------------------------------------------------
+    // Keep FIFO order.
+    // ------------------------------------------------------
+
+    product.fifoBatches =
+        product.fifoBatches.sort(
+            (a, b) =>
+                new Date(
+                    a.purchasedAt ||
+                    a.createdAt ||
+                    0
+                ) -
+                new Date(
+                    b.purchasedAt ||
+                    b.createdAt ||
+                    0
+                )
+        );
+
+
+    recalculateProductFifo(product);
+
+}
+
+
+// ==========================================================
+// UPDATE STAFF SUBSTATION INVENTORY
+// ==========================================================
+//
+// Staff inventory belongs to:
+//
+//     user.assignedSubstation
+//
+// The product inventory record is identified by productId.
+//
+// If the product is already present:
+//     increase units.
+//
+// If it does not exist:
+//     create the inventory entry.
+//
+// ==========================================================
+
+async function updateStaffSubstationInventory(
+    substationId,
+    product,
+    additionalUnits,
+    session
+) {
+
+    if (!substationId) {
+
+        throw new Error(
+            "Staff member is not assigned to a substation."
+        );
+
+    }
+
+
+    const substation =
+        await Substation
+            .findOne({
+                _id: substationId,
+                isActive: true
+            })
+            .session(session);
+
+
+    if (!substation) {
+
+        throw new Error(
+            "Assigned substation was not found."
+        );
+
+    }
+
+
+    if (
+        !Array.isArray(
+            substation.productInventory
+        )
+    ) {
+
+        substation.productInventory = [];
+
+    }
+
+
+    const productId =
+        product._id.toString();
+
+
+    const inventory =
+        substation.productInventory.find(
+            item =>
+                item.productId &&
+                item.productId.toString() === productId
+        );
+
+
+    if (inventory) {
+
+        inventory.units =
+            Number(inventory.units || 0) +
+            additionalUnits;
+
+        inventory.productName =
+            product.name;
+
+        inventory.category =
+            product.category;
+
+        inventory.subcategory =
+            product.subcategory;
+
+        inventory.updatedAt =
+            new Date();
+
+    } else {
+
+        substation.productInventory.push({
+
+            productId:
+                product._id,
+
+            productName:
+                product.name,
+
+            category:
+                product.category,
+
+            subcategory:
+                product.subcategory,
+
+            days:
+                Number(product.days || 0),
+
+            units:
+                additionalUnits,
+
+            updatedAt:
+                new Date()
+
+        });
+
+    }
+
+
+    await substation.save({
+        session
+    });
+
+}
+
+
+// ==========================================================
+// CREATE STOCK
+//
+// ADMIN:
+//
+//     Stock.units = created units
+//     Stock.purchaseBatches = created FIFO batch
+//     Product.units = 0
+//     Product.fifoBatches = []
+//
+// STAFF:
+//
+//     Stock.units = 0
+//     Stock.purchaseBatches = []
+//     Product.units = created units
+//     Product.fifoBatches = created FIFO batch
+//     Assigned substation inventory += created units
+// ==========================================================
+
+async function createStock(
+    body,
+    user
+) {
+
+    const isStaff =
+        user?.role === "staff";
+
+
+    // ------------------------------------------------------
+    // STAFF VALIDATION
+    // ------------------------------------------------------
+
+    if (
+        isStaff &&
+        !user.assignedSubstation
+    ) {
+
+        throw new Error(
+            "Staff member is not assigned to a substation."
+        );
+
+    }
+
 
     // ------------------------------------------------------
     // STOCK NAME
@@ -208,31 +518,31 @@ async function createStock(body) {
 
 
     // ------------------------------------------------------
-    // INITIAL UNITS
+    // UNITS
     // ------------------------------------------------------
 
     const units =
         wholeNumber(
             body.units,
-            "Warehouse units",
+            isStaff
+                ? "Product units"
+                : "Warehouse units",
             true
         );
 
     if (units <= 0) {
+
         throw new Error(
-            "Initial warehouse units must be greater than zero."
+            isStaff
+                ? "Product units must be greater than zero."
+                : "Initial warehouse units must be greater than zero."
         );
+
     }
 
 
     // ------------------------------------------------------
-    // INITIAL PURCHASE COST
-    //
-    // This remains exactly as the existing implementation:
-    //
-    // total purchase cost / units
-    //
-    // = unit buy price of the FIFO batch
+    // PURCHASE COST
     // ------------------------------------------------------
 
     const totalPurchaseCost =
@@ -242,13 +552,17 @@ async function createStock(body) {
             true
         );
 
+
     const unitBuyPrice =
         totalPurchaseCost / units;
 
+
     if (!Number.isFinite(unitBuyPrice)) {
+
         throw new Error(
             "Unable to calculate the unit buy price."
         );
+
     }
 
 
@@ -301,21 +615,6 @@ async function createStock(body) {
     }
 
 
-    // ------------------------------------------------------
-    // FIRST FIFO BATCH
-    // ------------------------------------------------------
-
-    const purchaseBatches = [
-
-        {
-            units,
-            buyPrice: unitBuyPrice,
-            purchasedAt: new Date()
-        }
-
-    ];
-
-
     const session =
         await mongoose.startSession();
 
@@ -336,22 +635,55 @@ async function createStock(body) {
                     await Stock.create(
                         [
                             {
+
                                 name,
+
                                 category,
+
                                 subcategory,
+
                                 days,
+
                                 image,
-                                units,
 
-                                // Existing behavior preserved.
+                                // ----------------------------------
+                                // ADMIN:
+                                //     warehouse units
+                                //
+                                // STAFF:
+                                //     warehouse remains zero
+                                // ----------------------------------
+
+                                units:
+                                    isStaff
+                                        ? 0
+                                        : units,
+
                                 buyPrice:
-                                    unitBuyPrice,
+                                    isStaff
+                                        ? 0
+                                        : unitBuyPrice,
 
-                                unitBuyPrice,
+                                unitBuyPrice:
+                                    isStaff
+                                        ? 0
+                                        : unitBuyPrice,
 
-                                purchaseBatches,
+                                purchaseBatches:
+                                    isStaff
+                                        ? []
+                                        : [
+                                            {
+                                                units,
+                                                buyPrice:
+                                                    unitBuyPrice,
+                                                purchasedAt:
+                                                    new Date()
+                                            }
+                                        ],
 
                                 description
+
                             }
                         ],
                         { session }
@@ -370,6 +702,7 @@ async function createStock(body) {
                     await Product.create(
                         [
                             {
+
                                 stock:
                                     createdStock._id,
 
@@ -386,15 +719,44 @@ async function createStock(body) {
 
                                 description,
 
-                                units: 0,
+                                // ----------------------------------
+                                // ADMIN:
+                                //     product starts at zero
+                                //
+                                // STAFF:
+                                //     product receives the units
+                                // ----------------------------------
 
-                                fifoBatches: [],
+                                units:
+                                    isStaff
+                                        ? units
+                                        : 0,
 
-                                unitBuyPrice: 0,
+                                fifoBatches:
+                                    isStaff
+                                        ? [
+                                            {
+                                                units,
+                                                buyPrice:
+                                                    unitBuyPrice,
+                                                purchasedAt:
+                                                    new Date()
+                                            }
+                                        ]
+                                        : [],
 
-                                buyPrice: 0,
+                                unitBuyPrice:
+                                    isStaff
+                                        ? unitBuyPrice
+                                        : 0,
+
+                                buyPrice:
+                                    isStaff
+                                        ? unitBuyPrice
+                                        : 0,
 
                                 unitSellPrice
+
                             }
                         ],
                         { session }
@@ -404,22 +766,51 @@ async function createStock(body) {
                 createdProduct =
                     productResult[0];
 
+
+                // ==================================================
+                // STAFF SUBSTATION INVENTORY
+                // ==================================================
+
+                if (isStaff) {
+
+                    await updateStaffSubstationInventory(
+
+                        user.assignedSubstation,
+
+                        createdProduct,
+
+                        units,
+
+                        session
+
+                    );
+
+                }
+
             }
         );
 
+
+        // ------------------------------------------------------
+        // Recalculate ONLY warehouse stock totals.
+        // ------------------------------------------------------
 
         await recalculateStockTotals();
 
 
         const stock =
             await Stock
-                .findById(createdStock._id)
+                .findById(
+                    createdStock._id
+                )
                 .lean();
 
 
         const product =
             await Product
-                .findById(createdProduct._id)
+                .findById(
+                    createdProduct._id
+                )
                 .lean();
 
 
@@ -434,34 +825,33 @@ async function createStock(body) {
         await session.endSession();
 
     }
+
 }
 
 
 // ==========================================================
 // UPDATE / EDIT STOCK
 //
-// Form meaning:
+// ADMIN:
 //
-// units:
-//     additional units only
+//     additional units -> Stock
+//     new FIFO batch -> Stock.purchaseBatches
 //
-// buyPrice:
-//     total purchase cost of the NEW additional FIFO batch
+// STAFF:
 //
-// sellPrice:
-//     updated selling price
+//     additional units -> Product
+//     new FIFO batch -> Product.fifoBatches
+//     Stock.units remains 0
+//     assigned substation inventory increases
 //
-// Existing FIFO batches are NEVER repriced.
+// Existing FIFO batches are never repriced.
 // ==========================================================
 
 async function updateStockEntry(
     stockId,
-    body
+    body,
+    user
 ) {
-
-    // ------------------------------------------------------
-    // VALIDATE STOCK ID
-    // ------------------------------------------------------
 
     if (
         !mongoose.isValidObjectId(stockId)
@@ -469,6 +859,22 @@ async function updateStockEntry(
 
         throw new Error(
             "Invalid stock."
+        );
+
+    }
+
+
+    const isStaff =
+        user?.role === "staff";
+
+
+    if (
+        isStaff &&
+        !user.assignedSubstation
+    ) {
+
+        throw new Error(
+            "Staff member is not assigned to a substation."
         );
 
     }
@@ -509,13 +915,21 @@ async function updateStockEntry(
 
 
                 // ==================================================
-                // RECONCILE CURRENT FIFO STATE
+                // RECONCILE WAREHOUSE FIFO
+                //
+                // Only relevant to ADMIN.
+                //
+                // Staff inventory lives in Product FIFO.
                 // ==================================================
 
-                await reconcilePurchaseBatches(
-                    stock,
-                    session
-                );
+                if (!isStaff) {
+
+                    await reconcilePurchaseBatches(
+                        stock,
+                        session
+                    );
+
+                }
 
 
                 // ==================================================
@@ -531,11 +945,6 @@ async function updateStockEntry(
 
                 // ==================================================
                 // ADDITIONAL UNITS
-                //
-                // In edit mode the form submits:
-                //
-                // blank = 0 additional units
-                // number = additional units
                 // ==================================================
 
                 const rawUnits =
@@ -547,7 +956,9 @@ async function updateStockEntry(
                         ? 0
                         : wholeNumber(
                             rawUnits,
-                            "Additional warehouse units",
+                            isStaff
+                                ? "Additional product units"
+                                : "Additional warehouse units",
                             true
                         );
 
@@ -628,12 +1039,6 @@ async function updateStockEntry(
 
                 // ==================================================
                 // SELL PRICE
-                //
-                // IMPORTANT:
-                // The form always submits sellPrice.
-                //
-                // It must update whether additional stock
-                // is being added or not.
                 // ==================================================
 
                 const unitSellPrice =
@@ -660,7 +1065,6 @@ async function updateStockEntry(
 
                 const image =
                     text(body.image);
-
 
                 const description =
                     text(body.description);
@@ -719,19 +1123,13 @@ async function updateStockEntry(
 
 
                 // ==================================================
-                // ADDITIONAL FIFO STOCK
-                //
-                // ONLY create a new purchase batch when
-                // additionalUnits > 0.
-                //
-                // Existing batches are untouched.
+                // ADMIN FIFO UPDATE
                 // ==================================================
 
-                if (additionalUnits > 0) {
-
-                    // ------------------------------------------------
-                    // Buy price is REQUIRED for a new batch.
-                    // ------------------------------------------------
+                if (
+                    !isStaff &&
+                    additionalUnits > 0
+                ) {
 
                     const totalPurchaseCost =
                         number(
@@ -759,11 +1157,6 @@ async function updateStockEntry(
                     }
 
 
-                    // ------------------------------------------------
-                    // Add NEW FIFO batch.
-                    // Existing batches retain their prices.
-                    // ------------------------------------------------
-
                     stock.purchaseBatches.push({
 
                         units:
@@ -778,18 +1171,10 @@ async function updateStockEntry(
                     });
 
 
-                    // ------------------------------------------------
-                    // Increase warehouse quantity.
-                    // ------------------------------------------------
-
                     stock.units =
                         currentUnits +
                         additionalUnits;
 
-
-                    // ------------------------------------------------
-                    // Keep FIFO ordering.
-                    // ------------------------------------------------
 
                     stock.purchaseBatches =
                         sortFifoBatches(
@@ -797,14 +1182,32 @@ async function updateStockEntry(
                         );
 
 
-                    // ------------------------------------------------
-                    // Preserve existing unit-buy-price behavior.
-                    // ------------------------------------------------
-
                     stock.unitBuyPrice =
                         calculateUnitBuyPrice(
                             stock
                         );
+
+                }
+
+
+                // ==================================================
+                // STAFF STOCK BEHAVIOR
+                //
+                // Staff does NOT add warehouse stock.
+                //
+                // Keep Stock.units at zero.
+                // Keep warehouse purchaseBatches empty.
+                // ==================================================
+
+                if (isStaff) {
+
+                    stock.units = 0;
+
+                    stock.purchaseBatches = [];
+
+                    stock.buyPrice = 0;
+
+                    stock.unitBuyPrice = 0;
 
                 }
 
@@ -851,53 +1254,127 @@ async function updateStockEntry(
                         .session(session);
 
 
-                if (product) {
+                if (!product) {
 
-                    product.name =
-                        productNameFromStock(
-                            stock
-                        );
-
-
-                    product.category =
-                        categoryDocument._id;
-
-
-                    product.subcategory =
-                        stock.subcategory;
-
-
-                    product.days =
-                        Number(
-                            stock.days || 0
-                        );
-
-
-                    product.image =
-                        stock.image || "";
-
-
-                    product.description =
-                        stock.description || "";
-
-
-                    // ------------------------------------------------
-                    // SELL PRICE ALWAYS UPDATES.
-                    //
-                    // This is the key edit-mode correction.
-                    // It must not depend on whether new FIFO
-                    // stock was added.
-                    // ------------------------------------------------
-
-                    product.unitSellPrice =
-                        unitSellPrice;
-
-
-                    await product.save({
-                        session
-                    });
+                    throw new Error(
+                        "Product associated with this stock was not found."
+                    );
 
                 }
+
+
+                product.name =
+                    productNameFromStock(
+                        stock
+                    );
+
+
+                product.category =
+                    categoryDocument._id;
+
+
+                product.subcategory =
+                    stock.subcategory;
+
+
+                product.days =
+                    Number(
+                        stock.days || 0
+                    );
+
+
+                product.image =
+                    stock.image || "";
+
+
+                product.description =
+                    stock.description || "";
+
+
+                // ------------------------------------------------
+                // SELL PRICE ALWAYS UPDATES.
+                // ------------------------------------------------
+
+                product.unitSellPrice =
+                    unitSellPrice;
+
+
+                // ==================================================
+                // STAFF PRODUCT FIFO UPDATE
+                // ==================================================
+
+                if (
+                    isStaff &&
+                    additionalUnits > 0
+                ) {
+
+                    const totalPurchaseCost =
+                        number(
+                            body.buyPrice,
+                            "Total purchase cost for additional units",
+                            true
+                        );
+
+
+                    const additionalUnitBuyPrice =
+                        totalPurchaseCost /
+                        additionalUnits;
+
+
+                    if (
+                        !Number.isFinite(
+                            additionalUnitBuyPrice
+                        )
+                    ) {
+
+                        throw new Error(
+                            "Unable to calculate the unit buy price for the additional product stock."
+                        );
+
+                    }
+
+
+                    // ------------------------------------------------
+                    // Add FIFO batch to Product.
+                    // ------------------------------------------------
+
+                    addStaffProductFifoBatch(
+
+                        product,
+
+                        additionalUnits,
+
+                        additionalUnitBuyPrice
+
+                    );
+
+
+                    // ------------------------------------------------
+                    // Update assigned substation inventory.
+                    // ------------------------------------------------
+
+                    await updateStaffSubstationInventory(
+
+                        user.assignedSubstation,
+
+                        product,
+
+                        additionalUnits,
+
+                        session
+
+                    );
+
+                }
+
+
+                // ==================================================
+                // SAVE PRODUCT
+                // ==================================================
+
+                await product.save({
+                    session
+                });
 
 
                 updatedStock =
@@ -909,6 +1386,9 @@ async function updateStockEntry(
 
         // ======================================================
         // RECALCULATE GLOBAL STOCK TOTALS
+        //
+        // This affects ADMIN warehouse stock only.
+        // Staff Stock.units is zero.
         // ======================================================
 
         await recalculateStockTotals();
@@ -930,6 +1410,7 @@ async function updateStockEntry(
         await session.endSession();
 
     }
+
 }
 
 
