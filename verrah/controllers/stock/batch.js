@@ -19,11 +19,6 @@
 //
 //     services/stockService/batchEdit.js
 //
-// This controller is responsible for:
-//     - preparing data
-//     - rendering the EJS pages
-//     - receiving the edit form
-//     - calling the service to save the changes
 // ==========================================================
 
 const service =
@@ -32,11 +27,6 @@ const service =
 
 // ==========================================================
 // LIST ALL FIFO BATCHES
-// ==========================================================
-//
-// GET /stock/:id/batches
-//
-// Displays every FIFO purchase batch belonging to the stock.
 // ==========================================================
 
 exports.batches =
@@ -53,11 +43,6 @@ exports.batches =
                     ""
                 ).trim();
 
-
-            // ==================================================
-            // GET STOCK + FIFO BATCHES
-            // ==================================================
-
             const {
                 stock,
                 batches
@@ -65,11 +50,6 @@ exports.batches =
                 await service.getFifoBatches(
                     stockId
                 );
-
-
-            // ==================================================
-            // RENDER
-            // ==================================================
 
             return res.render(
                 "stock/batch/batches",
@@ -110,13 +90,6 @@ exports.batches =
 // ==========================================================
 // VIEW / EDIT PARTICULAR FIFO BATCH
 // ==========================================================
-//
-// GET /stock/:id/batches/:batchId
-//
-// Displays one particular FIFO batch.
-//
-// No batch data is modified by this GET request.
-// ==========================================================
 
 exports.batch =
     async (
@@ -136,12 +109,7 @@ exports.batch =
                 ""
             ).trim();
 
-
         try {
-
-            // ==================================================
-            // REQUIRE BATCH ID
-            // ==================================================
 
             if (!batchId) {
 
@@ -149,11 +117,6 @@ exports.batch =
                     "FIFO batch ID is required."
                 );
             }
-
-
-            // ==================================================
-            // GET STOCK + FIFO BATCHES
-            // ==================================================
 
             const {
                 stock,
@@ -163,11 +126,6 @@ exports.batch =
                     stockId
                 );
 
-
-            // ==================================================
-            // FIND PARTICULAR BATCH
-            // ==================================================
-
             const batch =
                 batches.find(
                     currentBatch =>
@@ -175,11 +133,6 @@ exports.batch =
                             currentBatch._id
                         ) === batchId
                 );
-
-
-            // ==================================================
-            // BATCH NOT FOUND
-            // ==================================================
 
             if (!batch) {
 
@@ -189,11 +142,6 @@ exports.batch =
                     )}`
                 );
             }
-
-
-            // ==================================================
-            // RENDER EDIT PAGE
-            // ==================================================
 
             return res.render(
                 "stock/batch/edit",
@@ -237,29 +185,15 @@ exports.batch =
 // EDIT PARTICULAR FIFO BATCH
 // ==========================================================
 //
-// POST /stock/:id/batches/:batchId
+// Staff:
+//     Product.fifoBatches -> updated
+//     Product.units       -> updated
+//     Substation inventory -> updated
+//     Stock               -> NOT modified
 //
-// The edit form submits:
-//
-//     units
-//     buyPrice
-//
-// The batch ID is NOT expected in req.body.
-//
-// It comes directly from:
-//
-//     req.params.batchId
-//
-// Example:
-//
-//     POST /stock/68xxxxxxxxxxxxxxxxxxxxxx/batches/69xxxxxxxxxxxxxxxxxxxxxx
-//
-// Body:
-//
-//     units=80
-//     buyPrice=1000
-//
-// The service performs the actual database update.
+// Admin / other roles:
+//     Stock.purchaseBatches -> updated
+//     Stock.units           -> updated
 // ==========================================================
 
 exports.editBatches =
@@ -280,12 +214,7 @@ exports.editBatches =
                 ""
             ).trim();
 
-
         try {
-
-            // ==================================================
-            // REQUIRE STOCK ID
-            // ==================================================
 
             if (!stockId) {
 
@@ -294,11 +223,6 @@ exports.editBatches =
                 );
             }
 
-
-            // ==================================================
-            // REQUIRE BATCH ID
-            // ==================================================
-
             if (!batchId) {
 
                 throw new Error(
@@ -306,17 +230,11 @@ exports.editBatches =
                 );
             }
 
-
-            // ==================================================
-            // REQUIRE FORM VALUES
-            // ==================================================
-
             const units =
                 req.body.units;
 
             const buyPrice =
                 req.body.buyPrice;
-
 
             if (
                 units === undefined ||
@@ -329,7 +247,6 @@ exports.editBatches =
                 );
             }
 
-
             if (
                 buyPrice === undefined ||
                 buyPrice === null ||
@@ -341,19 +258,14 @@ exports.editBatches =
                 );
             }
 
-
             // ==================================================
-            // EDIT FIFO BATCH
-            // ==================================================
-            //
             // IMPORTANT:
             //
-            // batchId comes from req.params.batchId because the
-            // form submits it as part of the URL:
+            // PASS req.user.
             //
-            // /stock/:id/batches/:batchId
-            //
-            // units and buyPrice come from req.body.
+            // Without this, batchEdit.js cannot know that the
+            // request belongs to staff, so it will execute the
+            // normal Stock update branch.
             // ==================================================
 
             await service.editFifoBatch(
@@ -362,18 +274,26 @@ exports.editBatches =
                 {
                     units,
                     buyPrice
-                }
+                },
+                req.user
             );
 
+            // ==================================================
+            // STAFF
+            // ==================================================
+
+            if (
+                req.user &&
+                req.user.role === "staff"
+            ) {
+
+                return res.redirect(
+                    `/products?saved=1`
+                );
+            }
 
             // ==================================================
-            // SUCCESS
-            // ==================================================
-            //
-            // Return to the batch list.
-            //
-            // ?saved=1 allows the batches page to display the
-            // success message.
+            // ADMIN / OTHER ROLES
             // ==================================================
 
             return res.redirect(
@@ -387,9 +307,24 @@ exports.editBatches =
                 error
             );
 
+            // ==================================================
+            // STAFF ERROR
+            // ==================================================
+
+            if (
+                req.user &&
+                req.user.role === "staff"
+            ) {
+
+                return res.redirect(
+                    `/products?error=${encodeURIComponent(
+                        error.message
+                    )}`
+                );
+            }
 
             // ==================================================
-            // RETURN TO EDIT PAGE
+            // EDIT PAGE ERROR
             // ==================================================
 
             if (
@@ -403,7 +338,6 @@ exports.editBatches =
                     )}`
                 );
             }
-
 
             // ==================================================
             // FALLBACK
