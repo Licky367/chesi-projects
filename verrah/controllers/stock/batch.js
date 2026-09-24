@@ -288,7 +288,7 @@ exports.editBatches =
             ) {
 
                 return res.redirect(
-                    `/products?saved=1`
+                    `/sales`
                 );
             }
 
