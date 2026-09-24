@@ -56,7 +56,7 @@ router.post(
 // GET /stock/:id/batches - display all FIFO batches.
 router.get(
     "/:id/batches",
-    requireAccess,
+    requireAdminOrStaff,
     controller.batches
 );
 
