@@ -28,6 +28,11 @@
 // stockAvailable:
 //
 //     Remains GLOBAL and unchanged.
+//
+// stockProductId:
+//
+//     Product.stock
+//         -> ID of the Stock record related to the Product
 // ==========================================================
 
 
@@ -181,6 +186,10 @@ async function getProductAnalytics(
     // LOAD ACTIVE PRODUCTS
     //
     // Products remain global records.
+    //
+    // stock:
+    //     Contains the ID of the Stock record related
+    //     to this Product.
     // ======================================================
 
     const products =
@@ -464,6 +473,19 @@ async function getProductAnalytics(
                 }
 
 
+                // ==================================================
+                // PRODUCT ANALYTICS RESULT
+                // ==================================================
+                //
+                // stockProductId:
+                //
+                //     The ID of the Stock document associated
+                //     with this Product.
+                //
+                // Product.stock is already selected above,
+                // so no additional database query is needed.
+                // ==================================================
+
                 return {
 
                     _id:
@@ -471,6 +493,13 @@ async function getProductAnalytics(
 
                     name:
                         product.name,
+
+                    stockProductId:
+                        product.stock
+                            ? String(
+                                product.stock
+                            )
+                            : null,
 
                     stockAvailable:
                         stockBySubcategory.get(
