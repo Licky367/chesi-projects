@@ -33,6 +33,7 @@ router.get(
 // GET /stock/new - create/update stock form.
 router.get(
     "/new",
+    requireAdminOrStaff,
     requireAccess,
     controller.newStockForm
 );
