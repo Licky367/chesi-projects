@@ -10,6 +10,9 @@ const requireAccess =
     require("../middleware/requireAccess");
 
 
+const requireAdminOrStaff =
+    require("../middleware/requireAdminOrStaff");
+
 
 // ==========================================================
 // STOCK LIST
@@ -30,7 +33,7 @@ router.get(
 // GET /stock/new - create/update stock form.
 router.get(
     "/new",
-    requireAdmin,
+    requireAccess,
     controller.newStockForm
 );
 
@@ -42,7 +45,6 @@ router.get(
 // POST /stock - create or update stock.
 router.post(
     "/",
-    requireAdmin,
     controller.createOrUpdateStock
 );
 
@@ -54,7 +56,7 @@ router.post(
 // GET /stock/:id/batches - display all FIFO batches.
 router.get(
     "/:id/batches",
-    requireAdmin,
+    requireAccess,
     controller.batches
 );
 
@@ -77,7 +79,7 @@ router.get(
 
 router.post(
     "/:id/batches",
-    requireAdmin,
+    requireAccess,
     controller.createFifoBatch
 );
 
@@ -89,7 +91,7 @@ router.post(
 // GET /stock/:id/batch/:batchId - edit a specific FIFO batch.
 router.get(
     "/:id/batch/:batchId",
-    requireAdmin,
+    requireAccess,
     controller.batch
 );
 
@@ -97,7 +99,7 @@ router.get(
 // POST /stock/:id/batches/:batchId - save changes to FIFO batch.
 router.post(
     "/:id/batches/:batchId",
-    requireAdmin,
+    requireAccess,
     controller.editBatches
 );
 
@@ -109,7 +111,7 @@ router.post(
 // GET /stock/:id - stock allocation/details page.
 router.get(
     "/:id",
-    requireAdmin,
+    requireAdminOrStaff,
     controller.entry
 );
 
