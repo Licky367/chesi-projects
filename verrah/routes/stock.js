@@ -34,7 +34,6 @@ router.get(
 router.get(
     "/new",
     requireAdminOrStaff,
-    requireAccess,
     controller.newStockForm
 );
 
