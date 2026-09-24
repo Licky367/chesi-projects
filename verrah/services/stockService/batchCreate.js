@@ -21,10 +21,16 @@
 //
 //     {
 //         units,
-//         totalBuyingPrice,
+//         buyPrice,
 //         purchasedAt
 //     }
 //
+// IMPORTANT:
+//     buyPrice from the form is the TOTAL purchase cost
+//     of the new FIFO batch.
+//
+//     FIFO buyPrice stored in Stock.purchaseBatches and
+//     Product.fifoBatches is the PER-UNIT buy price.
 // ==========================================================
 
 const mongoose =
@@ -41,7 +47,9 @@ const Substation =
 
 const {
     weightedProductBuyPrice,
-    sortProductFifo
+    sortProductFifo,
+    sortFifoBatches,
+    calculateUnitBuyPrice
 } = require("./helpers");
 
 // ==========================================================
@@ -103,23 +111,29 @@ async function createFifoBatch(
     }
 
     // ======================================================
-    // READ TOTAL BUYING PRICE
+    // READ TOTAL BUY PRICE
+    //
+    // Form field:
+    //     buyPrice = TOTAL purchase cost
+    //
+    // FIFO field:
+    //     buyPrice = PER-UNIT purchase cost
     // ======================================================
 
-    const totalBuyingPrice =
+    const totalPurchaseCost =
         Number(
-            body.totalBuyingPrice
+            body.buyPrice
         );
 
     if (
         !Number.isFinite(
-            totalBuyingPrice
+            totalPurchaseCost
         ) ||
-        totalBuyingPrice < 0
+        totalPurchaseCost < 0
     ) {
 
         throw new Error(
-            "Total buying price must be a valid number greater than or equal to 0."
+            "Buy price must be a valid number greater than or equal to 0."
         );
 
     }
@@ -129,7 +143,7 @@ async function createFifoBatch(
     // ======================================================
 
     const buyPrice =
-        totalBuyingPrice /
+        totalPurchaseCost /
         units;
 
     if (
@@ -236,7 +250,8 @@ async function createFifoBatch(
 
                     const product =
                         await Product.findOne({
-                            stock: stock._id
+                            stock: stock._id,
+                            isActive: true
                         })
                         .session(
                             session
@@ -273,6 +288,7 @@ async function createFifoBatch(
 
                         units,
 
+                        // PER-UNIT FIFO BUY PRICE
                         buyPrice,
 
                         receivedAt:
@@ -329,7 +345,7 @@ async function createFifoBatch(
 
                     // ======================================
                     // RECALCULATE PRODUCT BUY PRICE
-                    // FROM FIFO
+                    // FROM PRODUCT FIFO
                     // ======================================
 
                     const unitBuyPrice =
@@ -473,6 +489,19 @@ async function createFifoBatch(
                     stock.units =
                         0;
 
+                    stock.buyPrice =
+                        0;
+
+                    stock.unitBuyPrice =
+                        0;
+
+                    stock.purchaseBatches =
+                        [];
+
+                    await stock.save({
+                        session
+                    });
+
                     updatedStock =
                         stock;
 
@@ -481,7 +510,7 @@ async function createFifoBatch(
 
                 // ==================================================
                 // NON-STAFF
-                // EXISTING BEHAVIOR
+                // EXISTING WAREHOUSE FIFO BEHAVIOR
                 // ==================================================
 
                 if (
@@ -503,11 +532,21 @@ async function createFifoBatch(
 
                     units,
 
+                    // PER-UNIT FIFO BUY PRICE
                     buyPrice,
 
                     purchasedAt
 
                 });
+
+                // ==============================================
+                // KEEP STOCK FIFO ORDER
+                // ==============================================
+
+                stock.purchaseBatches =
+                    sortFifoBatches(
+                        stock.purchaseBatches
+                    );
 
                 // ==============================================
                 // RECALCULATE TOTAL STOCK UNITS
@@ -546,6 +585,18 @@ async function createFifoBatch(
 
                 stock.units =
                     totalUnits;
+
+                // ==============================================
+                // RECALCULATE WEIGHTED STOCK BUY PRICE
+                // ==============================================
+
+                stock.unitBuyPrice =
+                    calculateUnitBuyPrice(
+                        stock
+                    );
+
+                stock.buyPrice =
+                    stock.unitBuyPrice;
 
                 // ==============================================
                 // SAVE STOCK
