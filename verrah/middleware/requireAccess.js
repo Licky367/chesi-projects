@@ -25,16 +25,23 @@ const Substation = require("../models/substations");
 //
 // ADMIN:
 //
-//     Uses SecurityKey.securityKey
+//     Uses SecurityKey.securityKey.
 //
 // STAFF:
 //
 //     Uses Substation.substationKey from the substation
-//     assigned to req.user.assignedSubstation
+//     assigned to req.user.assignedSubstation.
 //
 // OTHER ROLES:
 //
 //     Access denied.
+//
+// IMPORTANT:
+//
+//     The security key must be entered EVERY TIME the user
+//     visits a restricted page.
+//
+//     No session-based verification is used.
 //
 // ==========================================================
 
@@ -51,18 +58,6 @@ async function requireAccess(req, res, next) {
             return res.status(403).send(
                 "Access denied."
             );
-        }
-
-        // --------------------------------------------------
-        // ALREADY VERIFIED
-        // --------------------------------------------------
-
-        if (
-            req.session &&
-            req.session.securityKeyVerified
-        ) {
-
-            return next();
         }
 
         // --------------------------------------------------
@@ -103,8 +98,8 @@ async function requireAccess(req, res, next) {
         // STAFF
         // ==================================================
         //
-        // Staff uses the key belonging to their assigned
-        // substation.
+        // Staff uses the substationKey belonging to their
+        // assigned substation.
         //
         // ==================================================
 
@@ -125,7 +120,7 @@ async function requireAccess(req, res, next) {
             }
 
             // ----------------------------------------------
-            // VALIDATE OBJECT ID
+            // VALIDATE SUBSTATION ID
             // ----------------------------------------------
 
             if (
@@ -188,26 +183,23 @@ async function requireAccess(req, res, next) {
                 ? req.body.securityKey.trim()
                 : "";
 
+        // --------------------------------------------------
+        // CORRECT KEY
+        // --------------------------------------------------
+
+        if (
+            submittedKey &&
+            submittedKey === expectedKey
+        ) {
+
+            return next();
+        }
+
+        // --------------------------------------------------
+        // WRONG KEY
+        // --------------------------------------------------
+
         if (submittedKey) {
-
-            // ------------------------------------------------
-            // CORRECT KEY
-            // ------------------------------------------------
-
-            if (submittedKey === expectedKey) {
-
-                if (req.session) {
-
-                    req.session.securityKeyVerified =
-                        true;
-                }
-
-                return next();
-            }
-
-            // ------------------------------------------------
-            // WRONG KEY
-            // ------------------------------------------------
 
             return res.render(
                 "securityKey",
@@ -218,7 +210,7 @@ async function requireAccess(req, res, next) {
         }
 
         // --------------------------------------------------
-        // FIRST ACCESS
+        // FIRST ACCESS / NO KEY SUBMITTED
         // --------------------------------------------------
 
         return res.render(
