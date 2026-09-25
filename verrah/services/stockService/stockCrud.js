@@ -1,5 +1,5 @@
 // ==========================================================
-// services/stockService/stockCrude.js
+// services/stockService/stockCrud.js
 //
 // VERRAH COSMETICS
 // STOCK SERVICE
@@ -14,10 +14,11 @@
 // STAFF
 // ------
 // Stock is NOT warehouse stock.
-// Stock.units              = 0
-// Stock.purchaseBatches    = []
-// Stock.buyPrice           = 0
-// Stock.unitBuyPrice       = 0
+//
+// Stock.units           = 0
+// Stock.purchaseBatches = []
+// Stock.buyPrice        = 0
+// Stock.unitBuyPrice    = 0
 //
 // Staff stock is represented through:
 // Product.fifoBatches
@@ -27,6 +28,18 @@
 //
 // Staff can only edit/view batches belonging to their
 // assigned substation.
+//
+// IMPORTANT CATEGORY RULE:
+//
+// The controller resolves req.body.category into a
+// Category._id before calling this service.
+//
+// Therefore this service accepts:
+// - Category ObjectId
+// - Category name
+//
+// Product.category = Category._id
+// Stock.category   = Category.name
 //
 // ==========================================================
 
@@ -59,11 +72,56 @@ const {
 
 
 // ==========================================================
-// STAFF CHECK
+// USER ROLE CHECKS
 // ==========================================================
 
 function isStaff(user) {
-    return user && user.role === "staff";
+
+    return Boolean(
+        user &&
+        user.role === "staff"
+    );
+}
+
+
+function isAdmin(user) {
+
+    return Boolean(
+        user &&
+        user.role === "admin"
+    );
+}
+
+
+// ==========================================================
+// VALIDATE AUTHENTICATED USER
+//
+// Only ADMIN and STAFF may use these stock operations.
+//
+// IMPORTANT:
+// We do NOT treat every non-staff user as admin.
+// ==========================================================
+
+function validateStockUser(user) {
+
+    if (!user) {
+
+        throw new Error(
+            "Authenticated user is required."
+        );
+    }
+
+    if (
+        !isAdmin(user) &&
+        !isStaff(user)
+    ) {
+
+        throw new Error(
+            "You are not authorized to manage stock."
+        );
+    }
+
+    return user;
 }
 
 
@@ -79,8 +137,11 @@ function getStaffSubstationId(user) {
 
     if (
         !user.assignedSubstation ||
-        !mongoose.Types.ObjectId.isValid(user.assignedSubstation)
+        !mongoose.Types.ObjectId.isValid(
+            user.assignedSubstation
+        )
     ) {
+
         throw new Error(
             "Staff member has no valid assigned substation."
         );
@@ -89,6 +150,91 @@ function getStaffSubstationId(user) {
     return new mongoose.Types.ObjectId(
         user.assignedSubstation
     );
+}
+
+
+// ==========================================================
+// RESOLVE CATEGORY
+//
+// The controller currently does:
+//
+//     resolveCategoryId(req.body.category)
+//
+// and then sends:
+//
+//     body.category = Category._id
+//
+// Therefore the service MUST NOT assume that
+// body.category is a category name.
+//
+// This helper supports both:
+// - Category ObjectId
+// - Category name
+//
+// Returns the actual Category document.
+// ==========================================================
+
+async function resolveStockCategory(
+    categoryValue,
+    session
+) {
+
+    const value =
+        text(categoryValue);
+
+    if (!value) {
+
+        throw new Error(
+            "Category is required."
+        );
+    }
+
+    // ------------------------------------------------------
+    // CATEGORY ID
+    // ------------------------------------------------------
+
+    if (
+        mongoose.Types.ObjectId.isValid(value)
+    ) {
+
+        const category =
+            await getCategory(
+                value,
+                session
+            );
+
+        if (!category) {
+
+            throw new Error(
+                "Category not found."
+            );
+        }
+
+        validateCategory(category);
+
+        return category;
+    }
+
+    // ------------------------------------------------------
+    // CATEGORY NAME
+    // ------------------------------------------------------
+
+    const category =
+        await getCategoryByName(
+            value.toLowerCase(),
+            session
+        );
+
+    if (!category) {
+
+        throw new Error(
+            "Category not found."
+        );
+    }
+
+    validateCategory(category);
+
+    return category;
 }
 
 
@@ -108,35 +254,44 @@ function getStaffSubstationId(user) {
 // Staff Stock records have zero warehouse inventory.
 // ==========================================================
 
-async function recalculateStockTotals(session = null) {
+async function recalculateStockTotals(
+    session = null
+) {
 
-    const query = Stock.find({
-        active: { $ne: false }
-    });
+    const query =
+        Stock.find({
+            active: {
+                $ne: false
+            }
+        });
 
     if (session) {
         query.session(session);
     }
 
-    const stocks = await query;
+    const stocks =
+        await query;
 
     let cashOutflow = 0;
     let overal = 0;
 
     const categoryTotals = {};
 
+    // ======================================================
+    // FIRST PASS
+    // ======================================================
+
     for (const stock of stocks) {
 
         // --------------------------------------------------
-        // STAFF STOCK SHOULD NEVER CONTRIBUTE TO WAREHOUSE
-        // TOTALS.
-        //
-        // Staff Stock has no purchase batches.
+        // Ensure purchaseBatches exists
         // --------------------------------------------------
 
         if (
             !stock.purchaseBatches ||
-            !Array.isArray(stock.purchaseBatches)
+            !Array.isArray(
+                stock.purchaseBatches
+            )
         ) {
 
             stock.purchaseBatches = [];
@@ -144,25 +299,40 @@ async function recalculateStockTotals(session = null) {
 
         // --------------------------------------------------
         // Reconcile warehouse FIFO
+        //
+        // Staff stock has an empty purchaseBatches array,
+        // so it remains zero.
         // --------------------------------------------------
 
-        reconcilePurchaseBatches(stock);
+        reconcilePurchaseBatches(
+            stock
+        );
 
         // --------------------------------------------------
         // Calculate FIFO value
         // --------------------------------------------------
 
-        const fifoValue = calculateFifoValue(
-            stock.purchaseBatches
-        );
+        const fifoValue =
+            calculateFifoValue(
+                stock.purchaseBatches
+            );
 
-        const stockUnits = stock.purchaseBatches.reduce(
-            (total, batch) =>
-                total + wholeNumber(batch.units),
-            0
-        );
+        // --------------------------------------------------
+        // Calculate warehouse units
+        // --------------------------------------------------
 
-        stock.units = stockUnits;
+        const stockUnits =
+            stock.purchaseBatches.reduce(
+                (total, batch) =>
+                    total +
+                    wholeNumber(
+                        batch.units
+                    ),
+                0
+            );
+
+        stock.units =
+            stockUnits;
 
         // --------------------------------------------------
         // Calculate current unit buy price
@@ -171,7 +341,8 @@ async function recalculateStockTotals(session = null) {
         if (stockUnits > 0) {
 
             stock.unitBuyPrice =
-                fifoValue / stockUnits;
+                fifoValue /
+                stockUnits;
 
             stock.buyPrice =
                 stock.unitBuyPrice;
@@ -186,69 +357,105 @@ async function recalculateStockTotals(session = null) {
         // Warehouse cash outflow
         // --------------------------------------------------
 
-        cashOutflow += fifoValue;
+        cashOutflow +=
+            fifoValue;
 
         // --------------------------------------------------
         // Overall inventory value
         // --------------------------------------------------
 
-        overal += fifoValue;
+        overal +=
+            fifoValue;
 
         // --------------------------------------------------
         // Category totals
         // --------------------------------------------------
 
-        const categoryName = text(
-            stock.category
-        ).toLowerCase();
+        const categoryName =
+            text(
+                stock.category
+            ).toLowerCase();
 
         if (categoryName) {
 
-            if (!categoryTotals[categoryName]) {
-                categoryTotals[categoryName] = 0;
+            if (
+                !categoryTotals[
+                    categoryName
+                ]
+            ) {
+
+                categoryTotals[
+                    categoryName
+                ] = 0;
             }
 
-            categoryTotals[categoryName] += fifoValue;
+            categoryTotals[
+                categoryName
+            ] += fifoValue;
         }
 
         // --------------------------------------------------
-        // Existing schema uses categoryOveral
+        // Temporarily set values.
+        //
+        // categoryOveral is corrected again during the
+        // second pass once all category totals are known.
         // --------------------------------------------------
 
         stock.categoryOveral =
-            categoryTotals[categoryName] || 0;
+            categoryTotals[
+                categoryName
+            ] || 0;
 
-        stock.overal = overal;
+        stock.overal =
+            overal;
 
-        stock.totalsUpdatedAt = new Date();
+        stock.totalsUpdatedAt =
+            new Date();
 
         if (session) {
-            await stock.save({ session });
+
+            await stock.save({
+                session
+            });
+
         } else {
+
             await stock.save();
         }
     }
 
-    // ------------------------------------------------------
-    // Update every stock's categoryOveral with final totals
-    // ------------------------------------------------------
+    // ======================================================
+    // SECOND PASS
+    //
+    // Apply final category totals to every stock.
+    // ======================================================
 
     for (const stock of stocks) {
 
-        const categoryName = text(
-            stock.category
-        ).toLowerCase();
+        const categoryName =
+            text(
+                stock.category
+            ).toLowerCase();
 
         stock.categoryOveral =
-            categoryTotals[categoryName] || 0;
+            categoryTotals[
+                categoryName
+            ] || 0;
 
-        stock.overal = overal;
+        stock.overal =
+            overal;
 
-        stock.totalsUpdatedAt = new Date();
+        stock.totalsUpdatedAt =
+            new Date();
 
         if (session) {
-            await stock.save({ session });
+
+            await stock.save({
+                session
+            });
+
         } else {
+
             await stock.save();
         }
     }
@@ -276,8 +483,11 @@ function recalculateProductFifo(product) {
 
     if (
         !product.fifoBatches ||
-        !Array.isArray(product.fifoBatches)
+        !Array.isArray(
+            product.fifoBatches
+        )
     ) {
+
         product.fifoBatches = [];
     }
 
@@ -287,17 +497,24 @@ function recalculateProductFifo(product) {
 
     product.fifoBatches =
         product.fifoBatches.filter(
-            batch => wholeNumber(batch.units) > 0
+            batch =>
+                wholeNumber(
+                    batch.units
+                ) > 0
         );
 
     // ------------------------------------------------------
     // No FIFO
     // ------------------------------------------------------
 
-    if (product.fifoBatches.length === 0) {
+    if (
+        product.fifoBatches.length === 0
+    ) {
 
         product.units = 0;
+
         product.buyPrice = 0;
+
         product.unitBuyPrice = 0;
 
         return product;
@@ -307,7 +524,9 @@ function recalculateProductFifo(product) {
     // Sort FIFO
     // ------------------------------------------------------
 
-    sortFifoBatches(product.fifoBatches);
+    sortFifoBatches(
+        product.fifoBatches
+    );
 
     // ------------------------------------------------------
     // Product total units
@@ -316,7 +535,10 @@ function recalculateProductFifo(product) {
     const totalUnits =
         product.fifoBatches.reduce(
             (total, batch) =>
-                total + wholeNumber(batch.units),
+                total +
+                wholeNumber(
+                    batch.units
+                ),
             0
         );
 
@@ -331,9 +553,12 @@ function recalculateProductFifo(product) {
         product.fifoBatches[0];
 
     const currentUnitBuyPrice =
-        number(oldestBatch.buyPrice);
+        number(
+            oldestBatch.buyPrice
+        );
 
-    product.units = totalUnits;
+    product.units =
+        totalUnits;
 
     product.unitBuyPrice =
         currentUnitBuyPrice;
@@ -365,10 +590,14 @@ function addStaffProductFifoBatch(
     staffFIFOsubstation
 ) {
 
-    units = wholeNumber(units);
-    unitBuyPrice = number(unitBuyPrice);
+    units =
+        wholeNumber(units);
+
+    unitBuyPrice =
+        number(unitBuyPrice);
 
     if (units <= 0) {
+
         throw new Error(
             "Staff FIFO units must be greater than zero."
         );
@@ -380,6 +609,7 @@ function addStaffProductFifoBatch(
             staffFIFOsubstation
         )
     ) {
+
         throw new Error(
             "Staff FIFO batch requires a valid assigned substation."
         );
@@ -387,14 +617,15 @@ function addStaffProductFifoBatch(
 
     if (
         !product.fifoBatches ||
-        !Array.isArray(product.fifoBatches)
+        !Array.isArray(
+            product.fifoBatches
+        )
     ) {
+
         product.fifoBatches = [];
     }
 
     // ------------------------------------------------------
-    // IMPORTANT:
-    //
     // Ownership is permanently attached to the authenticated
     // staff member's assigned substation.
     // ------------------------------------------------------
@@ -403,9 +634,11 @@ function addStaffProductFifoBatch(
 
         units,
 
-        buyPrice: unitBuyPrice,
+        buyPrice:
+            unitBuyPrice,
 
-        purchasedAt: new Date(),
+        receivedAt:
+            new Date(),
 
         StaffFIFOsubstation:
             new mongoose.Types.ObjectId(
@@ -421,7 +654,9 @@ function addStaffProductFifoBatch(
         product.fifoBatches
     );
 
-    recalculateProductFifo(product);
+    recalculateProductFifo(
+        product
+    );
 
     return product;
 }
@@ -444,15 +679,20 @@ async function updateStaffSubstationInventory(
 
     if (
         !substationId ||
-        !mongoose.Types.ObjectId.isValid(substationId)
+        !mongoose.Types.ObjectId.isValid(
+            substationId
+        )
     ) {
+
         throw new Error(
             "Invalid staff substation."
         );
     }
 
     additionalUnits =
-        wholeNumber(additionalUnits);
+        wholeNumber(
+            additionalUnits
+        );
 
     if (additionalUnits <= 0) {
         return;
@@ -460,18 +700,27 @@ async function updateStaffSubstationInventory(
 
     const substationQuery =
         Substation.findOne({
-            _id: substationId,
-            active: { $ne: false }
+
+            _id:
+                substationId,
+
+            active: {
+                $ne: false
+            }
         });
 
     if (session) {
-        substationQuery.session(session);
+
+        substationQuery.session(
+            session
+        );
     }
 
     const substation =
         await substationQuery;
 
     if (!substation) {
+
         throw new Error(
             "Assigned substation not found."
         );
@@ -483,20 +732,27 @@ async function updateStaffSubstationInventory(
             substation.productInventory
         )
     ) {
+
         substation.productInventory = [];
     }
 
     let inventory =
         substation.productInventory.find(
             item =>
-                String(item.productId) ===
-                String(product._id)
+                String(
+                    item.productId
+                ) ===
+                String(
+                    product._id
+                )
         );
 
     if (inventory) {
 
         inventory.units =
-            wholeNumber(inventory.units) +
+            wholeNumber(
+                inventory.units
+            ) +
             additionalUnits;
 
         inventory.updatedAt =
@@ -530,10 +786,13 @@ async function updateStaffSubstationInventory(
     }
 
     if (session) {
+
         await substation.save({
             session
         });
+
     } else {
+
         await substation.save();
     }
 
@@ -561,9 +820,24 @@ async function updateStaffSubstationInventory(
 //
 // ==========================================================
 
-async function createStock(body, user) {
+async function createStock(
+    body,
+    user
+) {
 
-    const staff = isStaff(user);
+    // ------------------------------------------------------
+    // VALIDATE USER
+    // ------------------------------------------------------
+
+    validateStockUser(
+        user
+    );
+
+    const staff =
+        isStaff(user);
+
+    const admin =
+        isAdmin(user);
 
     const session =
         await mongoose.startSession();
@@ -575,27 +849,29 @@ async function createStock(body, user) {
         await session.withTransaction(
             async () => {
 
-                // --------------------------------------------------
+                // ==================================================
                 // STAFF SUBSTATION
-                // --------------------------------------------------
+                // ==================================================
 
-                let staffSubstationId = null;
+                let staffSubstationId =
+                    null;
 
                 if (staff) {
 
                     staffSubstationId =
-                        getStaffSubstationId(user);
+                        getStaffSubstationId(
+                            user
+                        );
                 }
 
-                // --------------------------------------------------
+                // ==================================================
                 // BASIC DATA
-                // --------------------------------------------------
+                // ==================================================
 
                 const name =
-                    text(body.name);
-
-                const categoryName =
-                    text(body.category).toLowerCase();
+                    text(
+                        body.name
+                    );
 
                 const subcategory =
                     cleanSubcategory(
@@ -603,119 +879,143 @@ async function createStock(body, user) {
                     );
 
                 const units =
-                    wholeNumber(body.units);
+                    wholeNumber(
+                        body.units
+                    );
 
                 // --------------------------------------------------
-                // IMPORTANT:
-                //
                 // body.buyPrice = TOTAL PURCHASE COST
-                //
-                // It is NOT the unit buy price.
                 // --------------------------------------------------
 
                 const totalPurchaseCost =
-                    number(body.buyPrice);
+                    number(
+                        body.buyPrice
+                    );
 
                 const unitSellPrice =
-                    number(body.unitSellPrice);
+                    number(
+                        body.unitSellPrice
+                    );
 
                 const days =
-                    wholeNumber(body.days);
+                    wholeNumber(
+                        body.days
+                    );
 
                 const image =
-                    text(body.image);
+                    text(
+                        body.image
+                    );
 
                 const description =
-                    text(body.description);
-
-                // --------------------------------------------------
-                // VALIDATION
-                // --------------------------------------------------
-
-                if (!categoryName) {
-                    throw new Error(
-                        "Category is required."
+                    text(
+                        body.description
                     );
-                }
+
+                // ==================================================
+                // VALIDATION
+                // ==================================================
 
                 if (units <= 0) {
+
                     throw new Error(
                         "Units must be greater than zero."
                     );
                 }
 
-                if (totalPurchaseCost < 0) {
+                if (
+                    totalPurchaseCost < 0
+                ) {
+
                     throw new Error(
                         "Purchase cost cannot be negative."
                     );
                 }
 
-                if (unitSellPrice < 0) {
+                if (
+                    unitSellPrice < 0
+                ) {
+
                     throw new Error(
                         "Selling price cannot be negative."
                     );
                 }
 
-                // --------------------------------------------------
+                // ==================================================
                 // CATEGORY
-                // --------------------------------------------------
+                //
+                // IMPORTANT:
+                //
+                // body.category may already be Category._id
+                // because controllers/stock/create-update.js
+                // calls resolveCategoryId().
+                // ==================================================
 
                 const category =
-                    await getCategoryByName(
-                        categoryName,
+                    await resolveStockCategory(
+                        body.category,
                         session
                     );
 
-                if (!category) {
-                    throw new Error(
-                        "Category not found."
-                    );
-                }
+                const categoryName =
+                    text(
+                        category.name
+                    ).toLowerCase();
 
-                validateCategory(category);
-
-                // --------------------------------------------------
+                // ==================================================
                 // PRODUCT NAME
-                // --------------------------------------------------
+                // ==================================================
 
                 const productName =
                     name ||
                     subcategory;
 
                 if (!productName) {
+
                     throw new Error(
                         "Product name or subcategory is required."
                     );
                 }
 
-                // --------------------------------------------------
+                // ==================================================
                 // DUPLICATE STOCK CHECK
-                // --------------------------------------------------
+                // ==================================================
 
                 const duplicateQuery =
                     Stock.findOne({
-                        active: { $ne: false },
-                        name: productName,
-                        category: category.name,
+
+                        active: {
+                            $ne: false
+                        },
+
+                        name:
+                            productName,
+
+                        category:
+                            category.name,
+
                         subcategory
                     });
 
-                duplicateQuery.session(session);
+                duplicateQuery.session(
+                    session
+                );
 
                 const duplicate =
                     await duplicateQuery;
 
                 if (duplicate) {
+
                     throw new Error(
                         "A stock entry with the same product details already exists."
                     );
                 }
 
-                // --------------------------------------------------
+                // ==================================================
                 // UNIT BUY PRICE
                 //
                 // BACKEND COMPUTED.
-                // --------------------------------------------------
+                // ==================================================
 
                 const unitBuyPrice =
                     calculateUnitBuyPrice(
@@ -723,9 +1023,9 @@ async function createStock(body, user) {
                         units
                     );
 
-                // --------------------------------------------------
+                // ==================================================
                 // CREATE STOCK
-                // --------------------------------------------------
+                // ==================================================
 
                 const stock =
                     new Stock({
@@ -734,7 +1034,7 @@ async function createStock(body, user) {
                             productName,
 
                         category:
-                            category.name,
+                            categoryName,
 
                         subcategory,
 
@@ -745,21 +1045,24 @@ async function createStock(body, user) {
                         description,
 
                         // ------------------------------------------
-                        // STAFF STOCK IS NEVER WAREHOUSE STOCK
+                        // ADMIN = warehouse stock
+                        // STAFF = zero warehouse stock
                         // ------------------------------------------
 
                         units:
-                            staff ? 0 : units,
+                            admin
+                                ? units
+                                : 0,
 
                         buyPrice:
-                            staff
-                                ? 0
-                                : unitBuyPrice,
+                            admin
+                                ? unitBuyPrice
+                                : 0,
 
                         unitBuyPrice:
-                            staff
-                                ? 0
-                                : unitBuyPrice,
+                            admin
+                                ? unitBuyPrice
+                                : 0,
 
                         // ------------------------------------------
                         // ADMIN = warehouse FIFO
@@ -767,9 +1070,8 @@ async function createStock(body, user) {
                         // ------------------------------------------
 
                         purchaseBatches:
-                            staff
-                                ? []
-                                : [
+                            admin
+                                ? [
                                     {
                                         units,
 
@@ -780,15 +1082,16 @@ async function createStock(body, user) {
                                             new Date()
                                     }
                                 ]
+                                : []
                     });
 
                 await stock.save({
                     session
                 });
 
-                // --------------------------------------------------
-                // CREATE PRODUCT
-                // --------------------------------------------------
+                // ==================================================
+                // CREATE PRODUCT FIFO
+                // ==================================================
 
                 const productFifoBatches =
                     staff
@@ -799,12 +1102,8 @@ async function createStock(body, user) {
                                 buyPrice:
                                     unitBuyPrice,
 
-                                purchasedAt:
+                                receivedAt:
                                     new Date(),
-
-                                // ----------------------------------
-                                // CRITICAL STAFF OWNERSHIP
-                                // ----------------------------------
 
                                 StaffFIFOsubstation:
                                     new mongoose.Types.ObjectId(
@@ -813,6 +1112,10 @@ async function createStock(body, user) {
                             }
                         ]
                         : [];
+
+                // ==================================================
+                // CREATE PRODUCT
+                // ==================================================
 
                 const product =
                     new Product({
@@ -863,27 +1166,34 @@ async function createStock(body, user) {
                     session
                 });
 
-                // --------------------------------------------------
+                // ==================================================
                 // STAFF SUBSTATION INVENTORY
-                // --------------------------------------------------
+                // ==================================================
 
                 if (staff) {
 
                     await updateStaffSubstationInventory(
+
                         staffSubstationId,
+
                         product,
+
                         units,
+
                         session
                     );
                 }
 
-                // --------------------------------------------------
+                // ==================================================
                 // ADMIN WAREHOUSE TOTALS
-                // --------------------------------------------------
+                // ==================================================
 
-                await recalculateStockTotals(
-                    session
-                );
+                if (admin) {
+
+                    await recalculateStockTotals(
+                        session
+                    );
+                }
 
                 result = {
                     stock,
@@ -893,6 +1203,7 @@ async function createStock(body, user) {
         );
 
         return {
+
             stock:
                 result.stock.toObject
                     ? result.stock.toObject()
@@ -939,24 +1250,49 @@ async function updateStockEntry(
     user
 ) {
 
+    // ------------------------------------------------------
+    // VALIDATE USER
+    // ------------------------------------------------------
+
+    validateStockUser(
+        user
+    );
+
+    const staff =
+        isStaff(user);
+
+    const admin =
+        isAdmin(user);
+
+    // ------------------------------------------------------
+    // VALIDATE STOCK ID
+    // ------------------------------------------------------
+
     if (
         !stockId ||
-        !mongoose.Types.ObjectId.isValid(stockId)
+        !mongoose.Types.ObjectId.isValid(
+            stockId
+        )
     ) {
+
         throw new Error(
             "Invalid stock ID."
         );
     }
 
-    const staff =
-        isStaff(user);
+    // ------------------------------------------------------
+    // STAFF SUBSTATION
+    // ------------------------------------------------------
 
-    let staffSubstationId = null;
+    let staffSubstationId =
+        null;
 
     if (staff) {
 
         staffSubstationId =
-            getStaffSubstationId(user);
+            getStaffSubstationId(
+                user
+            );
     }
 
     const session =
@@ -969,120 +1305,138 @@ async function updateStockEntry(
         await session.withTransaction(
             async () => {
 
-                // --------------------------------------------------
+                // ==================================================
                 // LOAD STOCK
-                // --------------------------------------------------
+                // ==================================================
 
                 const stockQuery =
-                    Stock.findById(stockId);
+                    Stock.findById(
+                        stockId
+                    );
 
-                stockQuery.session(session);
+                stockQuery.session(
+                    session
+                );
 
                 const stock =
                     await stockQuery;
 
                 if (!stock) {
+
                     throw new Error(
                         "Stock not found."
                     );
                 }
 
-                // --------------------------------------------------
+                // ==================================================
                 // ADMIN RECONCILES WAREHOUSE FIFO
-                // --------------------------------------------------
+                // ==================================================
 
-                if (!staff) {
+                if (admin) {
 
                     reconcilePurchaseBatches(
                         stock
                     );
                 }
 
-                // --------------------------------------------------
+                // ==================================================
                 // ADDITIONAL UNITS
-                //
-                // IMPORTANT:
                 //
                 // body.units means ADDITIONAL units.
                 // It does NOT replace current units.
-                // --------------------------------------------------
+                // ==================================================
 
                 const additionalUnits =
                     wholeNumber(
                         body.units
                     );
 
-                if (additionalUnits < 0) {
+                if (
+                    additionalUnits < 0
+                ) {
+
                     throw new Error(
                         "Additional units cannot be negative."
                     );
                 }
 
-                // --------------------------------------------------
+                // ==================================================
                 // TOTAL PURCHASE COST
                 //
                 // body.buyPrice is TOTAL cost for the
                 // additional units.
-                // --------------------------------------------------
+                // ==================================================
 
                 const totalPurchaseCost =
-                    number(body.buyPrice);
+                    number(
+                        body.buyPrice
+                    );
 
                 if (
                     additionalUnits > 0 &&
                     totalPurchaseCost < 0
                 ) {
+
                     throw new Error(
                         "Purchase cost cannot be negative."
                     );
                 }
 
-                // --------------------------------------------------
+                // ==================================================
                 // CATEGORY
-                // --------------------------------------------------
+                //
+                // IMPORTANT:
+                //
+                // body.category normally contains Category._id
+                // because the controller resolves it first.
+                //
+                // If category was omitted, use existing Stock
+                // category.
+                // ==================================================
 
-                let categoryName =
-                    text(body.category);
+                let categoryValue =
+                    body.category;
 
-                if (categoryName) {
-                    categoryName =
-                        categoryName.toLowerCase();
-                }
+                if (
+                    categoryValue === undefined ||
+                    categoryValue === null ||
+                    text(categoryValue) === ""
+                ) {
 
-                if (!categoryName) {
-
-                    categoryName =
-                        text(stock.category)
-                            .toLowerCase();
+                    categoryValue =
+                        stock.category;
                 }
 
                 const category =
-                    await getCategoryByName(
-                        categoryName,
+                    await resolveStockCategory(
+                        categoryValue,
                         session
                     );
 
-                if (!category) {
-                    throw new Error(
-                        "Category not found."
-                    );
-                }
+                const categoryName =
+                    text(
+                        category.name
+                    ).toLowerCase();
 
-                validateCategory(category);
-
-                // --------------------------------------------------
+                // ==================================================
                 // PRODUCT NAME
-                // --------------------------------------------------
+                // ==================================================
 
                 const subcategory =
                     cleanSubcategory(
-                        body.subcategory !== undefined
+
+                        body.subcategory !==
+                        undefined
+
                             ? body.subcategory
+
                             : stock.subcategory
                     );
 
                 const requestedName =
-                    text(body.name);
+                    text(
+                        body.name
+                    );
 
                 const productName =
                     requestedName ||
@@ -1090,61 +1444,85 @@ async function updateStockEntry(
                     subcategory;
 
                 if (!productName) {
+
                     throw new Error(
                         "Product name or subcategory is required."
                     );
                 }
 
-                // --------------------------------------------------
+                // ==================================================
                 // SELL PRICE
-                // --------------------------------------------------
+                // ==================================================
 
                 const unitSellPrice =
-                    body.unitSellPrice !== undefined
-                        ? number(body.unitSellPrice)
+                    body.unitSellPrice !==
+                    undefined
+
+                        ? number(
+                            body.unitSellPrice
+                        )
+
                         : null;
 
                 if (
                     unitSellPrice !== null &&
                     unitSellPrice < 0
                 ) {
+
                     throw new Error(
                         "Selling price cannot be negative."
                     );
                 }
 
-                // --------------------------------------------------
+                // ==================================================
                 // OTHER FIELDS
-                // --------------------------------------------------
+                // ==================================================
 
                 const days =
-                    body.days !== undefined
-                        ? wholeNumber(body.days)
+                    body.days !==
+                    undefined
+
+                        ? wholeNumber(
+                            body.days
+                        )
+
                         : stock.days;
 
                 const image =
-                    body.image !== undefined
-                        ? text(body.image)
+                    body.image !==
+                    undefined
+
+                        ? text(
+                            body.image
+                        )
+
                         : stock.image;
 
                 const description =
-                    body.description !== undefined
-                        ? text(body.description)
+                    body.description !==
+                    undefined
+
+                        ? text(
+                            body.description
+                        )
+
                         : stock.description;
 
-                // --------------------------------------------------
+                // ==================================================
                 // DUPLICATE CHECK
-                // --------------------------------------------------
+                // ==================================================
 
                 const duplicateQuery =
                     Stock.findOne({
 
                         _id: {
-                            $ne: stock._id
+                            $ne:
+                                stock._id
                         },
 
                         active: {
-                            $ne: false
+                            $ne:
+                                false
                         },
 
                         name:
@@ -1156,26 +1534,29 @@ async function updateStockEntry(
                         subcategory
                     });
 
-                duplicateQuery.session(session);
+                duplicateQuery.session(
+                    session
+                );
 
                 const duplicate =
                     await duplicateQuery;
 
                 if (duplicate) {
+
                     throw new Error(
                         "Another stock entry with the same product details already exists."
                     );
                 }
 
                 // ==================================================
-                // UPDATE STOCK
+                // UPDATE COMMON STOCK FIELDS
                 // ==================================================
 
                 stock.name =
                     productName;
 
                 stock.category =
-                    category.name;
+                    categoryName;
 
                 stock.subcategory =
                     subcategory;
@@ -1191,9 +1572,11 @@ async function updateStockEntry(
 
                 // ==================================================
                 // ADMIN STOCK
+                //
+                // Warehouse FIFO
                 // ==================================================
 
-                if (!staff) {
+                if (admin) {
 
                     if (
                         !stock.purchaseBatches ||
@@ -1201,15 +1584,18 @@ async function updateStockEntry(
                             stock.purchaseBatches
                         )
                     ) {
+
                         stock.purchaseBatches =
                             [];
                     }
 
                     // ----------------------------------------------
-                    // NEW FIFO BATCH
+                    // CREATE NEW FIFO BATCH
                     // ----------------------------------------------
 
-                    if (additionalUnits > 0) {
+                    if (
+                        additionalUnits > 0
+                    ) {
 
                         const additionalUnitBuyPrice =
                             calculateUnitBuyPrice(
@@ -1249,7 +1635,7 @@ async function updateStockEntry(
                         );
 
                     // ----------------------------------------------
-                    // Recalculate unit buy price
+                    // Recalculate warehouse FIFO value
                     // ----------------------------------------------
 
                     const fifoValue =
@@ -1257,7 +1643,9 @@ async function updateStockEntry(
                             stock.purchaseBatches
                         );
 
-                    if (stock.units > 0) {
+                    if (
+                        stock.units > 0
+                    ) {
 
                         stock.unitBuyPrice =
                             fifoValue /
@@ -1268,26 +1656,33 @@ async function updateStockEntry(
 
                     } else {
 
-                        stock.unitBuyPrice = 0;
-                        stock.buyPrice = 0;
+                        stock.unitBuyPrice =
+                            0;
+
+                        stock.buyPrice =
+                            0;
                     }
                 }
 
                 // ==================================================
                 // STAFF STOCK
                 //
-                // Staff never owns warehouse stock.
+                // Staff NEVER owns warehouse stock.
                 // ==================================================
 
-                else {
+                else if (staff) {
 
-                    stock.units = 0;
+                    stock.units =
+                        0;
 
-                    stock.purchaseBatches = [];
+                    stock.purchaseBatches =
+                        [];
 
-                    stock.buyPrice = 0;
+                    stock.buyPrice =
+                        0;
 
-                    stock.unitBuyPrice = 0;
+                    stock.unitBuyPrice =
+                        0;
                 }
 
                 await stock.save({
@@ -1300,23 +1695,27 @@ async function updateStockEntry(
 
                 const productQuery =
                     Product.findOne({
-                        stock: stock._id
+                        stock:
+                            stock._id
                     });
 
-                productQuery.session(session);
+                productQuery.session(
+                    session
+                );
 
                 const product =
                     await productQuery;
 
                 if (!product) {
+
                     throw new Error(
                         "Product linked to this stock was not found."
                     );
                 }
 
-                // --------------------------------------------------
-                // PRODUCT FIELDS
-                // --------------------------------------------------
+                // ==================================================
+                // UPDATE PRODUCT FIELDS
+                // ==================================================
 
                 product.name =
                     productName;
@@ -1350,7 +1749,9 @@ async function updateStockEntry(
 
                 if (staff) {
 
-                    if (additionalUnits > 0) {
+                    if (
+                        additionalUnits > 0
+                    ) {
 
                         // ------------------------------------------
                         // BACKEND COMPUTED UNIT BUY PRICE
@@ -1365,13 +1766,12 @@ async function updateStockEntry(
                         // ------------------------------------------
                         // CREATE NEW STAFF FIFO BATCH
                         //
-                        // IMPORTANT:
-                        //
                         // StaffFIFOsubstation comes ONLY from
                         // authenticated user.
                         // ------------------------------------------
 
                         addStaffProductFifoBatch(
+
                             product,
 
                             additionalUnits,
@@ -1386,6 +1786,7 @@ async function updateStockEntry(
                         // ------------------------------------------
 
                         await updateStaffSubstationInventory(
+
                             staffSubstationId,
 
                             product,
@@ -1397,12 +1798,8 @@ async function updateStockEntry(
                     }
 
                     // ------------------------------------------------
-                    // Product FIFO recalculation is handled by
-                    // addStaffProductFifoBatch when new units are
-                    // added.
-                    //
-                    // If no additional units were added, preserve
-                    // existing Product FIFO.
+                    // Ensure Product.units and current FIFO price
+                    // match the Product FIFO.
                     // ------------------------------------------------
 
                     recalculateProductFifo(
@@ -1413,10 +1810,10 @@ async function updateStockEntry(
                 // ==================================================
                 // ADMIN PRODUCT
                 //
-                // Warehouse additions DO NOT immediately allocate
+                // Warehouse additions do NOT immediately allocate
                 // Product inventory to substations.
                 //
-                // Product FIFO remains untouched here.
+                // Product FIFO remains untouched.
                 // ==================================================
 
                 await product.save({
@@ -1424,12 +1821,17 @@ async function updateStockEntry(
                 });
 
                 // ==================================================
-                // RECALCULATE STOCK TOTALS
+                // RECALCULATE WAREHOUSE TOTALS
+                //
+                // Only necessary for admin warehouse changes.
                 // ==================================================
 
-                await recalculateStockTotals(
-                    session
-                );
+                if (admin) {
+
+                    await recalculateStockTotals(
+                        session
+                    );
+                }
 
                 result = {
                     stock,
@@ -1439,6 +1841,7 @@ async function updateStockEntry(
         );
 
         return {
+
             stock:
                 result.stock.toObject
                     ? result.stock.toObject()
@@ -1469,8 +1872,6 @@ module.exports = {
 
     updateStockEntry,
 
-    // Exported because other stock-service modules may use
-    // the same Product FIFO logic.
     recalculateProductFifo,
 
     addStaffProductFifoBatch,
