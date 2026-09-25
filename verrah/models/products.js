@@ -25,11 +25,36 @@ const directionsOfUseSchema = new mongoose.Schema(
 
 const fifoBatchSchema = new mongoose.Schema(
   {
-    units: { type: Number, required: true, min: 0, default: 0 },
-    buyPrice: { type: Number, required: true, min: 0, default: 0 },
-    receivedAt: { type: Date, required: true, default: Date.now }
+    units: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
+    },
+
+    buyPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0
+    },
+
+    receivedAt: {
+      type: Date,
+      required: true,
+      default: Date.now
+    },
+
+    StaffFIFOsubstation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Substation",
+      default: null
+    }
   },
-  { timestamps: true }
+
+  {
+    timestamps: true
+  }
 );
 
 const productSchema = new mongoose.Schema(
