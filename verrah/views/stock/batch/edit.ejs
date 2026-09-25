@@ -12,6 +12,7 @@ Expected variables:
     batch
     error
     saved
+    user
 
 Editable:
 
@@ -20,7 +21,13 @@ Editable:
 
 Read-only:
 
-    purchasedAt
+    purchasedAt / receivedAt
+
+ROUTES — DO NOT CHANGE:
+
+    GET  /stock/:id/batches
+    GET  /stock/:id/batch/:batchId
+    POST /stock/:id/batch/:batchId
 ==========================================================
 */
 
@@ -36,20 +43,71 @@ const batchId =
         : "";
 
 
+/*
+==========================================================
+STAFF
+==========================================================
+
+Staff batches belong to Product.fifoBatches and use:
+
+    StaffFIFOsubstation
+
+Admin/non-staff batches belong to:
+
+    Stock.purchaseBatches
+==========================================================
+*/
+
+const isStaff =
+    typeof user !== "undefined" &&
+    user &&
+    user.role === "staff";
+
+
+/*
+==========================================================
+BATCH DATE
+==========================================================
+
+Support both possible FIFO date fields:
+
+    purchasedAt
+    receivedAt
+
+This allows the same view to display:
+
+    Stock.purchaseBatches
+    Product.fifoBatches
+==========================================================
+*/
+
+const rawBatchDate =
+    batch
+    && (
+        batch.purchasedAt ||
+        batch.receivedAt ||
+        batch.createdAt
+    )
+        ? (
+            batch.purchasedAt ||
+            batch.receivedAt ||
+            batch.createdAt
+        )
+        : null;
+
+
 const batchDate =
-    batch && batch.purchasedAt
-        ? new Date(batch.purchasedAt)
+    rawBatchDate
+        ? new Date(rawBatchDate)
         : null;
 
 
 /*
- * Keep the existing batch units as a string.
- *
- * Do NOT use Number() here.
- *
- * The value is going directly into the
- * HTML form field.
- */
+==========================================================
+CURRENT UNITS
+==========================================================
+*/
+
 const currentUnits =
     batch &&
     batch.units !== undefined &&
@@ -57,6 +115,12 @@ const currentUnits =
         ? String(batch.units)
         : "";
 
+
+/*
+==========================================================
+CURRENT BUY PRICE
+==========================================================
+*/
 
 const currentBuyPrice =
     batch &&
@@ -83,7 +147,7 @@ const currentBuyPrice =
         <div>
 
             <h1 class="sales-title">
-                Edit Stock Batch
+                Edit FIFO Batch
             </h1>
 
             <p class="sales-subtitle">
@@ -112,6 +176,7 @@ const currentBuyPrice =
             <i class="fas fa-layer-group"></i>
             Batches
         </a>
+
 
         <a
             href="/stock/<%= stockId %>"
@@ -163,7 +228,7 @@ const currentBuyPrice =
 
                 <i class="fas fa-circle-check"></i>
 
-                Stock batch updated successfully.
+                FIFO batch updated successfully.
 
             </div>
 
@@ -196,13 +261,48 @@ const currentBuyPrice =
 
 
                 <!-- =================================================
+                     BATCH TYPE
+                ================================================== -->
+
+                <div class="sales-liability-field">
+
+                    <label>
+                        Batch Type
+                    </label>
+
+                    <div class="sales-liability-assigned">
+
+                        <span class="sales-liability-assigned-label">
+                            FIFO
+                        </span>
+
+                        <strong>
+
+                            <% if (isStaff) { %>
+
+                                Product FIFO Batch
+
+                            <% } else { %>
+
+                                Stock Purchase Batch
+
+                            <% } %>
+
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
                      FORM
                 ================================================== -->
 
                 <form
                     id="stockBatchEditForm"
                     method="POST"
-                    action="/stock/<%= stockId %>/batches/<%= batchId %>"
+                    action="/stock/<%= stockId %>/batch/<%= batchId %>"
                     class="sales-liability-form"
                 >
 
@@ -279,6 +379,50 @@ const currentBuyPrice =
 
 
                     <!-- =============================================
+                         STAFF SUBSTATION
+                    ============================================== -->
+
+                    <% if (isStaff) { %>
+
+                        <div class="sales-liability-field">
+
+                            <label>
+                                Substation
+                            </label>
+
+                            <div class="sales-liability-assigned">
+
+                                <span class="sales-liability-assigned-label">
+                                    Assigned
+                                </span>
+
+                                <strong>
+
+                                    <%
+                                    const staffSubstation =
+                                        batch &&
+                                        batch.StaffFIFOsubstation
+                                            ? batch.StaffFIFOsubstation
+                                            : (
+                                                user &&
+                                                user.assignedSubstation
+                                                    ? user.assignedSubstation
+                                                    : null
+                                            );
+                                    %>
+
+                                    <%= staffSubstation || "Assigned Substation" %>
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    <% } %>
+
+
+                    <!-- =============================================
                          UNITS
                     ============================================== -->
 
@@ -310,7 +454,7 @@ const currentBuyPrice =
                     <div class="sales-liability-field">
 
                         <label for="buyPrice">
-                            Buy Price
+                            Unit Buy Price
                         </label>
 
                         <input
@@ -328,9 +472,9 @@ const currentBuyPrice =
                     </div>
 
 
-                    <!-- =============================================
+                    <!-- =================================================
                          ACTIONS
-                    ============================================== -->
+                    ================================================== -->
 
                     <div class="sales-liability-form-actions">
 
@@ -404,6 +548,12 @@ const currentBuyPrice =
                 );
 
 
+            /*
+             * ======================================================
+             * UNITS
+             * ======================================================
+             */
+
             if (!unitsInput) {
 
                 event.preventDefault();
@@ -412,19 +562,12 @@ const currentBuyPrice =
             }
 
 
-            /*
-             * Read the actual input value.
-             */
             const rawUnits =
                 String(
                     unitsInput.value || ""
                 ).trim();
 
 
-            /*
-             * If the browser somehow gives us
-             * an empty value, stop submission.
-             */
             if (!rawUnits) {
 
                 event.preventDefault();
@@ -435,18 +578,15 @@ const currentBuyPrice =
             }
 
 
-            /*
-             * Convert only after confirming
-             * that a value exists.
-             */
             const units =
                 Number(rawUnits);
 
 
             /*
-             * Units must be a non-negative
-             * whole number.
+             * Units must be a safe,
+             * non-negative whole number.
              */
+
             if (
                 !Number.isSafeInteger(
                     units
@@ -462,29 +602,16 @@ const currentBuyPrice =
             }
 
 
-            /*
-             * IMPORTANT:
-             *
-             * Explicitly put the normalized
-             * integer back into the input.
-             *
-             * Because the input has:
-             *
-             *     name="units"
-             *
-             * the browser will submit:
-             *
-             *     units=25
-             *
-             * for example.
-             */
             unitsInput.value =
                 String(units);
 
 
             /*
-             * Normalize buy price too.
+             * ======================================================
+             * BUY PRICE
+             * ======================================================
              */
+
             if (buyPriceInput) {
 
                 const rawBuyPrice =
@@ -531,16 +658,14 @@ const currentBuyPrice =
 
 
             /*
-             * Final safety check:
+             * ======================================================
+             * HIDDEN NORMALIZED UNITS
+             * ======================================================
              *
-             * Create/update a hidden field
-             * containing the exact `units`
-             * parameter expected by Express.
-             *
-             * Remove an existing one first so
-             * duplicate `units` parameters are
-             * never submitted.
+             * Ensure only one explicit units
+             * parameter exists.
              */
+
             const existingHidden =
                 form.querySelector(
                     'input[type="hidden"][data-stock-units]'
@@ -576,16 +701,6 @@ const currentBuyPrice =
             form.appendChild(
                 hiddenUnits
             );
-
-
-            /*
-             * Keep the visible input as well.
-             *
-             * The hidden field is appended last,
-             * so Express receives the same value.
-             */
-            unitsInput.value =
-                String(units);
 
         }
     );
