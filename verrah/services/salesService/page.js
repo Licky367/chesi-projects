@@ -4,6 +4,10 @@
 // ==========================================================
 
 
+const mongoose =
+    require("mongoose");
+
+
 const filterService =
     require("./filter");
 
@@ -108,6 +112,33 @@ async function getSalesPageData(
             "daily-cash-sales",
             user
         );
+
+
+    // ======================================================
+    // PRODUCT CATEGORY FILTER
+    // ======================================================
+
+    const requestedCategory =
+        query.category
+            ? String(query.category).trim()
+            : "";
+
+
+    const categoryId =
+        requestedCategory &&
+        mongoose.Types.ObjectId.isValid(
+            requestedCategory
+        )
+            ? requestedCategory
+            : "";
+
+
+    if (categoryId) {
+
+        productsFilter.category =
+            categoryId;
+
+    }
 
 
     // ======================================================
@@ -335,6 +366,20 @@ async function getSalesPageData(
 
 
     // ======================================================
+    // PRESERVE PRODUCT CATEGORY FILTER
+    // ======================================================
+
+    if (categoryId) {
+
+        params.set(
+            "category",
+            categoryId
+        );
+
+    }
+
+
+    // ======================================================
     // GLOBAL SUBSTATION FILTER
     // ======================================================
 
@@ -367,6 +412,8 @@ async function getSalesPageData(
         substations,
 
         categories,
+
+        categoryId,
 
         activeFilter,
 
