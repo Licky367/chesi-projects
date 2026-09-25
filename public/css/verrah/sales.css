@@ -1839,3 +1839,137 @@ ADDITIVE ONLY
     }
 
 }
+
+
+
+/* =========================================================
+PRODUCT ANALYTICS ACTION BUTTONS
+========================================================= */
+
+#addManyToCartActions,
+#updateMarketAvailableActions {
+position: fixed;
+bottom: 20px;
+z-index: 1000;
+}
+
+/* =========================================================
+ADD TO CART — BOTTOM LEFT
+========================================================= */
+
+#addManyToCartActions {
+left: 20px;
+}
+
+/* =========================================================
+UPDATE MARKET — BOTTOM RIGHT
+========================================================= */
+
+#updateMarketAvailableActions {
+right: 20px;
+}
+
+/* =========================================================
+ACTION BUTTON
+========================================================= */
+
+#addManyToCartActions .sales-filter-button,
+#updateMarketAvailableActions .sales-filter-button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+
+min-height: 44px;
+padding: 11px 18px;
+
+border: none;
+border-radius: 8px;
+
+background: #6f4e37;
+color: #ffffff;
+
+font-size: 0.9rem;
+font-weight: 600;
+
+line-height: 1.2;
+white-space: nowrap;
+
+cursor: pointer;
+
+box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.18);
+
+transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+}
+
+/* =========================================================
+HOVER
+========================================================= */
+
+#addManyToCartActions .sales-filter-button:hover,
+#updateMarketAvailableActions .sales-filter-button:hover {
+background: #4b2e1f;
+
+transform: translateY(-1px);
+
+box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.22);
+
+}
+
+/* =========================================================
+ACTIVE
+========================================================= */
+
+#addManyToCartActions .sales-filter-button:active,
+#updateMarketAvailableActions .sales-filter-button:active {
+transform: translateY(0);
+
+box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.18);
+
+}
+
+/* =========================================================
+ICON
+========================================================= */
+
+#addManyToCartActions .sales-filter-button i,
+#updateMarketAvailableActions .sales-filter-button i {
+font-size: 0.9rem;
+}
+
+/* =========================================================
+MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+#addManyToCartActions,
+#updateMarketAvailableActions {
+    bottom: 14px;
+}
+
+#addManyToCartActions {
+    left: 12px;
+}
+
+#updateMarketAvailableActions {
+    right: 12px;
+}
+
+#addManyToCartActions .sales-filter-button,
+#updateMarketAvailableActions .sales-filter-button {
+    min-height: 42px;
+    padding: 10px 13px;
+
+    font-size: 0.8rem;
+    gap: 6px;
+}
+
+}
