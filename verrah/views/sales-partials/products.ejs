@@ -56,6 +56,18 @@ const availableCategories =
 Array.isArray(categories)
 ? categories
 : [];
+
+/*
+
+CURRENT CATEGORY
+
+*/
+
+const selectedCategoryId =
+typeof categoryId !== "undefined" &&
+categoryId
+? String(categoryId)
+: "";
 %>
 
 <!-- ======================================================
@@ -63,6 +75,7 @@ Array.isArray(categories)
 ======================================================= --><div class="sales-section-heading"><div>
 
     <h2>
+
         Product Analytics
 
         <button
@@ -73,6 +86,7 @@ Array.isArray(categories)
         >
             <i class="fas fa-bars"></i>
         </button>
+
     </h2>
 
     <p>
@@ -90,6 +104,7 @@ Array.isArray(categories)
     id="categoryFilterOverlay"
 ></div>
 
+
 <div
     id="categoryFilterPopup"
     role="dialog"
@@ -103,12 +118,15 @@ Array.isArray(categories)
             Product Categories
         </h3>
 
+
         <button
             type="button"
             id="closeCategoryFilter"
             aria-label="Close category filter"
         >
+
             <i class="fas fa-times"></i>
+
         </button>
 
     </div>
@@ -118,10 +136,16 @@ Array.isArray(categories)
 
         <button
             type="button"
-            class="category-filter-option active"
+            class="category-filter-option <%= !selectedCategoryId ? 'active' : '' %>"
             data-category-id="all"
+            onclick="
+                window.location.href =
+                '<%= currentPath || '/sales' %>'
+            "
         >
+
             All Categories
+
         </button>
 
 
@@ -129,10 +153,16 @@ Array.isArray(categories)
 
             <button
                 type="button"
-                class="category-filter-option"
+                class="category-filter-option <%= selectedCategoryId === String(category._id) ? 'active' : '' %>"
                 data-category-id="<%= category._id %>"
+                onclick="
+                    window.location.href =
+                    '<%= currentPath || '/sales' %>?category=<%= category._id %>'
+                "
             >
+
                 <%= category.name %>
+
             </button>
 
         <% }); %>
@@ -278,31 +308,12 @@ Array.isArray(categories)
             { %>
 
 
-                <%
-                let productCategoryId = "";
-
-                if (
-                    product.category &&
-                    typeof product.category === "object" &&
-                    product.category._id
-                ) {
-                    productCategoryId =
-                        String(product.category._id);
-                } else if (product.category) {
-                    productCategoryId =
-                        String(product.category);
-                }
-                %>
-
-
                 <!-- ==================================================
                      PRODUCT ROW
                 =================================================== -->
 
                 <tr
                     class="sales-product-row"
-
-                    data-category-id="<%= productCategoryId %>"
 
                     <% if (isStaff) { %>
 
@@ -585,16 +596,6 @@ Array.isArray(categories)
     const closeButton =
         document.getElementById("closeCategoryFilter");
 
-    const options =
-        document.querySelectorAll(
-            ".category-filter-option"
-        );
-
-    const rows =
-        document.querySelectorAll(
-            ".sales-product-row"
-        );
-
 
     if (!menuIcon || !modal) {
         return;
@@ -625,48 +626,6 @@ Array.isArray(categories)
     }
 
 
-    function filterProducts(categoryId) {
-
-        rows.forEach(function (row) {
-
-            const rowCategoryId =
-                row.getAttribute(
-                    "data-category-id"
-                );
-
-            if (
-                categoryId === "all" ||
-                rowCategoryId === categoryId
-            ) {
-
-                row.style.display = "";
-
-            } else {
-
-                row.style.display = "none";
-
-            }
-
-        });
-
-
-        options.forEach(function (option) {
-
-            option.classList.toggle(
-                "active",
-                option.getAttribute(
-                    "data-category-id"
-                ) === categoryId
-            );
-
-        });
-
-
-        closeCategoryFilter();
-
-    }
-
-
     menuIcon.addEventListener(
         "click",
         function (event) {
@@ -679,42 +638,32 @@ Array.isArray(categories)
     );
 
 
-    closeButton.addEventListener(
-        "click",
-        function () {
+    if (closeButton) {
 
-            closeCategoryFilter();
-
-        }
-    );
-
-
-    overlay.addEventListener(
-        "click",
-        function () {
-
-            closeCategoryFilter();
-
-        }
-    );
-
-
-    options.forEach(function (option) {
-
-        option.addEventListener(
+        closeButton.addEventListener(
             "click",
             function () {
 
-                filterProducts(
-                    option.getAttribute(
-                        "data-category-id"
-                    )
-                );
+                closeCategoryFilter();
 
             }
         );
 
-    });
+    }
+
+
+    if (overlay) {
+
+        overlay.addEventListener(
+            "click",
+            function () {
+
+                closeCategoryFilter();
+
+            }
+        );
+
+    }
 
 
     document.addEventListener(
