@@ -1848,12 +1848,12 @@ PRODUCT ANALYTICS ACTION BUTTONS
 #addManyToCartActions,
 #updateMarketAvailableActions {
 position: fixed;
-top: 92px;
+bottom: 70px;
 z-index: 1000;
 }
 
 /* =========================================================
-ADD TO CART — TOP LEFT
+ADD TO CART — BOTTOM LEFT
 ========================================================= */
 
 #addManyToCartActions {
@@ -1861,7 +1861,7 @@ left: 20px;
 }
 
 /* =========================================================
-UPDATE MARKET — TOP RIGHT
+UPDATE MARKET — BOTTOM RIGHT
 ========================================================= */
 
 #updateMarketAvailableActions {
@@ -1951,7 +1951,7 @@ MOBILE
 
 #addManyToCartActions,
 #updateMarketAvailableActions {
-    top: 92px;
+    bottom: 64px;
 }
 
 #addManyToCartActions {
