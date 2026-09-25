@@ -5,20 +5,26 @@ VERRAH COSMETICS
 STOCK FIFO BATCHES
 ==========================================================
 
-Displays all purchase batches belonging to a stock entry.
+ADMIN
+-----
+Displays:
+    Stock.purchaseBatches
 
-Tabs:
-    Batches
-    New Batch
+STAFF
+-----
+Displays:
+    Product.fifoBatches
 
-Columns:
-    Date
-    Units
-    Buy Price
+The service is responsible for filtering staff batches to
+the authenticated user's assigned substation.
 
-Latest batch appears first.
+Routes MUST remain exactly as they already exist:
+
+    GET /stock/:id/batches
+    GET /stock/:id/batch/:batchId
 
 Clicking a row opens:
+
     /stock/:stockId/batch/:batchId
 
 New batch form:
@@ -30,6 +36,9 @@ New batch form:
 The service calculates:
 
     buyPrice = totalBuyingPrice / units
+
+IMPORTANT:
+This view does NOT change any route.
 ==========================================================
 */
 
@@ -41,21 +50,55 @@ const stockId =
 
 
 // ==========================================================
+// DETERMINE STAFF
+// ==========================================================
+
+const isStaff =
+    typeof user !== "undefined" &&
+    user &&
+    user.role === "staff";
+
+
+// ==========================================================
 // SORT BATCHES
+//
+// Supports both:
+//
+//     purchasedAt
+//
+// and:
+//
+//     receivedAt
+//
+// This is useful because Product FIFO batches may have been
+// created by different FIFO creation services.
+//
 // ==========================================================
 
 const sortedBatches =
     Array.isArray(batches)
         ? [...batches].sort((a, b) => {
 
+            const aRawDate =
+                a.purchasedAt ||
+                a.receivedAt ||
+                a.createdAt ||
+                null;
+
+            const bRawDate =
+                b.purchasedAt ||
+                b.receivedAt ||
+                b.createdAt ||
+                null;
+
             const aDate =
-                a.purchasedAt
-                    ? new Date(a.purchasedAt).getTime()
+                aRawDate
+                    ? new Date(aRawDate).getTime()
                     : 0;
 
             const bDate =
-                b.purchasedAt
-                    ? new Date(b.purchasedAt).getTime()
+                bRawDate
+                    ? new Date(bRawDate).getTime()
                     : 0;
 
             return bDate - aDate;
@@ -67,6 +110,7 @@ const sortedBatches =
 
 
 <div class="sales-page">
+
 
     <!-- =====================================================
          HEADER
@@ -85,7 +129,9 @@ const sortedBatches =
 
             <h1 class="sales-title">
 
-                Stock Batches
+                <%= isStaff
+                    ? "Product Batches"
+                    : "Stock Batches" %>
 
             </h1>
 
@@ -108,6 +154,7 @@ const sortedBatches =
     ====================================================== -->
 
     <div class="sales-navigation">
+
 
         <!-- ================================================
              STOCK DETAILS
@@ -139,6 +186,7 @@ const sortedBatches =
             Batches
 
         </a>
+
 
     </div>
 
@@ -219,13 +267,27 @@ const sortedBatches =
                         <div>
 
                             <h2>
-                                Purchase Batches
+
+                                <%= isStaff
+                                    ? "Product FIFO Batches"
+                                    : "Purchase Batches" %>
+
                             </h2>
+
 
                             <p class="sales-subtitle">
 
-                                Existing FIFO purchase batches
-                                for this stock.
+                                <% if (isStaff) { %>
+
+                                    FIFO batches belonging to your
+                                    assigned substation.
+
+                                <% } else { %>
+
+                                    Existing FIFO purchase batches
+                                    for this stock.
+
+                                <% } %>
 
                             </p>
 
@@ -245,6 +307,7 @@ const sortedBatches =
 
                             <table class="sales-table">
 
+
                                 <thead>
 
                                     <tr>
@@ -253,9 +316,11 @@ const sortedBatches =
                                             Date
                                         </th>
 
+
                                         <th>
                                             Units
                                         </th>
+
 
                                         <th>
                                             Buy Price
@@ -272,14 +337,50 @@ const sortedBatches =
                                     <% sortedBatches.forEach(batch => { %>
 
 
+                                        <%
+                                        /*
+                                        ==================================================
+                                        BATCH DATE
+                                        ==================================================
+                                        */
+
+                                        const batchRawDate =
+                                            batch.purchasedAt ||
+                                            batch.receivedAt ||
+                                            batch.createdAt ||
+                                            null;
+
+
+                                        const batchDate =
+                                            batchRawDate
+                                                ? new Date(
+                                                    batchRawDate
+                                                )
+                                                : null;
+                                        %>
+
+
                                         <tr
                                             class="sales-product-row"
                                             tabindex="0"
                                             role="link"
+
+                                            /*
+                                            ==================================================
+                                            IMPORTANT:
+                                            KEEP EXISTING ROUTE EXACTLY.
+
+                                            /stock/:stockId/batch/:batchId
+
+                                            DO NOT CHANGE TO /batches/
+                                            ==================================================
+                                            */
+
                                             onclick="
                                                 window.location.href =
                                                 '/stock/<%= stockId %>/batch/<%= batch._id %>';
                                             "
+
                                             onkeydown="
                                                 if (
                                                     event.key === 'Enter' ||
@@ -299,15 +400,6 @@ const sortedBatches =
                                             ================== -->
 
                                             <td>
-
-                                                <%
-                                                const batchDate =
-                                                    batch.purchasedAt
-                                                        ? new Date(
-                                                            batch.purchasedAt
-                                                        )
-                                                        : null;
-                                                %>
 
 
                                                 <% if (
@@ -337,6 +429,7 @@ const sortedBatches =
 
 
                                                 <% } %>
+
 
                                             </td>
 
@@ -413,8 +506,19 @@ const sortedBatches =
 
                                             <br>
 
-                                            No purchase batches found
-                                            for this stock.
+
+                                            <% if (isStaff) { %>
+
+                                                No FIFO batches found for
+                                                your assigned substation.
+
+                                            <% } else { %>
+
+                                                No purchase batches found
+                                                for this stock.
+
+                                            <% } %>
+
 
                                         </td>
 
@@ -457,12 +561,22 @@ const sortedBatches =
                                 Create New Batch
                             </h2>
 
+
                             <p class="sales-subtitle">
 
-                                Add a new purchase batch to
-                                <%= stock && stock.name
-                                    ? stock.name
-                                    : "this stock" %>.
+                                <% if (isStaff) { %>
+
+                                    Add a new FIFO batch to your
+                                    assigned substation.
+
+                                <% } else { %>
+
+                                    Add a new purchase batch to
+                                    <%= stock && stock.name
+                                        ? stock.name
+                                        : "this stock" %>.
+
+                                <% } %>
 
                             </p>
 
@@ -578,14 +692,18 @@ const sortedBatches =
                                 <span
                                     class="sales-liability-assigned-label"
                                 >
+
                                     Calculated automatically
+
                                 </span>
 
 
                                 <strong
                                     id="calculatedBuyPrice"
                                 >
+
                                     KSh 0.00
+
                                 </strong>
 
                             </div>
@@ -632,6 +750,7 @@ const sortedBatches =
 <script>
 
 (function () {
+
 
     // ======================================================
     // TABS
