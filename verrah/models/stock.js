@@ -211,6 +211,17 @@ const stockSchema =
             },
 
             // ------------------------------------------------------
+            // SELLING PRICE
+            // ------------------------------------------------------
+
+            unitSellPrice: {
+                type: Number,
+                required: true,
+                min: 0,
+                default: 0
+            },
+
+            // ------------------------------------------------------
             // FIFO PURCHASE BATCHES
             // ------------------------------------------------------
 
@@ -278,7 +289,7 @@ stockSchema.pre(
     function (next) {
 
         if (
-          !Array.isArray(
+            !Array.isArray(
                 this.purchaseBatches
             ) ||
             this.purchaseBatches.length === 0
@@ -297,7 +308,7 @@ stockSchema.pre(
             );
 
         if (
-            fifoUnits!==
+            fifoUnits !==
             Number(
                 this.units || 0
             )
@@ -320,54 +331,109 @@ stockSchema.pre(
 
 // Get current FIFO batch - oldest batch with units > 0
 stockSchema.methods.getCurrentBatch = function () {
+
     if (
-      !Array.isArray(this.purchaseBatches) ||
-      !this.purchaseBatches.length
+        !Array.isArray(this.purchaseBatches) ||
+        !this.purchaseBatches.length
     ) {
         return null;
     }
 
-    const available = this.purchaseBatches
-      .filter(b => Number(b.units || 0) > 0)
-      .sort((a, b) => new Date(a.purchasedAt) - new Date(b.purchasedAt));
+    const available =
+        this.purchaseBatches
+            .filter(
+                b =>
+                    Number(b.units || 0) > 0
+            )
+            .sort(
+                (a, b) =>
+                    new Date(a.purchasedAt) -
+                    new Date(b.purchasedAt)
+            );
 
     return available[0] || null;
 };
 
 // Get current buy price from current batch
 stockSchema.methods.getCurrentPrice = function () {
-    const batch = this.getCurrentBatch();
+
+    const batch =
+        this.getCurrentBatch();
+
     if (batch) {
-        return Number(batch.buyPrice || 0);
+        return Number(
+            batch.buyPrice || 0
+        );
     }
+
     // Fallback for legacy records with no batches
-    return Number(this.buyPrice || 0);
+    return Number(
+        this.buyPrice || 0
+    );
 };
 
 // Get current batch units
 stockSchema.methods.getCurrentBatchUnits = function () {
-    const batch = this.getCurrentBatch();
+
+    const batch =
+        this.getCurrentBatch();
+
     if (batch) {
-        return Number(batch.units || 0);
+        return Number(
+            batch.units || 0
+        );
     }
-    return Number(this.units || 0);
+
+    return Number(
+        this.units || 0
+    );
 };
 
-// Virtuals for EJS
-stockSchema.virtual("currentBatchPrice").get(function () {
+// ==========================================================
+// VIRTUALS FOR EJS
+// ==========================================================
+
+stockSchema.virtual(
+    "currentBatchPrice"
+).get(function () {
+
     return this.getCurrentPrice();
+
 });
 
-stockSchema.virtual("currentBatch").get(function () {
+stockSchema.virtual(
+    "currentBatch"
+).get(function () {
+
     return this.getCurrentBatch();
+
 });
 
-stockSchema.virtual("currentBatchUnits").get(function () {
+stockSchema.virtual(
+    "currentBatchUnits"
+).get(function () {
+
     return this.getCurrentBatchUnits();
+
 });
 
-stockSchema.set("toJSON", { virtuals: true });
-stockSchema.set("toObject", { virtuals: true });
+// ==========================================================
+// JSON / OBJECT VIRTUALS
+// ==========================================================
+
+stockSchema.set(
+    "toJSON",
+    {
+        virtuals: true
+    }
+);
+
+stockSchema.set(
+    "toObject",
+    {
+        virtuals: true
+    }
+);
 
 // ==========================================================
 // EXPORT
