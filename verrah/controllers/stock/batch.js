@@ -1,4 +1,4 @@
-// ==========================================================
+// =========================================================
 // controllers/stock/batch.js
 // STOCK FIFO BATCH CONTROLLER
 // VERRAH COSMETICS
