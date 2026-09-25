@@ -28,6 +28,9 @@ const substationService =
 const Product =
     require("../../models/products");
 
+const Category =
+    require("../../models/category");
+
 
 // ==========================================================
 // GET SALES PAGE DATA
@@ -140,6 +143,23 @@ async function getSalesPageData(
         )
 
     ]);
+
+
+    // ======================================================
+    // LOAD ACTIVE CATEGORIES
+    // ======================================================
+
+    const categories =
+        await Category.find({
+            isActive: true
+        })
+        .select(
+            "_id name categoryIcon isActive"
+        )
+        .sort({
+            name: 1
+        })
+        .lean();
 
 
     // ======================================================
@@ -345,6 +365,8 @@ async function getSalesPageData(
         activeTab,
 
         substations,
+
+        categories,
 
         activeFilter,
 
