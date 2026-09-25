@@ -9,9 +9,12 @@
 // STAFF:
 //     - Stock.purchaseBatches is NOT increased.
 //     - Stock.units remains 0.
-//     - A matching Product.fifoBatches entry is created.
+//     - Product.fifoBatches receives a NEW batch.
+//     - StaffFIFOsubstation is saved as the staff user's
+//       assigned substation.
 //     - Product.units is increased.
-//     - The staff user's assigned substation inventory is increased.
+//     - The staff user's assigned substation inventory
+//       is increased.
 //
 // OTHER USERS:
 //     - Existing Stock FIFO behavior remains unchanged.
@@ -23,6 +26,10 @@
 //         totalBuyingPrice,
 //         purchasedAt
 //     }
+//
+// IMPORTANT:
+//     StaffFIFOsubstation is NEVER read from req.body.
+//     It is always taken from user.assignedSubstation.
 //
 // ==========================================================
 
@@ -207,9 +214,9 @@ async function createFifoBatch(
                 }
 
 
-                // ==========================================
+                // ==================================================
                 // STAFF
-                // ==========================================
+                // ==================================================
 
                 if (
                     user &&
@@ -234,6 +241,46 @@ async function createFifoBatch(
 
 
                     // ======================================
+                    // STORE STAFF SUBSTATION ID
+                    // ======================================
+                    //
+                    // IMPORTANT:
+                    //
+                    // This value is taken from the authenticated
+                    // staff user.
+                    //
+                    // It is NOT taken from body.StaffFIFOsubstation.
+                    //
+                    // ======================================
+
+                    const StaffFIFOsubstation =
+                        new mongoose.Types.ObjectId(
+                            user.assignedSubstation
+                        );
+
+
+                    // ======================================
+                    // FIND ASSIGNED SUBSTATION
+                    // ======================================
+
+                    const substation =
+                        await Substation.findById(
+                            StaffFIFOsubstation
+                        )
+                        .session(
+                            session
+                        );
+
+
+                    if (!substation) {
+
+                        throw new Error(
+                            "Assigned substation not found."
+                        );
+                    }
+
+
+                    // ======================================
                     // FIND LINKED PRODUCT
                     // ======================================
                     //
@@ -244,7 +291,8 @@ async function createFifoBatch(
 
                     const product =
                         await Product.findOne({
-                            stock: stock._id
+                            stock: stock._id,
+                            isActive: true
                         })
                         .session(
                             session
@@ -277,6 +325,11 @@ async function createFifoBatch(
                     // ======================================
                     // CREATE PRODUCT FIFO BATCH
                     // ======================================
+                    //
+                    // StaffFIFOsubstation records which
+                    // substation owns this FIFO batch.
+                    //
+                    // ======================================
 
                     product.fifoBatches.push({
 
@@ -285,7 +338,9 @@ async function createFifoBatch(
                         buyPrice,
 
                         receivedAt:
-                            purchasedAt
+                            purchasedAt,
+
+                        StaffFIFOsubstation
 
                     });
 
@@ -318,7 +373,9 @@ async function createFifoBatch(
 
                             productUnits +=
                                 batchUnits;
+
                         }
+
                     }
 
 
@@ -337,27 +394,6 @@ async function createFifoBatch(
                     await product.save({
                         session
                     });
-
-
-                    // ======================================
-                    // UPDATE ASSIGNED SUBSTATION
-                    // ======================================
-
-                    const substation =
-                        await Substation.findById(
-                            user.assignedSubstation
-                        )
-                        .session(
-                            session
-                        );
-
-
-                    if (!substation) {
-
-                        throw new Error(
-                            "Assigned substation not found."
-                        );
-                    }
 
 
                     // ======================================
@@ -418,6 +454,7 @@ async function createFifoBatch(
 
                     }
 
+
                     // ======================================
                     // CREATE NEW INVENTORY ENTRY
                     // ======================================
@@ -445,6 +482,7 @@ async function createFifoBatch(
                                     new Date()
 
                             });
+
                     }
 
 
@@ -531,7 +569,9 @@ async function createFifoBatch(
 
                         totalUnits +=
                             batchUnits;
+
                     }
+
                 }
 
 
@@ -554,6 +594,7 @@ async function createFifoBatch(
 
                 updatedStock =
                     stock;
+
             }
         );
 
@@ -567,7 +608,9 @@ async function createFifoBatch(
     } finally {
 
         await session.endSession();
+
     }
+
 }
 
 
