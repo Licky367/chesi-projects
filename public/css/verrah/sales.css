@@ -1841,7 +1841,6 @@ ADDITIVE ONLY
 }
 
 
-
 /* =========================================================
 PRODUCT ANALYTICS ACTION BUTTONS
 ========================================================= */
@@ -1849,12 +1848,12 @@ PRODUCT ANALYTICS ACTION BUTTONS
 #addManyToCartActions,
 #updateMarketAvailableActions {
 position: fixed;
-bottom: 70px;
+top: 92px;
 z-index: 1000;
 }
 
 /* =========================================================
-ADD TO CART — BOTTOM LEFT
+ADD TO CART — TOP LEFT
 ========================================================= */
 
 #addManyToCartActions {
@@ -1862,7 +1861,7 @@ left: 20px;
 }
 
 /* =========================================================
-UPDATE MARKET — BOTTOM RIGHT
+UPDATE MARKET — TOP RIGHT
 ========================================================= */
 
 #updateMarketAvailableActions {
@@ -1952,7 +1951,7 @@ MOBILE
 
 #addManyToCartActions,
 #updateMarketAvailableActions {
-    bottom: 14px;
+    top: 92px;
 }
 
 #addManyToCartActions {
