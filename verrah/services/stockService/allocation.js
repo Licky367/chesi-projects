@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Stock = require("../../models/stock");
 const Product = require("../../models/products");
 const Substation = require("../../models/substations");
-const { text, number, wholeNumber, productNameFromStock, totalBatchUnits, calculateUnitBuyPrice, sortFifoBatches, productFifoUnits, weightedProductBuyPrice, batchUnits } = require("./helpers");
+const { text, number, wholeNumber, productNameFromStock, totalBatchUnits, calculateUnitBuyPrice, sortFifoBatches, sortProductFifo, productFifoUnits, weightedProductBuyPrice, batchUnits } = require("./helpers");
 const { getCategoryByName } = require("./category");
 const { reconcilePurchaseBatches, consumeFifoBatches } = require("./stockFifo");
 const { reconcileProductFifo, addLayersToProductFifo } = require("./productFifo");
@@ -88,7 +88,7 @@ async function createProductFromStock(stockId, body) {
             stock.units = warehouseUnits - allocationUnits;
             product.units = newProductUnits;
 
-            product.fifoBatches = sortFifoBatches(
+            product.fifoBatches = sortProductFifo(
                 Array.isArray(product.fifoBatches) ? product.fifoBatches : []
             );
             product.fifoBatches = product.fifoBatches.filter(batch => batchUnits(batch) > 0);
@@ -125,7 +125,7 @@ async function createProductFromStock(stockId, body) {
                     );
                     inventory.units = currentUnits + allocation.units;
                     inventory.productName = product.name;
-                    inventory.category = String(product.category || "");
+                    inventory.category = product.category;
                     inventory.subcategory = product.subcategory;
                     inventory.days = Number(product.days || 0);
                     inventory.updatedAt = new Date();
@@ -133,7 +133,7 @@ async function createProductFromStock(stockId, body) {
                     substation.productInventory.push({
                         productId: product._id,
                         productName: product.name,
-                        category: String(product.category || ""),
+                        category: product.category,
                         subcategory: product.subcategory,
                         days: Number(product.days || 0),
                         units: allocation.units,

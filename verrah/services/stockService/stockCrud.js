@@ -12,6 +12,7 @@ number,
 wholeNumber,
 calculateUnitBuyPrice,
 sortFifoBatches,
+sortProductFifo,
 calculateFifoValue
 } = require("./helpers");
 
@@ -210,9 +211,7 @@ session = null
 
 const query =
     Stock.find({
-        isActive: {
-            $ne: false
-        }
+        isActive: true
     });
 
 if (session) {
@@ -275,8 +274,9 @@ for (const stock of stocks) {
         wholeNumber(stock.units) > 0
     ) {
 
-        reconcilePurchaseBatches(
-            stock
+        await reconcilePurchaseBatches(
+            stock,
+            session
         );
     }
 
@@ -286,7 +286,7 @@ for (const stock of stocks) {
 
     const fifoValue =
         calculateFifoValue(
-            stock.purchaseBatches
+            stock
         );
 
     // --------------------------------------------------
@@ -524,10 +524,9 @@ if (
 // Sort FIFO
 // ------------------------------------------------------
 
-product.fifoBatches =
-    sortProductFifo(
-        product.fifoBatches
-    );
+sortFifoBatches(
+    product.fifoBatches
+);
 
 // ------------------------------------------------------
 // Product total units
@@ -652,10 +651,9 @@ product.fifoBatches.push({
 // SORT + RECALCULATE
 // ------------------------------------------------------
 
-product.fifoBatches =
-    sortProductFifo(
-        product.fifoBatches
-    );
+sortFifoBatches(
+    product.fifoBatches
+);
 
 recalculateProductFifo(
     product
@@ -706,9 +704,7 @@ const substationQuery =
         _id:
             substationId,
 
-        isActive: {
-            $ne: false
-        }
+        isActive: true
     });
 
 if (session) {
@@ -771,9 +767,7 @@ if (inventory) {
             product.name,
 
         category:
-            String(
-                product.category || ""
-            ),
+            product.category,
 
         subcategory:
             product.subcategory,
@@ -987,9 +981,7 @@ try {
             const duplicateQuery =
                 Stock.findOne({
 
-                    isActive: {
-                        $ne: false
-                    },
+                    isActive: true,
 
                     name:
                         productName,
@@ -1019,10 +1011,9 @@ try {
             // ==================================================
 
             const unitBuyPrice =
-                calculateBatchUnitBuyPrice(
-                    totalPurchaseCost,
-                    units
-                );
+                units > 0
+                    ? totalPurchaseCost / units
+                    : 0;
 
             // ==================================================
             // CREATE STOCK
@@ -1311,8 +1302,9 @@ try {
 
             if (admin) {
 
-                reconcilePurchaseBatches(
-                    stock
+                await reconcilePurchaseBatches(
+                    stock,
+                    session
                 );
             }
 
@@ -1487,10 +1479,7 @@ try {
                             stock._id
                     },
 
-                    isActive: {
-                        $ne:
-                            false
-                    },
+                    isActive: true,
 
                     name:
                         productName,
@@ -1563,10 +1552,9 @@ try {
                 ) {
 
                     const additionalUnitBuyPrice =
-                        calculateBatchUnitBuyPrice(
-                            totalPurchaseCost,
-                            additionalUnits
-                        );
+                        additionalUnits > 0
+                            ? totalPurchaseCost / additionalUnits
+                            : 0;
 
                     stock.purchaseBatches.push({
 
@@ -1580,10 +1568,9 @@ try {
                             new Date()
                     });
 
-                    stock.purchaseBatches =
-                        sortFifoBatches(
-                            stock.purchaseBatches
-                        );
+                    sortFifoBatches(
+                        stock.purchaseBatches
+                    );
                 }
 
                 // ----------------------------------------------
@@ -1608,10 +1595,9 @@ try {
                 // ----------------------------------------------
 
                 const fifoValue =
-                    calculateFifoValue({
-                        purchaseBatches:
-                            stock.purchaseBatches
-                    });
+                    calculateFifoValue(
+                        stock
+                    );
 
                 if (
                     stock.units > 0
@@ -1732,10 +1718,9 @@ try {
                     // ------------------------------------------
 
                     const additionalUnitBuyPrice =
-                        calculateBatchUnitBuyPrice(
-                            totalPurchaseCost,
-                            additionalUnits
-                        );
+                        additionalUnits > 0
+                            ? totalPurchaseCost / additionalUnits
+                            : 0;
 
                     // ------------------------------------------
                     // ADD STAFF FIFO
