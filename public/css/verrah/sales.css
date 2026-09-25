@@ -1849,7 +1849,7 @@ PRODUCT ANALYTICS ACTION BUTTONS
 #addManyToCartActions,
 #updateMarketAvailableActions {
 position: fixed;
-bottom: 20px;
+bottom: 70px;
 z-index: 1000;
 }
 
