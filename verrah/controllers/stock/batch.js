@@ -4,24 +4,30 @@
 // VERRAH COSMETICS
 // ==========================================================
 //
-// Routes:
+// ROUTES:
 //
 //     GET /stock/:id/batches
 //         -> stock/batch/batches.ejs
 //
-//     GET /stock/:id/batches/:batchId
+//     GET /stock/:id/batch/:batchId
 //         -> stock/batch/edit.ejs
 //
-//     POST /stock/:id/batches/:batchId
+//     POST /stock/:id/batch/:batchId
 //         -> edits the selected FIFO batch
+//
+// IMPORTANT:
 //
 // The actual FIFO batch retrieval/editing logic remains in:
 //
 //     services/stockService/batchEdit.js
 //
-// IMPORTANT STAFF RULE:
+// ==========================================================
 //
-// Staff work with Product.fifoBatches.
+// STAFF RULE:
+//
+// Staff work with:
+//
+//     Product.fifoBatches
 //
 // Staff may ONLY see/edit batches where:
 //
@@ -29,13 +35,19 @@
 //         ===
 //     req.user.assignedSubstation
 //
-// Admin / non-staff users work with:
+// ADMIN / NON-STAFF:
+//
+// Admin/non-staff users work with:
 //
 //     Stock.purchaseBatches
 //
-// req.user MUST therefore be passed to the service for BOTH
-// retrieval and editing.
+// req.user MUST therefore be passed to the service for:
+//
+//     1. retrieval
+//     2. editing
+//
 // ==========================================================
+
 
 const service =
     require("../../services/stockService");
@@ -45,11 +57,15 @@ const service =
 // LIST ALL FIFO BATCHES
 // ==========================================================
 //
+// GET /stock/:id/batches
+//
 // STAFF:
-//     Returns only Product.fifoBatches belonging to their
-//     assigned substation.
+//
+//     Returns only Product.fifoBatches belonging to the
+//     authenticated staff member's assigned substation.
 //
 // ADMIN / OTHER:
+//
 //     Returns Stock.purchaseBatches.
 //
 // ==========================================================
@@ -66,23 +82,34 @@ exports.batches =
                 ""
             ).trim();
 
+
         try {
+
+            // ==================================================
+            // VALIDATE STOCK ID
+            // ==================================================
 
             if (!stockId) {
 
                 throw new Error(
                     "Stock ID is required."
                 );
+
             }
 
+
             // ==================================================
+            // GET FIFO BATCHES
+            // ==================================================
+            //
             // IMPORTANT:
             //
-            // Pass req.user so batchEdit.js can determine:
+            // req.user is required here.
             //
-            // 1. staff vs admin
-            // 2. staff assigned substation
-            // 3. which Product.fifoBatches staff may see
+            // The service determines whether the request is
+            // staff or admin/non-staff and retrieves the
+            // appropriate FIFO batches.
+            //
             // ==================================================
 
             const {
@@ -94,6 +121,11 @@ exports.batches =
                     req.user
                 );
 
+
+            // ==================================================
+            // RENDER
+            // ==================================================
+
             return res.render(
                 "stock/batch/batches",
                 {
@@ -103,6 +135,13 @@ exports.batches =
                     stock,
 
                     batches,
+
+                    /*
+                     * Make authenticated user explicitly
+                     * available to the EJS view.
+                     */
+                    user:
+                        req.user,
 
                     error:
                         req.query.error ||
@@ -121,12 +160,10 @@ exports.batches =
                 error
             );
 
-            // --------------------------------------------------
-            // STAFF
-            //
-            // If staff is denied access or their assigned
-            // substation is invalid, return them to products.
-            // --------------------------------------------------
+
+            // ==================================================
+            // STAFF ERROR
+            // ==================================================
 
             if (
                 req.user &&
@@ -138,18 +175,22 @@ exports.batches =
                         error.message
                     )}`
                 );
+
             }
 
-            // --------------------------------------------------
-            // ADMIN / OTHER
-            // --------------------------------------------------
+
+            // ==================================================
+            // ADMIN / OTHER ERROR
+            // ==================================================
 
             return res.redirect(
                 `/stock?error=${encodeURIComponent(
                     error.message
                 )}`
             );
+
         }
+
     };
 
 
@@ -157,10 +198,15 @@ exports.batches =
 // VIEW / EDIT PARTICULAR FIFO BATCH
 // ==========================================================
 //
-// STAFF:
-//     Finds the batch from their assigned substation only.
+// GET /stock/:id/batch/:batchId
 //
-// ADMIN:
+// STAFF:
+//
+//     Finds the batch from Product.fifoBatches belonging to
+//     their assigned substation only.
+//
+// ADMIN / OTHER:
+//
 //     Finds the batch from Stock.purchaseBatches.
 //
 // ==========================================================
@@ -177,36 +223,51 @@ exports.batch =
                 ""
             ).trim();
 
+
         const batchId =
             String(
                 req.params.batchId ||
                 ""
             ).trim();
 
+
         try {
+
+            // ==================================================
+            // VALIDATE STOCK ID
+            // ==================================================
 
             if (!stockId) {
 
                 throw new Error(
                     "Stock ID is required."
                 );
+
             }
+
+
+            // ==================================================
+            // VALIDATE BATCH ID
+            // ==================================================
 
             if (!batchId) {
 
                 throw new Error(
                     "FIFO batch ID is required."
                 );
+
             }
 
+
             // ==================================================
+            // GET FIFO BATCHES
+            // ==================================================
+            //
             // IMPORTANT:
             //
-            // Pass req.user here too.
+            // req.user is passed so staff filtering happens
+            // inside the service.
             //
-            // For staff this ensures getFifoBatches() returns
-            // ONLY Product.fifoBatches belonging to their
-            // assigned substation.
             // ==================================================
 
             const {
@@ -218,17 +279,25 @@ exports.batch =
                     req.user
                 );
 
+
             // ==================================================
             // FIND SELECTED BATCH
             // ==================================================
 
             const batch =
-                batches.find(
-                    currentBatch =>
-                        String(
-                            currentBatch._id
-                        ) === batchId
-                );
+                Array.isArray(batches)
+                    ? batches.find(
+                        currentBatch =>
+                            String(
+                                currentBatch._id
+                            ) === batchId
+                    )
+                    : null;
+
+
+            // ==================================================
+            // BATCH NOT FOUND
+            // ==================================================
 
             if (!batch) {
 
@@ -237,10 +306,12 @@ exports.batch =
                         "FIFO batch not found."
                     )}`
                 );
+
             }
 
+
             // ==================================================
-            // RENDER
+            // RENDER EDIT PAGE
             // ==================================================
 
             return res.render(
@@ -254,6 +325,13 @@ exports.batch =
                     batch,
 
                     batches,
+
+                    /*
+                     * Explicitly expose authenticated user
+                     * to the EJS template.
+                     */
+                    user:
+                        req.user,
 
                     error:
                         req.query.error ||
@@ -272,9 +350,10 @@ exports.batch =
                 error
             );
 
-            // --------------------------------------------------
-            // STAFF
-            // --------------------------------------------------
+
+            // ==================================================
+            // STAFF ERROR
+            // ==================================================
 
             if (
                 req.user &&
@@ -286,18 +365,22 @@ exports.batch =
                         error.message
                     )}`
                 );
+
             }
 
-            // --------------------------------------------------
-            // ADMIN / OTHER
-            // --------------------------------------------------
+
+            // ==================================================
+            // ADMIN / OTHER ERROR
+            // ==================================================
 
             return res.redirect(
                 `/stock/${stockId}/batches?error=${encodeURIComponent(
                     error.message
                 )}`
             );
+
         }
+
     };
 
 
@@ -305,15 +388,31 @@ exports.batch =
 // EDIT PARTICULAR FIFO BATCH
 // ==========================================================
 //
-// STAFF:
-//     Product.fifoBatches -> updated
-//     Product.units       -> updated
-//     Substation inventory -> updated
-//     Stock               -> NOT modified
+// POST /stock/:id/batch/:batchId
 //
-// ADMIN / OTHER ROLES:
-//     Stock.purchaseBatches -> updated
-//     Stock.units           -> updated
+// STAFF:
+//
+//     Product.fifoBatches
+//         -> updated
+//
+//     Product.units
+//         -> updated
+//
+//     Substation inventory
+//         -> updated
+//
+//     Stock
+//         -> NOT modified
+//
+// ADMIN / OTHER:
+//
+//     Stock.purchaseBatches
+//         -> updated
+//
+//     Stock.units
+//         -> updated
+//
+// ==========================================================
 //
 // IMPORTANT:
 //
@@ -338,37 +437,57 @@ exports.editBatches =
                 ""
             ).trim();
 
+
         const batchId =
             String(
                 req.params.batchId ||
                 ""
             ).trim();
 
+
         try {
+
+            // ==================================================
+            // VALIDATE STOCK ID
+            // ==================================================
 
             if (!stockId) {
 
                 throw new Error(
                     "Stock ID is required."
                 );
+
             }
+
+
+            // ==================================================
+            // VALIDATE BATCH ID
+            // ==================================================
 
             if (!batchId) {
 
                 throw new Error(
                     "FIFO batch ID is required."
                 );
+
             }
+
 
             // ==================================================
             // FORM VALUES
             // ==================================================
 
             const units =
-                req.body.units;
+                req.body
+                    ? req.body.units
+                    : undefined;
+
 
             const buyPrice =
-                req.body.buyPrice;
+                req.body
+                    ? req.body.buyPrice
+                    : undefined;
+
 
             // ==================================================
             // VALIDATE UNITS
@@ -383,7 +502,31 @@ exports.editBatches =
                 throw new Error(
                     "Units are required."
                 );
+
             }
+
+
+            // ==================================================
+            // NORMALIZE / VALIDATE UNITS
+            // ==================================================
+
+            const normalizedUnits =
+                Number(units);
+
+
+            if (
+                !Number.isSafeInteger(
+                    normalizedUnits
+                ) ||
+                normalizedUnits < 0
+            ) {
+
+                throw new Error(
+                    "Units must be a non-negative whole number."
+                );
+
+            }
+
 
             // ==================================================
             // VALIDATE BUY PRICE
@@ -398,21 +541,42 @@ exports.editBatches =
                 throw new Error(
                     "Buy price is required."
                 );
+
             }
+
+
+            // ==================================================
+            // NORMALIZE / VALIDATE BUY PRICE
+            // ==================================================
+
+            const normalizedBuyPrice =
+                Number(buyPrice);
+
+
+            if (
+                !Number.isFinite(
+                    normalizedBuyPrice
+                ) ||
+                normalizedBuyPrice < 0
+            ) {
+
+                throw new Error(
+                    "Buy price must be a non-negative number."
+                );
+
+            }
+
 
             // ==================================================
             // EDIT FIFO BATCH
             // ==================================================
             //
-            // IMPORTANT:
+            // STAFF:
             //
-            // req.user is intentionally passed as the FOURTH
-            // argument.
-            //
-            // Staff:
             //     Product.fifoBatches
             //
-            // Admin:
+            // ADMIN / OTHER:
+            //
             //     Stock.purchaseBatches
             //
             // ==================================================
@@ -423,19 +587,23 @@ exports.editBatches =
                 batchId,
 
                 {
-                    units,
-                    buyPrice
+                    units:
+                        normalizedUnits,
+
+                    buyPrice:
+                        normalizedBuyPrice
                 },
 
                 req.user
             );
 
+
             // ==================================================
             // STAFF SUCCESS
             // ==================================================
             //
-            // Staff inventory/batch work is complete.
-            // Return them to the sales/products area.
+            // Staff return to the sales page after a successful
+            // Product FIFO/substation update.
             //
             // ==================================================
 
@@ -445,9 +613,11 @@ exports.editBatches =
             ) {
 
                 return res.redirect(
-                    `/sales`
+                    "/sales"
                 );
+
             }
+
 
             // ==================================================
             // ADMIN / OTHER SUCCESS
@@ -464,6 +634,7 @@ exports.editBatches =
                 error
             );
 
+
             // ==================================================
             // STAFF ERROR
             // ==================================================
@@ -478,10 +649,24 @@ exports.editBatches =
                         error.message
                     )}`
                 );
+
             }
+
 
             // ==================================================
             // ADMIN / OTHER ERROR
+            // ==================================================
+            //
+            // IMPORTANT:
+            //
+            // The edit page route is:
+            //
+            //     /stock/:id/batch/:batchId
+            //
+            // NOT:
+            //
+            //     /stock/:id/batches/:batchId
+            //
             // ==================================================
 
             if (
@@ -490,11 +675,13 @@ exports.editBatches =
             ) {
 
                 return res.redirect(
-                    `/stock/${stockId}/batches/${batchId}?error=${encodeURIComponent(
+                    `/stock/${stockId}/batch/${batchId}?error=${encodeURIComponent(
                         error.message
                     )}`
                 );
+
             }
+
 
             // ==================================================
             // FALLBACK
@@ -505,32 +692,7 @@ exports.editBatches =
                     error.message
                 )}`
             );
+
         }
+
     };
-
-The key changes
-
-Both retrieval calls are now:
-
-await service.getFifoBatches(
-    stockId,
-    req.user
-);
-
-instead of:
-
-await service.getFifoBatches(
-    stockId
-);
-
-And editing remains:
-
-await service.editFifoBatch(
-    stockId,
-    batchId,
-    {
-        units,
-        buyPrice
-    },
-    req.user
-);
