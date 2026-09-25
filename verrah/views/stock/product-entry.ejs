@@ -1,473 +1,462 @@
-<section class="shop-page stock-entry-page">
-
-  <!-- =========================================================
+<section class="shop-page stock-entry-page">  <!-- =========================================================
        STOCK MANAGEMENT FORM
-  ========================================================== -->
+  ========================================================== -->  <div class="form-card stock-management-form"><div class="form-card-header">
 
-  <div class="form-card stock-management-form">
+  <div>
 
-    <div class="form-card-header">
+    <h1>
+      <%= old ? "Edit/Update Stock" : "Add Stock" %>
+    </h1>
 
-      <div>
+    <p>
+      <%= old
+        ? "Update the stock item and/or add additional warehouse quantity."
+        : "Add a new stock item to the warehouse."
+      %>
+    </p>
 
-        <h1>
-          <%= old ? "Edit/Update Stock" : "Add Stock" %>
-        </h1>
+  </div>
+
+</div>
+
+
+<!-- =======================================================
+     STOCK FORM
+======================================================== -->
+
+<form
+  action="/stock"
+  method="POST"
+  id="stockForm"
+  novalidate
+>
+
+  <% if (old && old._id) { %>
+
+    <input
+      type="hidden"
+      name="stockId"
+      value="<%= old._id %>"
+    >
+
+  <% } %>
+
+
+  <!-- =====================================================
+       FORM GRID
+  ====================================================== -->
+
+  <div class="form-grid">
+
+
+    <!-- ===================================================
+         CATEGORY
+    ==================================================== -->
+
+    <div class="field">
+
+      <label for="category">
+        Category
+      </label>
+
+      <select
+        id="category"
+        name="category"
+        required
+      >
+
+        <option value="">
+          Select category
+        </option>
+
+        <% if (
+          typeof categories !== "undefined" &&
+          categories.length
+        ) { %>
+
+          <% categories.forEach(category => { %>
+
+            <option
+              value="<%= category.name || category %>"
+              <%= old?.category === (category.name || category)
+                ? "selected"
+                : ""
+              %>
+            >
+              <%= category.name || category %>
+            </option>
+
+          <% }) %>
+
+        <% } %>
+
+      </select>
+
+    </div>
+
+
+    <!-- ===================================================
+         STOCK NAME
+    ==================================================== -->
+
+    <div class="field">
+
+      <label for="name">
+        Stock name
+      </label>
+
+      <input
+        type="text"
+        id="name"
+        name="name"
+        value="<%= old?.name || '' %>"
+        required
+        autocomplete="off"
+        placeholder="Enter stock name"
+      >
+
+      <small class="form-help">
+        The main name of this stock item.
+      </small>
+
+    </div>
+
+
+    <!-- ===================================================
+         SUBCATEGORY
+    ==================================================== -->
+
+    <div class="field">
+
+      <label for="subcategory">
+        Subcategory
+      </label>
+
+      <input
+        type="text"
+        id="subcategory"
+        name="subcategory"
+        value="<%= old?.subcategory || '' %>"
+        required
+        autocomplete="off"
+        placeholder="Enter subcategory"
+      >
+
+      <small class="form-help">
+        The subcategory of this stock item.
+      </small>
+
+    </div>
+
+
+    <!-- ===================================================
+         UNITS
+    ==================================================== -->
+
+    <div class="field">
+
+      <label for="units">
+
+        <%= old
+          ? "Additional units"
+          : "Initial units"
+        %>
+
+      </label>
+
+      <input
+        type="number"
+        id="units"
+        name="units"
+        min="0"
+        step="1"
+        value="<%= old ? '' : (old?.units ?? '') %>"
+        required
+      >
+
+      <% if (old) { %>
+
+        <small class="form-help">
+          Enter only the additional units being added to the
+          existing FIFO stock. Do not enter the new total.
+        </small>
+
+      <% } else { %>
+
+        <small class="form-help">
+          Initial quantity entering the warehouse.
+        </small>
+
+      <% } %>
+
+    </div>
+
+
+    <!-- ===================================================
+         BUY PRICE
+    ==================================================== -->
+
+    <div class="field">
+
+      <label for="buyPrice">
+        Buy price (for the whole batch)
+      </label>
+
+      <input
+        type="number"
+        id="buyPrice"
+        name="buyPrice"
+        min="0"
+        step="0.01"
+        value="<%= old ? '' : (old?.buyPrice ?? '') %>"
+        <%= old ? "" : "required" %>
+        placeholder="<%= old
+          ? 'Price for additional FIFO batch'
+          : 'Enter purchase price'
+        %>"
+      >
+
+      <% if (old) { %>
+
+        <small class="form-help">
+          Purchase price for the new FIFO batch. Existing FIFO
+          batches are not repriced.
+        </small>
+
+      <% } else { %>
+
+        <small class="form-help">
+          Purchase price for the initial FIFO batch.
+        </small>
+
+      <% } %>
+
+    </div>
+
+
+    <!-- ===================================================
+         SELL PRICE
+    ==================================================== -->
+
+    <div class="field">
+
+      <label for="unitSellPrice">
+        Sell price (Per Unit)
+      </label>
+
+      <input
+        type="number"
+        id="unitSellPrice"
+        name="unitSellPrice"
+        min="0"
+        step="0.01"
+        value="<%= old?.unitSellPrice ?? '' %>"
+        required
+        placeholder="Enter sell price"
+      >
+
+      <small class="form-help">
+        Selling price for the product.
+      </small>
+
+    </div>
+
+
+    <!-- ===================================================
+         DELIVERY DAYS
+    ==================================================== -->
+
+    <div class="field">
+
+      <label for="days">
+        Delivery days
+      </label>
+
+      <input
+        type="number"
+        id="days"
+        name="days"
+        min="0"
+        step="1"
+        value="<%= old?.days ?? '' %>"
+        placeholder="Optional"
+      >
+
+    </div>
+
+
+    <!-- ===================================================
+         IMAGE
+    ==================================================== -->
+
+    <div class="field">
+
+      <label for="image">
+        Image
+      </label>
+
+      <input
+        type="text"
+        id="image"
+        name="image"
+        value="<%= old?.image || '' %>"
+        autocomplete="off"
+        placeholder="Image URL"
+      >
+
+    </div>
+
+
+    <!-- ===================================================
+         DESCRIPTION
+    ==================================================== -->
+
+    <div class="field field-full">
+
+      <label for="description">
+        Description
+      </label>
+
+      <textarea
+        id="description"
+        name="description"
+        rows="5"
+        placeholder="Enter stock description"
+      ><%= old?.description || '' %></textarea>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       FIFO INFORMATION
+  ====================================================== -->
+
+  <div class="info-card">
+
+    <div class="info-card-icon">
+
+      <i class="fas fa-layer-group"></i>
+
+    </div>
+
+    <div>
+
+      <h3>
+        FIFO stock management
+      </h3>
+
+      <% if (old) { %>
 
         <p>
-          <%= old
-            ? "Update the stock item and/or add additional warehouse quantity."
-            : "Add a new stock item to the warehouse."
-          %>
+          Existing FIFO purchase batches keep their original
+          purchase prices. To increase stock, enter only the
+          additional units being received. Those units will
+          become a new FIFO purchase batch using the supplied
+          buy price.
         </p>
+
+      <% } else { %>
+
+        <p>
+          The initial warehouse quantity will become the first
+          FIFO purchase batch using the supplied buy price.
+          Future purchases will create separate FIFO batches.
+        </p>
+
+      <% } %>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       EDIT SUMMARY
+  ====================================================== -->
+
+  <% if (old) { %>
+
+    <div class="edit-summary">
+
+      <div class="edit-summary-item">
+
+        <span class="summary-label">
+          Current warehouse units
+        </span>
+
+        <strong id="currentUnits">
+          <%= Number(old.units || 0).toLocaleString("en-KE") %>
+        </strong>
+
+      </div>
+
+
+      <div class="edit-summary-item">
+
+        <span class="summary-label">
+          Additional units
+        </span>
+
+        <strong id="additionalUnits">
+          0
+        </strong>
+
+      </div>
+
+
+      <div class="edit-summary-item">
+
+        <span class="summary-label">
+          New warehouse total
+        </span>
+
+        <strong id="newUnits">
+          <%= Number(old.units || 0).toLocaleString("en-KE") %>
+        </strong>
 
       </div>
 
     </div>
 
+  <% } %>
 
-    <!-- =======================================================
-         STOCK FORM
-    ======================================================== -->
 
-    <form
-      action="/stock"
-      method="POST"
-      id="stockForm"
-      novalidate
+  <!-- =====================================================
+       FORM ACTIONS
+  ====================================================== -->
+
+  <div class="form-actions">
+
+    <a
+      href="/stock"
+      class="secondary-btn"
     >
 
-      <% if (old && old._id) { %>
+      <i class="fas fa-arrow-left"></i>
 
-        <input
-          type="hidden"
-          name="stockId"
-          value="<%= old._id %>"
-        >
+      Cancel
 
-      <% } %>
+    </a>
 
 
-      <!-- =====================================================
-           FORM GRID
-      ====================================================== -->
+    <button
+      type="submit"
+      class="primary-btn"
+    >
 
-      <div class="form-grid">
+      <i class="fas <%= old ? 'fa-save' : 'fa-plus' %>"></i>
 
+      <%= old ? "Update Stock" : "Add Stock" %>
 
-        <!-- ===================================================
-             CATEGORY
-        ==================================================== -->
-
-        <div class="field">
-
-          <label for="category">
-            Category
-          </label>
-
-          <select
-            id="category"
-            name="category"
-            required
-          >
-
-            <option value="">
-              Select category
-            </option>
-
-            <% if (
-              typeof categories !== "undefined" &&
-              categories.length
-            ) { %>
-
-              <% categories.forEach(category => { %>
-
-                <option
-                  value="<%= category.name || category %>"
-                  <%= old?.category === (category.name || category)
-                    ? "selected"
-                    : ""
-                  %>
-                >
-                  <%= category.name || category %>
-                </option>
-
-              <% }) %>
-
-            <% } %>
-
-          </select>
-
-        </div>
-
-
-        <!-- ===================================================
-             STOCK NAME
-        ==================================================== -->
-
-        <div class="field">
-
-          <label for="name">
-            Stock name
-          </label>
-
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value="<%= old?.name || '' %>"
-            required
-            autocomplete="off"
-            placeholder="Enter stock name"
-          >
-
-          <small class="form-help">
-            The main name of this stock item.
-          </small>
-
-        </div>
-
-
-        <!-- ===================================================
-             SUBCATEGORY
-        ==================================================== -->
-
-        <div class="field">
-
-          <label for="subcategory">
-            Subcategory
-          </label>
-
-          <input
-            type="text"
-            id="subcategory"
-            name="subcategory"
-            value="<%= old?.subcategory || '' %>"
-            required
-            autocomplete="off"
-            placeholder="Enter subcategory"
-          >
-
-          <small class="form-help">
-            The subcategory of this stock item.
-          </small>
-
-        </div>
-
-
-        <!-- ===================================================
-             UNITS
-        ==================================================== -->
-
-        <div class="field">
-
-          <label for="units">
-
-            <%= old
-              ? "Additional units"
-              : "Initial units"
-            %>
-
-          </label>
-
-          <input
-            type="number"
-            id="units"
-            name="units"
-            min="0"
-            step="1"
-            value="<%= old ? '' : (old?.units ?? '') %>"
-            required
-          >
-
-          <% if (old) { %>
-
-            <small class="form-help">
-              Enter only the additional units being added to the
-              existing FIFO stock. Do not enter the new total.
-            </small>
-
-          <% } else { %>
-
-            <small class="form-help">
-              Initial quantity entering the warehouse.
-            </small>
-
-          <% } %>
-
-        </div>
-
-
-        <!-- ===================================================
-             BUY PRICE
-        ==================================================== -->
-
-        <div class="field">
-
-          <label for="buyPrice">
-            Buy price (for the whole batch)
-          </label>
-
-          <input
-            type="number"
-            id="buyPrice"
-            name="buyPrice"
-            min="0"
-            step="0.01"
-            value="<%= old ? '' : (old?.buyPrice ?? '') %>"
-            <%= old ? "" : "required" %>
-            placeholder="<%= old
-              ? 'Price for additional FIFO batch'
-              : 'Enter purchase price'
-            %>"
-          >
-
-          <% if (old) { %>
-
-            <small class="form-help">
-              Purchase price for the new FIFO batch. Existing FIFO
-              batches are not repriced.
-            </small>
-
-          <% } else { %>
-
-            <small class="form-help">
-              Purchase price for the initial FIFO batch.
-            </small>
-
-          <% } %>
-
-        </div>
-
-
-        <!-- ===================================================
-             SELL PRICE
-        ==================================================== -->
-
-        <div class="field">
-
-          <label for="sellPrice">
-            Sell price (Per Unit)
-          </label>
-
-          <input
-            type="number"
-            id="sellPrice"
-            name="sellPrice"
-            min="0"
-            step="0.01"
-            value="<%= old?.unitSellPrice ?? old?.sellPrice ?? '' %>"
-            required
-            placeholder="Enter sell price"
-          >
-
-          <small class="form-help">
-            Selling price for the product.
-          </small>
-
-        </div>
-
-
-        <!-- ===================================================
-             DELIVERY DAYS
-        ==================================================== -->
-
-        <div class="field">
-
-          <label for="days">
-            Delivery days
-          </label>
-
-          <input
-            type="number"
-            id="days"
-            name="days"
-            min="0"
-            step="1"
-            value="<%= old?.days ?? '' %>"
-            placeholder="Optional"
-          >
-
-        </div>
-
-
-        <!-- ===================================================
-             IMAGE
-        ==================================================== -->
-
-        <div class="field">
-
-          <label for="image">
-            Image
-          </label>
-
-          <input
-            type="text"
-            id="image"
-            name="image"
-            value="<%= old?.image || '' %>"
-            autocomplete="off"
-            placeholder="Image URL"
-          >
-
-        </div>
-
-
-        <!-- ===================================================
-             DESCRIPTION
-        ==================================================== -->
-
-        <div class="field field-full">
-
-          <label for="description">
-            Description
-          </label>
-
-          <textarea
-            id="description"
-            name="description"
-            rows="5"
-            placeholder="Enter stock description"
-          ><%= old?.description || '' %></textarea>
-
-        </div>
-
-      </div>
-
-
-      <!-- =====================================================
-           FIFO INFORMATION
-      ====================================================== -->
-
-      <div class="info-card">
-
-        <div class="info-card-icon">
-
-          <i class="fas fa-layer-group"></i>
-
-        </div>
-
-        <div>
-
-          <h3>
-            FIFO stock management
-          </h3>
-
-          <% if (old) { %>
-
-            <p>
-              Existing FIFO purchase batches keep their original
-              purchase prices. To increase stock, enter only the
-              additional units being received. Those units will
-              become a new FIFO purchase batch using the supplied
-              buy price.
-            </p>
-
-          <% } else { %>
-
-            <p>
-              The initial warehouse quantity will become the first
-              FIFO purchase batch using the supplied buy price.
-              Future purchases will create separate FIFO batches.
-            </p>
-
-          <% } %>
-
-        </div>
-
-      </div>
-
-
-      <!-- =====================================================
-           EDIT SUMMARY
-      ====================================================== -->
-
-      <% if (old) { %>
-
-        <div class="edit-summary">
-
-          <div class="edit-summary-item">
-
-            <span class="summary-label">
-              Current warehouse units
-            </span>
-
-            <strong id="currentUnits">
-              <%= Number(old.units || 0).toLocaleString("en-KE") %>
-            </strong>
-
-          </div>
-
-
-          <div class="edit-summary-item">
-
-            <span class="summary-label">
-              Additional units
-            </span>
-
-            <strong id="additionalUnits">
-              0
-            </strong>
-
-          </div>
-
-
-          <div class="edit-summary-item">
-
-            <span class="summary-label">
-              New warehouse total
-            </span>
-
-            <strong id="newUnits">
-              <%= Number(old.units || 0).toLocaleString("en-KE") %>
-            </strong>
-
-          </div>
-
-        </div>
-
-      <% } %>
-
-
-      <!-- =====================================================
-           FORM ACTIONS
-      ====================================================== -->
-
-      <div class="form-actions">
-
-        <a
-          href="/stock"
-          class="secondary-btn"
-        >
-
-          <i class="fas fa-arrow-left"></i>
-
-          Cancel
-
-        </a>
-
-
-        <button
-          type="submit"
-          class="primary-btn"
-        >
-
-          <i class="fas <%= old ? 'fa-save' : 'fa-plus' %>"></i>
-
-          <%= old ? "Update Stock" : "Add Stock" %>
-
-        </button>
-
-      </div>
-
-    </form>
+    </button>
 
   </div>
 
-</section>
+</form>
 
-
-<script>
+  </div></section><script>
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -484,8 +473,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const buyPriceInput =
     document.getElementById("buyPrice");
 
-  const sellPriceInput =
-    document.getElementById("sellPrice");
+  const unitSellPriceInput =
+    document.getElementById("unitSellPrice");
 
 
   /* ==========================================================
@@ -498,7 +487,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ==========================================================
      UPDATE EDIT SUMMARY
-     
+
      IMPORTANT:
      In edit mode `units` means ADDITIONAL units.
   ========================================================== */
@@ -583,9 +572,9 @@ document.addEventListener("DOMContentLoaded", () => {
           .trim();
 
 
-      const sellPrice =
+      const unitSellPrice =
         Number(
-          sellPriceInput.value
+          unitSellPriceInput.value
         );
 
 
@@ -685,8 +674,8 @@ document.addEventListener("DOMContentLoaded", () => {
       ------------------------------------------------------ */
 
       if (
-        !Number.isFinite(sellPrice) ||
-        sellPrice < 0
+        !Number.isFinite(unitSellPrice) ||
+        unitSellPrice < 0
       ) {
 
         event.preventDefault();
@@ -695,7 +684,7 @@ document.addEventListener("DOMContentLoaded", () => {
           "Please enter a valid sell price."
         );
 
-        sellPriceInput.focus();
+        unitSellPriceInput.focus();
 
         return;
 
@@ -704,7 +693,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       /* ------------------------------------------------------
          EDIT MODE
-         
+
          `units` is ADDITIONAL quantity.
       ------------------------------------------------------ */
 
@@ -742,7 +731,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         /* ----------------------------------------------------
            CREATE MODE
-           
+
            `units` is the initial quantity.
         ---------------------------------------------------- */
 
