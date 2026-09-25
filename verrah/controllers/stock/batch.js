@@ -19,6 +19,22 @@
 //
 //     services/stockService/batchEdit.js
 //
+// IMPORTANT STAFF RULE:
+//
+// Staff work with Product.fifoBatches.
+//
+// Staff may ONLY see/edit batches where:
+//
+//     batch.StaffFIFOsubstation
+//         ===
+//     req.user.assignedSubstation
+//
+// Admin / non-staff users work with:
+//
+//     Stock.purchaseBatches
+//
+// req.user MUST therefore be passed to the service for BOTH
+// retrieval and editing.
 // ==========================================================
 
 const service =
@@ -28,6 +44,15 @@ const service =
 // ==========================================================
 // LIST ALL FIFO BATCHES
 // ==========================================================
+//
+// STAFF:
+//     Returns only Product.fifoBatches belonging to their
+//     assigned substation.
+//
+// ADMIN / OTHER:
+//     Returns Stock.purchaseBatches.
+//
+// ==========================================================
 
 exports.batches =
     async (
@@ -35,20 +60,38 @@ exports.batches =
         res
     ) => {
 
+        const stockId =
+            String(
+                req.params.id ||
+                ""
+            ).trim();
+
         try {
 
-            const stockId =
-                String(
-                    req.params.id ||
-                    ""
-                ).trim();
+            if (!stockId) {
+
+                throw new Error(
+                    "Stock ID is required."
+                );
+            }
+
+            // ==================================================
+            // IMPORTANT:
+            //
+            // Pass req.user so batchEdit.js can determine:
+            //
+            // 1. staff vs admin
+            // 2. staff assigned substation
+            // 3. which Product.fifoBatches staff may see
+            // ==================================================
 
             const {
                 stock,
                 batches
             } =
                 await service.getFifoBatches(
-                    stockId
+                    stockId,
+                    req.user
                 );
 
             return res.render(
@@ -78,6 +121,29 @@ exports.batches =
                 error
             );
 
+            // --------------------------------------------------
+            // STAFF
+            //
+            // If staff is denied access or their assigned
+            // substation is invalid, return them to products.
+            // --------------------------------------------------
+
+            if (
+                req.user &&
+                req.user.role === "staff"
+            ) {
+
+                return res.redirect(
+                    `/products?error=${encodeURIComponent(
+                        error.message
+                    )}`
+                );
+            }
+
+            // --------------------------------------------------
+            // ADMIN / OTHER
+            // --------------------------------------------------
+
             return res.redirect(
                 `/stock?error=${encodeURIComponent(
                     error.message
@@ -89,6 +155,14 @@ exports.batches =
 
 // ==========================================================
 // VIEW / EDIT PARTICULAR FIFO BATCH
+// ==========================================================
+//
+// STAFF:
+//     Finds the batch from their assigned substation only.
+//
+// ADMIN:
+//     Finds the batch from Stock.purchaseBatches.
+//
 // ==========================================================
 
 exports.batch =
@@ -111,6 +185,13 @@ exports.batch =
 
         try {
 
+            if (!stockId) {
+
+                throw new Error(
+                    "Stock ID is required."
+                );
+            }
+
             if (!batchId) {
 
                 throw new Error(
@@ -118,13 +199,28 @@ exports.batch =
                 );
             }
 
+            // ==================================================
+            // IMPORTANT:
+            //
+            // Pass req.user here too.
+            //
+            // For staff this ensures getFifoBatches() returns
+            // ONLY Product.fifoBatches belonging to their
+            // assigned substation.
+            // ==================================================
+
             const {
                 stock,
                 batches
             } =
                 await service.getFifoBatches(
-                    stockId
+                    stockId,
+                    req.user
                 );
+
+            // ==================================================
+            // FIND SELECTED BATCH
+            // ==================================================
 
             const batch =
                 batches.find(
@@ -142,6 +238,10 @@ exports.batch =
                     )}`
                 );
             }
+
+            // ==================================================
+            // RENDER
+            // ==================================================
 
             return res.render(
                 "stock/batch/edit",
@@ -172,6 +272,26 @@ exports.batch =
                 error
             );
 
+            // --------------------------------------------------
+            // STAFF
+            // --------------------------------------------------
+
+            if (
+                req.user &&
+                req.user.role === "staff"
+            ) {
+
+                return res.redirect(
+                    `/products?error=${encodeURIComponent(
+                        error.message
+                    )}`
+                );
+            }
+
+            // --------------------------------------------------
+            // ADMIN / OTHER
+            // --------------------------------------------------
+
             return res.redirect(
                 `/stock/${stockId}/batches?error=${encodeURIComponent(
                     error.message
@@ -185,15 +305,25 @@ exports.batch =
 // EDIT PARTICULAR FIFO BATCH
 // ==========================================================
 //
-// Staff:
+// STAFF:
 //     Product.fifoBatches -> updated
 //     Product.units       -> updated
 //     Substation inventory -> updated
 //     Stock               -> NOT modified
 //
-// Admin / other roles:
+// ADMIN / OTHER ROLES:
 //     Stock.purchaseBatches -> updated
 //     Stock.units           -> updated
+//
+// IMPORTANT:
+//
+// req.user is passed to the service so batchEdit.js can:
+//
+//     - identify staff
+//     - identify assignedSubstation
+//     - verify batch ownership
+//     - prevent staff editing another substation's batch
+//
 // ==========================================================
 
 exports.editBatches =
@@ -230,11 +360,19 @@ exports.editBatches =
                 );
             }
 
+            // ==================================================
+            // FORM VALUES
+            // ==================================================
+
             const units =
                 req.body.units;
 
             const buyPrice =
                 req.body.buyPrice;
+
+            // ==================================================
+            // VALIDATE UNITS
+            // ==================================================
 
             if (
                 units === undefined ||
@@ -246,6 +384,10 @@ exports.editBatches =
                     "Units are required."
                 );
             }
+
+            // ==================================================
+            // VALIDATE BUY PRICE
+            // ==================================================
 
             if (
                 buyPrice === undefined ||
@@ -259,27 +401,42 @@ exports.editBatches =
             }
 
             // ==================================================
+            // EDIT FIFO BATCH
+            // ==================================================
+            //
             // IMPORTANT:
             //
-            // PASS req.user.
+            // req.user is intentionally passed as the FOURTH
+            // argument.
             //
-            // Without this, batchEdit.js cannot know that the
-            // request belongs to staff, so it will execute the
-            // normal Stock update branch.
+            // Staff:
+            //     Product.fifoBatches
+            //
+            // Admin:
+            //     Stock.purchaseBatches
+            //
             // ==================================================
 
             await service.editFifoBatch(
                 stockId,
+
                 batchId,
+
                 {
                     units,
                     buyPrice
                 },
+
                 req.user
             );
 
             // ==================================================
-            // STAFF
+            // STAFF SUCCESS
+            // ==================================================
+            //
+            // Staff inventory/batch work is complete.
+            // Return them to the sales/products area.
+            //
             // ==================================================
 
             if (
@@ -293,7 +450,7 @@ exports.editBatches =
             }
 
             // ==================================================
-            // ADMIN / OTHER ROLES
+            // ADMIN / OTHER SUCCESS
             // ==================================================
 
             return res.redirect(
@@ -324,7 +481,7 @@ exports.editBatches =
             }
 
             // ==================================================
-            // EDIT PAGE ERROR
+            // ADMIN / OTHER ERROR
             // ==================================================
 
             if (
@@ -350,3 +507,30 @@ exports.editBatches =
             );
         }
     };
+
+The key changes
+
+Both retrieval calls are now:
+
+await service.getFifoBatches(
+    stockId,
+    req.user
+);
+
+instead of:
+
+await service.getFifoBatches(
+    stockId
+);
+
+And editing remains:
+
+await service.editFifoBatch(
+    stockId,
+    batchId,
+    {
+        units,
+        buyPrice
+    },
+    req.user
+);
