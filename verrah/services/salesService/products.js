@@ -33,6 +33,11 @@
 //
 //     Product.stock
 //         -> ID of the Stock record related to the Product
+//
+// category:
+//
+//     Product.category
+//         -> Category document from models/category.js
 // ==========================================================
 
 
@@ -50,6 +55,10 @@ const Package =
 
 const Substation =
     require("../../models/substations");
+
+
+const Category =
+    require("../../models/category");
 
 
 // ==========================================================
@@ -78,7 +87,7 @@ function getSubstationQuery(
 
     };
 
-}
+};
 
 
 // ==========================================================
@@ -190,6 +199,9 @@ async function getProductAnalytics(
     // stock:
     //     Contains the ID of the Stock record related
     //     to this Product.
+    //
+    // category:
+    //     Contains the ID of the Category document.
     // ======================================================
 
     const products =
@@ -201,10 +213,57 @@ async function getProductAnalytics(
         })
 
             .select(
-                "_id name subcategory units stock"
+                "_id name category subcategory units stock"
             )
 
             .lean();
+
+
+    // ======================================================
+    // LOAD ACTIVE CATEGORIES
+    //
+    // Category remains a separate document.
+    // ======================================================
+
+    const categories =
+        await Category.find({
+
+            isActive:
+                true
+
+        })
+
+            .select(
+                "_id name categoryIcon isActive"
+            )
+
+            .lean();
+
+
+    // ======================================================
+    // CATEGORY BY ID
+    // ======================================================
+
+    const categoryById =
+        new Map();
+
+
+    for (
+        const category
+        of categories
+    ) {
+
+        categoryById.set(
+
+            String(
+                category._id
+            ),
+
+            category
+
+        );
+
+    }
 
 
     // ======================================================
@@ -436,6 +495,20 @@ async function getProductAnalytics(
 
 
                 // ==================================================
+                // CATEGORY DOCUMENT
+                // ==================================================
+
+                const category =
+                    product.category
+                        ? categoryById.get(
+                            String(
+                                product.category
+                            )
+                        ) || null
+                        : null;
+
+
+                // ==================================================
                 // MARKET AVAILABLE
                 // ==================================================
                 //
@@ -493,6 +566,9 @@ async function getProductAnalytics(
 
                     name:
                         product.name,
+
+                    category:
+                        category,
 
                     stockProductId:
                         product.stock
