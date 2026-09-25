@@ -84,7 +84,9 @@ categoryId
             aria-label="Filter products by category"
             title="Filter by category"
         >
+
             <i class="fas fa-bars"></i>
+
         </button>
 
     </h2>
@@ -179,44 +181,38 @@ categoryId
     action="/products/addManyToCart"
     method="POST"
     id="addManyToCartForm"
->
+><% if (hasSelectedSubstation) { %>
 
-    <% if (hasSelectedSubstation) { %>
+    <input
+        type="hidden"
+        name="activeSubstationId"
+        value="<%= selectedSubstationId %>"
+    >
 
-        <input
-            type="hidden"
-            name="activeSubstationId"
-            value="<%= selectedSubstationId %>"
-        >
+<% } %>
 
-    <% } %>
-
-</form>
-
-
-<div
+</form><div
     id="addManyToCartActions"
     style="
         display: none;
-        margin-bottom: 12px;
+        position: fixed;
+        left: 20px;
+        bottom: 20px;
+        z-index: 1000;
     "
+><button
+    type="submit"
+    form="addManyToCartForm"
+    class="sales-filter-button"
 >
 
-    <button
-        type="submit"
-        form="addManyToCartForm"
-        class="sales-filter-button"
-    >
+    <i class="fas fa-cart-plus"></i>
 
-        <i class="fas fa-cart-plus"></i>
+    Add Selected Products to Cart
 
-        Add Selected Products to Cart
+</button>
 
-    </button>
-
-</div>
-
-<% } %>
+</div><% } %>
 
 <!-- ======================================================
      UPDATE MARKET AVAILABLE FORM
@@ -226,40 +222,34 @@ categoryId
     action="/substations/productsUpdate/<%= selectedSubstationId %>"
     method="POST"
     id="updateMarketAvailableForm"
+><input
+    type="hidden"
+    name="substationId"
+    value="<%= selectedSubstationId %>"
 >
 
-    <input
-        type="hidden"
-        name="substationId"
-        value="<%= selectedSubstationId %>"
-    >
-
-</form>
-
-
-<div
+</form><div
     id="updateMarketAvailableActions"
     style="
         display: none;
-        margin-bottom: 12px;
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 1000;
     "
+><button
+    type="submit"
+    form="updateMarketAvailableForm"
+    class="sales-filter-button"
 >
 
-    <button
-        type="submit"
-        form="updateMarketAvailableForm"
-        class="sales-filter-button"
-    >
+    <i class="fas fa-save"></i>
 
-        <i class="fas fa-save"></i>
+    Update Market Units
 
-        Update Market Units
+</button>
 
-    </button>
-
-</div>
-
-<% } %>
+</div><% } %>
 
 <!-- ======================================================
      PRODUCT TABLE
@@ -681,6 +671,162 @@ categoryId
 
         }
     );
+
+
+    /* =====================================================
+       SELL INPUT BUTTON
+    ====================================================== */
+
+    const sellInputs =
+        document.querySelectorAll(
+            ".product-cart-qty"
+        );
+
+    const addManyToCartActions =
+        document.getElementById(
+            "addManyToCartActions"
+        );
+
+
+    function updateAddToCartButton() {
+
+        if (!addManyToCartActions) {
+            return;
+        }
+
+
+        let hasQuantity =
+            false;
+
+
+        sellInputs.forEach(
+            function (input) {
+
+                const value =
+                    Number(input.value);
+
+
+                if (
+                    input.value.trim() !== "" &&
+                    Number.isFinite(value) &&
+                    value > 0
+                ) {
+
+                    hasQuantity = true;
+
+                }
+
+            }
+        );
+
+
+        addManyToCartActions.style.display =
+            hasQuantity
+            ? "block"
+            : "none";
+
+    }
+
+
+    sellInputs.forEach(
+        function (input) {
+
+            input.addEventListener(
+                "input",
+                updateAddToCartButton
+            );
+
+            input.addEventListener(
+                "change",
+                updateAddToCartButton
+            );
+
+        }
+    );
+
+
+    updateAddToCartButton();
+
+
+    /* =====================================================
+       MARKET UNITS UPDATE BUTTON
+    ====================================================== */
+
+    const marketInputs =
+        document.querySelectorAll(
+            ".market-units-input"
+        );
+
+    const updateMarketAvailableActions =
+        document.getElementById(
+            "updateMarketAvailableActions"
+        );
+
+
+    function updateMarketButton() {
+
+        if (!updateMarketAvailableActions) {
+            return;
+        }
+
+
+        let hasChanges =
+            false;
+
+
+        marketInputs.forEach(
+            function (input) {
+
+                const originalValue =
+                    String(
+                        input.dataset.originalValue || ""
+                    ).trim();
+
+                const currentValue =
+                    String(
+                        input.value
+                    ).trim();
+
+
+                if (
+                    currentValue !== originalValue
+                ) {
+
+                    hasChanges = true;
+
+                }
+
+            }
+        );
+
+
+        updateMarketAvailableActions.style.display =
+            hasChanges
+            ? "block"
+            : "none";
+
+    }
+
+
+    marketInputs.forEach(
+        function (input) {
+
+            input.addEventListener(
+                "input",
+                updateMarketButton
+            );
+
+            input.addEventListener(
+                "change",
+                updateMarketButton
+            );
+
+        }
+    );
+
+
+    updateMarketButton();
+
 
 })();
 </script>
