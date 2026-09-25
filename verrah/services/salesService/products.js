@@ -38,6 +38,13 @@
 //
 //     Product.category
 //         -> Category document from models/category.js
+//
+// category filter:
+//
+//     filter.category
+//         -> Product.category
+//            when a category is selected
+//
 // ==========================================================
 
 
@@ -192,6 +199,38 @@ async function getProductAnalytics(
 ) {
 
     // ======================================================
+    // PRODUCT QUERY
+    //
+    // Products remain global records.
+    //
+    // category:
+    //     When filter.category exists, only products
+    //     belonging to that Category are loaded.
+    //
+    // Without filter.category:
+    //     Existing behavior remains unchanged.
+    // ======================================================
+
+    const productQuery = {
+
+        isActive:
+            true
+
+    };
+
+
+    if (
+        filter &&
+        filter.category
+    ) {
+
+        productQuery.category =
+            filter.category;
+
+    }
+
+
+    // ======================================================
     // LOAD ACTIVE PRODUCTS
     //
     // Products remain global records.
@@ -205,12 +244,9 @@ async function getProductAnalytics(
     // ======================================================
 
     const products =
-        await Product.find({
-
-            isActive:
-                true
-
-        })
+        await Product.find(
+            productQuery
+        )
 
             .select(
                 "_id name category subcategory units stock"
