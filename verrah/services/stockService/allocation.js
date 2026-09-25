@@ -125,7 +125,7 @@ async function createProductFromStock(stockId, body) {
                     );
                     inventory.units = currentUnits + allocation.units;
                     inventory.productName = product.name;
-                    inventory.category = product.category;
+                    inventory.category = String(product.category || "");
                     inventory.subcategory = product.subcategory;
                     inventory.days = Number(product.days || 0);
                     inventory.updatedAt = new Date();
@@ -133,7 +133,7 @@ async function createProductFromStock(stockId, body) {
                     substation.productInventory.push({
                         productId: product._id,
                         productName: product.name,
-                        category: product.category,
+                        category: String(product.category || ""),
                         subcategory: product.subcategory,
                         days: Number(product.days || 0),
                         units: allocation.units,

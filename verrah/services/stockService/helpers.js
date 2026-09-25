@@ -404,6 +404,49 @@ function calculateFifoValue(stock) {
 // FIFO UNIT BUY PRICE
 // ==========================================================
 
+function calculateBatchUnitBuyPrice(
+    totalPurchaseCost,
+    units
+) {
+
+    const totalCost =
+        number(
+            totalPurchaseCost,
+            "Total purchase cost"
+        );
+
+    const quantity =
+        wholeNumber(
+            units,
+            "Batch units"
+        );
+
+    if (quantity <= 0) {
+        throw new Error(
+            "Batch units must be greater than zero."
+        );
+    }
+
+    const result =
+        totalCost / quantity;
+
+    if (
+        !Number.isFinite(result) ||
+        result < 0
+    ) {
+        throw new Error(
+            "Unable to calculate the batch unit buy price."
+        );
+    }
+
+    return result;
+}
+
+
+// ==========================================================
+// FIFO UNIT BUY PRICE
+// ==========================================================
+
 function calculateUnitBuyPrice(stock) {
 
     const units =
@@ -671,6 +714,8 @@ module.exports = {
     calculateFifoValue,
 
     calculateUnitBuyPrice,
+
+    calculateBatchUnitBuyPrice,
 
     setCalculatedUnitBuyPrice,
 

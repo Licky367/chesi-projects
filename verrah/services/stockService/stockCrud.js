@@ -210,7 +210,7 @@ session = null
 
 const query =
     Stock.find({
-        active: {
+        isActive: {
             $ne: false
         }
     });
@@ -524,9 +524,10 @@ if (
 // Sort FIFO
 // ------------------------------------------------------
 
-sortFifoBatches(
-    product.fifoBatches
-);
+product.fifoBatches =
+    sortProductFifo(
+        product.fifoBatches
+    );
 
 // ------------------------------------------------------
 // Product total units
@@ -651,9 +652,10 @@ product.fifoBatches.push({
 // SORT + RECALCULATE
 // ------------------------------------------------------
 
-sortFifoBatches(
-    product.fifoBatches
-);
+product.fifoBatches =
+    sortProductFifo(
+        product.fifoBatches
+    );
 
 recalculateProductFifo(
     product
@@ -704,7 +706,7 @@ const substationQuery =
         _id:
             substationId,
 
-        active: {
+        isActive: {
             $ne: false
         }
     });
@@ -765,11 +767,13 @@ if (inventory) {
         productId:
             product._id,
 
-        name:
+        productName:
             product.name,
 
         category:
-            product.category,
+            String(
+                product.category || ""
+            ),
 
         subcategory:
             product.subcategory,
@@ -983,7 +987,7 @@ try {
             const duplicateQuery =
                 Stock.findOne({
 
-                    active: {
+                    isActive: {
                         $ne: false
                     },
 
@@ -1015,7 +1019,7 @@ try {
             // ==================================================
 
             const unitBuyPrice =
-                calculateUnitBuyPrice(
+                calculateBatchUnitBuyPrice(
                     totalPurchaseCost,
                     units
                 );
@@ -1483,7 +1487,7 @@ try {
                             stock._id
                     },
 
-                    active: {
+                    isActive: {
                         $ne:
                             false
                     },
@@ -1559,7 +1563,7 @@ try {
                 ) {
 
                     const additionalUnitBuyPrice =
-                        calculateUnitBuyPrice(
+                        calculateBatchUnitBuyPrice(
                             totalPurchaseCost,
                             additionalUnits
                         );
@@ -1576,9 +1580,10 @@ try {
                             new Date()
                     });
 
-                    sortFifoBatches(
-                        stock.purchaseBatches
-                    );
+                    stock.purchaseBatches =
+                        sortFifoBatches(
+                            stock.purchaseBatches
+                        );
                 }
 
                 // ----------------------------------------------
@@ -1603,9 +1608,10 @@ try {
                 // ----------------------------------------------
 
                 const fifoValue =
-                    calculateFifoValue(
-                        stock.purchaseBatches
-                    );
+                    calculateFifoValue({
+                        purchaseBatches:
+                            stock.purchaseBatches
+                    });
 
                 if (
                     stock.units > 0
@@ -1726,7 +1732,7 @@ try {
                     // ------------------------------------------
 
                     const additionalUnitBuyPrice =
-                        calculateUnitBuyPrice(
+                        calculateBatchUnitBuyPrice(
                             totalPurchaseCost,
                             additionalUnits
                         );

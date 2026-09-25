@@ -45,6 +45,12 @@ const Product =
 const Substation =
     require("../../models/substations");
 
+const {
+    productFifoValue,
+    productFifoUnits,
+    sortProductFifo
+} = require("./helpers");
+
 
 // ==========================================================
 // CREATE FIFO BATCH
@@ -383,8 +389,32 @@ async function createFifoBatch(
                     // UPDATE PRODUCT UNITS
                     // ======================================
 
+                    product.fifoBatches =
+                        sortProductFifo(
+                            product.fifoBatches
+                        );
+
+                    const productFifoTotalUnits =
+                        productFifoUnits(
+                            product
+                        );
+
+                    const productFifoValueTotal =
+                        productFifoValue(
+                            product
+                        );
+
                     product.units =
-                        productUnits;
+                        productFifoTotalUnits;
+
+                    product.unitBuyPrice =
+                        productFifoTotalUnits > 0
+                            ? productFifoValueTotal /
+                                productFifoTotalUnits
+                            : 0;
+
+                    product.buyPrice =
+                        product.unitBuyPrice;
 
 
                     // ======================================
