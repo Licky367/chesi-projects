@@ -334,7 +334,7 @@ function getSubstationQuery(
 
     };
 
-};
+}
 
 
 // ==========================================================
@@ -476,47 +476,28 @@ async function getProductAnalytics(
 
 
     // ======================================================
-    // CATEGORY QUERY
+    // LOAD ALL ACTIVE CATEGORIES
     // ======================================================
     //
-    // Without a business type:
+    // Do NOT query MongoDB using:
     //
-    //     Existing behaviour.
+    //     "businessType.id"
     //
-    // With a business type:
+    // here.
     //
-    //     Only categories belonging to that business type.
+    // We compare businessType.id in JavaScript so that
+    // ObjectId/string representation cannot cause the
+    // entire category list to disappear.
     //
-    // ======================================================
-
-    const categoryQuery = {
-
-        isActive:
-            true
-
-    };
-
-
-    if (
-        businessType
-    ) {
-
-        categoryQuery[
-            "businessType.id"
-        ] =
-            businessType.id;
-
-    }
-
-
-    // ======================================================
-    // LOAD ACTIVE CATEGORIES
     // ======================================================
 
     const categories =
-        await Category.find(
-            categoryQuery
-        )
+        await Category.find({
+
+            isActive:
+                true
+
+        })
 
             .select(
                 "_id name categoryIcon isActive businessType"
@@ -526,7 +507,70 @@ async function getProductAnalytics(
 
 
     // ======================================================
+    // FILTER CATEGORIES BY BUSINESS TYPE
+    // ======================================================
+    //
+    // ADMIN WITHOUT SUBSTATION:
+    //
+    //     All active categories.
+    //
+    // STAFF:
+    //
+    //     Only categories matching the business type
+    //     of the assigned substation.
+    //
+    // ADMIN + SELECTED SUBSTATION:
+    //
+    //     Only categories matching the business type
+    //     of the selected substation.
+    //
+    // ======================================================
+
+    const filteredCategories =
+        businessType
+            ? categories.filter(
+
+                category => {
+
+                    if (
+                        !category.businessType ||
+                        !category.businessType.id
+                    ) {
+
+                        return false;
+
+                    }
+
+
+                    return (
+
+                        String(
+                            category.businessType.id
+                        ) ===
+
+                        String(
+                            businessType.id
+                        )
+
+                    );
+
+                }
+
+            )
+            : categories;
+
+
+    // ======================================================
     // CATEGORY BY ID
+    // ======================================================
+    //
+    // Keep all active categories available here so that
+    // returned Product.category can still resolve to its
+    // Category document.
+    //
+    // The actual business-type restriction is applied
+    // through filteredCategories below.
+    //
     // ======================================================
 
     const categoryById =
@@ -552,14 +596,7 @@ async function getProductAnalytics(
 
 
     // ======================================================
-    // CATEGORY FILTER
-    // ======================================================
-    //
-    // filter.category remains supported.
-    //
-    // The selected category must also belong to the
-    // applicable business type when a business type is active.
-    //
+    // PRODUCT QUERY
     // ======================================================
 
     const productQuery = {
@@ -569,6 +606,14 @@ async function getProductAnalytics(
 
     };
 
+
+    // ======================================================
+    // CATEGORY FILTER
+    // ======================================================
+    //
+    // filter.category remains supported.
+    //
+    // ======================================================
 
     if (
         filter &&
@@ -604,7 +649,7 @@ async function getProductAnalytics(
     ) {
 
         const businessTypeCategoryIds =
-            categories.map(
+            filteredCategories.map(
 
                 category =>
                     category._id
@@ -622,7 +667,7 @@ async function getProductAnalytics(
 
         // --------------------------------------------------
         // If a specific category was selected, retain it
-        // only if it belongs to the business type.
+        // only if it belongs to the active business type.
         // --------------------------------------------------
 
         if (
@@ -637,9 +682,10 @@ async function getProductAnalytics(
 
 
             const categoryBelongsToBusinessType =
-                categories.some(
+                filteredCategories.some(
 
                     category =>
+
                         String(
                             category._id
                         ) ===
@@ -678,6 +724,7 @@ async function getProductAnalytics(
 
     // ======================================================
     // LOAD ACTIVE PRODUCTS
+    // ======================================================
     //
     // Products remain global records.
     //
@@ -687,6 +734,7 @@ async function getProductAnalytics(
     //
     // category:
     //     Contains the ID of the Category document.
+    //
     // ======================================================
 
     const products =
@@ -745,7 +793,9 @@ async function getProductAnalytics(
                 .toLowerCase();
 
 
-        if (!key) {
+        if (
+            !key
+        ) {
 
             continue;
 
@@ -810,8 +860,7 @@ async function getProductAnalytics(
 
     // ======================================================
     // DELIVERED PACKAGES
-    //
-    // The existing date filtering remains unchanged.
+    // ======================================================
     //
     // When a substation is active:
     //
@@ -820,6 +869,10 @@ async function getProductAnalytics(
     //
     //     ADMIN
     //         -> selected substation
+    //
+    // When there is no effective substation:
+    //
+    //     global delivered packages.
     //
     // ======================================================
 
@@ -947,11 +1000,13 @@ async function getProductAnalytics(
 
                 const category =
                     product.category
+
                         ? categoryById.get(
                             String(
                                 product.category
                             )
                         ) || null
+
                         : null;
 
 
@@ -968,6 +1023,7 @@ async function getProductAnalytics(
                 //     Product.units
                 //
                 // Missing substation inventory means 0.
+                //
                 // ==================================================
 
                 let marketAvailable;
@@ -1001,8 +1057,6 @@ async function getProductAnalytics(
                 //     The ID of the Stock document associated
                 //     with this Product.
                 //
-                // Product.stock is already selected above,
-                // so no additional database query is needed.
                 // ==================================================
 
                 return {
