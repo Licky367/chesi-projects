@@ -96,27 +96,29 @@
 
   <div class="products-heading">
 
+<% if(user && user.role === "admin") { %>
 
     <!-- ======================================================
-         BACK BUTTON LINK
+         SUBCATEGORY LINK
     ======================================================= -->
 
     <div class="product-back">
 
       <a
-        href="/"
+        href="/products/category/<%= category._id %>/categories"
         class="secondary-btn"
       >
 
         <i class="fas fa-arrow-left"></i>
 
         <span>
-          ⬅️ Back
+          Subcategories
         </span>
 
       </a>
 
     </div>
+<% } %>
 
 
     <!-- ======================================================
