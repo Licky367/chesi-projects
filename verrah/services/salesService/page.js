@@ -229,14 +229,12 @@ async function getSalesPageData(
         effectiveSubstationId
     ) {
 
-        // ==================================================
-        // USE THE SUBSTATION SERVICE
-        // ==================================================
-
         const effectiveSubstation =
-            await substationService.getById(
-                effectiveSubstationId
-            );
+            await substationService.getById
+                ? await substationService.getById(
+                    effectiveSubstationId
+                )
+                : null;
 
 
         if (
@@ -253,10 +251,6 @@ async function getSalesPageData(
                 );
 
         } else {
-
-            // ==============================================
-            // FALLBACK TO ALREADY LOADED SUBSTATIONS
-            // ==============================================
 
             const substation =
                 substations.find(
@@ -294,17 +288,12 @@ async function getSalesPageData(
     //
     // WITHOUT EFFECTIVE SUBSTATION:
     //
-    //     ALL active categories.
+    //     All active categories.
     //
     // WITH EFFECTIVE SUBSTATION:
     //
-    //     ONLY categories whose:
-    //
-    //     category.businessType.id
-    //
-    //     matches:
-    //
-    //     substation.businessType.id
+    //     Only categories whose businessType.id matches
+    //     the effective substation businessType.id.
     //
     // ======================================================
 
