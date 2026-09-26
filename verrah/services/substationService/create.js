@@ -1,12 +1,17 @@
 // ==========================================================
-// verrah/services/substationService/create.js
-// CREATE SUBSTATION
+// services/substationService/create.js
+//
+// SUBSTATION CREATE SERVICE
 // ==========================================================
 
-const mongoose = require("mongoose");
+const mongoose =
+    require("mongoose");
 
-const Substation = require("../../models/substations");
-const Category = require("../../models/category");
+const Substation =
+    require("../../models/substations");
+
+const Category =
+    require("../../models/category");
 
 const {
     text,
@@ -18,171 +23,314 @@ const {
 
 
 // ==========================================================
-// BUSINESS TYPE
+// RESOLVE BUSINESS TYPE
 // ==========================================================
 //
-// Business types are shared between Categories and
-// Substations.
+// Business type is NOT a separate model.
 //
-// There is no separate BusinessType model.
+// The same businessType.id is shared by:
+//   Category.businessType
+//   Substation.businessType
 //
-// The shared business type is represented as:
-//
-// {
-//     id: ObjectId("..."),
-//     name: "Cosmetics"
-// }
-//
-// Category.businessType.id
-// Substation.businessType.id
-//
-// must contain the SAME ID for the same business type.
-//
+// If the name already exists, reuse its ID.
+// If it does not exist, create a new shared ObjectId.
 // ==========================================================
 
 async function resolveBusinessType(value) {
 
-    // ------------------------------------------------------
-    // NORMALIZE INPUT
-    // ------------------------------------------------------
-
     let businessTypeName = "";
 
-    if (typeof value === "string") {
-
-        businessTypeName =
-            text(value);
-
-    } else if (
+    if (
         value &&
         typeof value === "object"
     ) {
 
         businessTypeName =
             text(value.name);
+
+    } else {
+
+        businessTypeName =
+            text(value);
     }
 
-    // ------------------------------------------------------
-    // NO BUSINESS TYPE
-    // ------------------------------------------------------
 
     if (!businessTypeName) {
 
-        return {
-            id: null,
-            name: ""
-        };
+        throw new Error(
+            "Business type is required."
+        );
     }
 
+
     // ------------------------------------------------------
-    // FIND EXISTING BUSINESS TYPE
-    // ------------------------------------------------------
-    //
-    // First check Categories because Category.businessType
-    // is the shared business-type source.
-    //
-    // Several categories may use the same business type.
-    //
+    // LOOK IN CATEGORIES FIRST
     // ------------------------------------------------------
 
-    const existingCategory =
+    const category =
         await Category.findOne({
-            "businessType.name": businessTypeName
+            "businessType.name":
+                businessTypeName
         })
         .select("businessType")
         .lean();
 
+
     if (
-        existingCategory &&
-        existingCategory.businessType &&
-        existingCategory.businessType.id
+        category &&
+        category.businessType &&
+        category.businessType.id
     ) {
 
         return {
             id:
-                existingCategory.businessType.id,
+                category.businessType.id,
 
             name:
-                existingCategory.businessType.name ||
+                category.businessType.name ||
                 businessTypeName
         };
     }
 
+
     // ------------------------------------------------------
-    // CHECK EXISTING SUBSTATION
-    // ------------------------------------------------------
-    //
-    // This covers a business type that may already have
-    // been assigned to a substation even if no Category
-    // currently carries it.
-    //
+    // LOOK IN SUBSTATIONS
     // ------------------------------------------------------
 
-    const existingSubstation =
+    const substation =
         await Substation.findOne({
-            "businessType.name": businessTypeName
+            "businessType.name":
+                businessTypeName
         })
         .select("businessType")
         .lean();
 
+
     if (
-        existingSubstation &&
-        existingSubstation.businessType &&
-        existingSubstation.businessType.id
+        substation &&
+        substation.businessType &&
+        substation.businessType.id
     ) {
 
         return {
             id:
-                existingSubstation.businessType.id,
+                substation.businessType.id,
 
             name:
-                existingSubstation.businessType.name ||
+                substation.businessType.name ||
                 businessTypeName
         };
     }
 
+
     // ------------------------------------------------------
-    // CREATE NEW BUSINESS TYPE ID
-    // ------------------------------------------------------
-    //
-    // There is no separate BusinessType document.
-    //
-    // The ObjectId itself is the shared business-type ID.
-    //
+    // NEW BUSINESS TYPE
     // ------------------------------------------------------
 
     return {
+
         id:
             new mongoose.Types.ObjectId(),
 
         name:
             businessTypeName
+
     };
 }
 
 
 // ==========================================================
-// EXPORT BUSINESS TYPE RESOLVER
+// GET BUSINESS TYPES
 // ==========================================================
 //
-// The update service can use this same resolver when the
-// business type of an existing substation is changed.
+// Collects business types from BOTH:
+//   Category
+//   Substation
 //
-// Example:
+// Multiple categories/substations may use the same
+// businessType.id, so duplicates are removed.
 //
-// const {
-//     resolveBusinessType
-// } = require("./create");
-//
-// const businessType =
-//     await resolveBusinessType(
-//         body.businessType
-//     );
-//
+// No separate BusinessType model is used.
 // ==========================================================
 
-exports.resolveBusinessType =
-    resolveBusinessType;
+async function getBusinessTypes() {
+
+    const [
+        categories,
+        substations
+    ] = await Promise.all([
+
+        Category.find({
+            "businessType.name": {
+                $nin: [
+                    null,
+                    ""
+                ]
+            }
+        })
+        .select("businessType")
+        .lean(),
+
+        Substation.find({
+            "businessType.name": {
+                $nin: [
+                    null,
+                    ""
+                ]
+            }
+        })
+        .select("businessType")
+        .lean()
+
+    ]);
+
+
+    const businessTypes =
+        new Map();
+
+
+    // ------------------------------------------------------
+    // CATEGORY BUSINESS TYPES
+    // ------------------------------------------------------
+
+    for (
+        const category
+        of categories
+    ) {
+
+        const businessType =
+            category.businessType;
+
+
+        if (
+            !businessType ||
+            !businessType.name
+        ) {
+            continue;
+        }
+
+
+        const name =
+            text(
+                businessType.name
+            );
+
+
+        if (!name) {
+            continue;
+        }
+
+
+        const id =
+            businessType.id
+                ? String(
+                    businessType.id
+                )
+                : "";
+
+
+        // Prefer the shared ID as the
+        // unique identifier.
+
+        const key =
+            id ||
+            name.toLowerCase();
+
+
+        if (
+            !businessTypes.has(key)
+        ) {
+
+            businessTypes.set(
+                key,
+                {
+                    id:
+                        businessType.id ||
+                        null,
+
+                    name
+                }
+            );
+        }
+    }
+
+
+    // ------------------------------------------------------
+    // SUBSTATION BUSINESS TYPES
+    // ------------------------------------------------------
+
+    for (
+        const substation
+        of substations
+    ) {
+
+        const businessType =
+            substation.businessType;
+
+
+        if (
+            !businessType ||
+            !businessType.name
+        ) {
+            continue;
+        }
+
+
+        const name =
+            text(
+                businessType.name
+            );
+
+
+        if (!name) {
+            continue;
+        }
+
+
+        const id =
+            businessType.id
+                ? String(
+                    businessType.id
+                )
+                : "";
+
+
+        const key =
+            id ||
+            name.toLowerCase();
+
+
+        if (
+            !businessTypes.has(key)
+        ) {
+
+            businessTypes.set(
+                key,
+                {
+                    id:
+                        businessType.id ||
+                        null,
+
+                    name
+                }
+            );
+        }
+    }
+
+
+    // ------------------------------------------------------
+    // SORT BY NAME
+    // ------------------------------------------------------
+
+    return Array.from(
+        businessTypes.values()
+    ).sort(
+        (a, b) =>
+            a.name.localeCompare(
+                b.name
+            )
+    );
+}
 
 
 // ==========================================================
@@ -193,12 +341,10 @@ exports.create = async (body) => {
 
     body = body || {};
 
-    // ------------------------------------------------------
-    // BASIC INFORMATION
-    // ------------------------------------------------------
 
     const name =
         text(body.name);
+
 
     if (!name) {
 
@@ -206,6 +352,7 @@ exports.create = async (body) => {
             "Substation name is required."
         );
     }
+
 
     if (
         await Substation.findOne({
@@ -218,60 +365,39 @@ exports.create = async (body) => {
         );
     }
 
-    // ------------------------------------------------------
-    // GPS
-    // ------------------------------------------------------
 
     const gps =
         buildGPS(body);
 
-    // ------------------------------------------------------
-    // PHONE
-    // ------------------------------------------------------
 
     const phoneNumber =
         normalizePhoneNumber(
             body.phoneNumber
         );
 
-    // ------------------------------------------------------
-    // DIRECTIONS
-    // ------------------------------------------------------
 
     const directions =
         normalizeDirections(
             body.directions
         );
 
-    // ------------------------------------------------------
-    // BUSINESS TYPE
-    // ------------------------------------------------------
-    //
-    // The service creates/resolves the shared business type.
-    //
-    // The form only needs to provide the business type name.
-    //
-    // ------------------------------------------------------
 
     const businessType =
         await resolveBusinessType(
             body.businessType
         );
 
-    // ------------------------------------------------------
-    // SUBSTATION DATA
-    // ------------------------------------------------------
 
     const substationData = {
 
         name,
 
+        businessType,
+
         location:
             text(body.location),
 
         phoneNumber,
-
-        businessType,
 
         substationIcon:
             text(body.substationIcon),
@@ -291,22 +417,28 @@ exports.create = async (body) => {
                     body.isActive === "true" ||
                     body.isActive === "on"
                 )
+
     };
 
-    // ------------------------------------------------------
-    // CREATE
-    // ------------------------------------------------------
 
     const created =
         await Substation.create(
             substationData
         );
 
-    // ------------------------------------------------------
-    // RETURN
-    // ------------------------------------------------------
 
     return prepareSubstation(
         created.toObject()
     );
 };
+
+
+// ==========================================================
+// EXPORT BUSINESS TYPE HELPERS
+// ==========================================================
+
+exports.getBusinessTypes =
+    getBusinessTypes;
+
+exports.resolveBusinessType =
+    resolveBusinessType;
