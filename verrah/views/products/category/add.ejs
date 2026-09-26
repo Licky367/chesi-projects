@@ -2,35 +2,93 @@
 const isEdit = !!(category && category._id);
 
 const categoryName =
-    category?.name ||
-    formData?.name ||
-    "";
+category?.name ||
+formData?.name ||
+"";
 
 const categoryDescription =
-    category?.description ||
-    formData?.description ||
-    "";
+category?.description ||
+formData?.description ||
+"";
 
 const existingImage =
-    category?.categoryIcon ||
-    "";
+category?.categoryIcon ||
+"";
 
 const businessTypes =
-    Array.isArray(locals.businessTypes)
-        ? locals.businessTypes
-        : [];
+Array.isArray(locals.businessTypes)
+? locals.businessTypes
+: [];
 
 const selectedBusinessTypeId =
-    isEdit &&
-    category?.businessType?.id
-        ? String(category.businessType.id)
-        : String(formData?.businessTypeId || "");
+isEdit &&
+category?.businessType?.id
+? String(category.businessType.id)
+: String(formData?.businessTypeId || "");
 %>
 
-<section class="shop-page category-form-page">
+<section class="category-add-page"><div class="category-add-card">
 
     <!-- =====================================================
-         CATEGORY FORM
+         HEADER
+    ====================================================== -->
+
+    <header class="category-add-header">
+
+        <div class="category-add-icon">
+            <i class="fas fa-layer-group"></i>
+        </div>
+
+        <div class="category-add-heading">
+
+            <h1>
+                <%= isEdit
+                    ? "Edit Category"
+                    : "Add Category" %>
+            </h1>
+
+            <p>
+                <%= isEdit
+                    ? "Update the category details and image."
+                    : "Create a new product category for your business." %>
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         ERROR ALERT
+    ====================================================== -->
+
+    <% if (typeof error !== "undefined" && error) { %>
+
+        <div class="category-alert category-alert-error">
+
+            <div class="alert-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+
+            <div class="alert-content">
+
+                <strong>
+                    Unable to save category
+                </strong>
+
+                <span>
+                    <%= error %>
+                </span>
+
+            </div>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- =====================================================
+         FORM
     ====================================================== -->
 
     <form
@@ -44,33 +102,61 @@ const selectedBusinessTypeId =
     >
 
         <!-- =================================================
-             CATEGORY NAME
+             CATEGORY DETAILS
         ================================================== -->
 
         <section class="form-section">
 
             <div class="section-heading">
-                <span class="section-number">01</span>
-                <h2>Category Details</h2>
+
+                <span class="section-number">
+                    01
+                </span>
+
+                <div>
+
+                    <h2>
+                        Category Details
+                    </h2>
+
+                    <p>
+                        Enter the basic information for this category.
+                    </p>
+
+                </div>
+
             </div>
+
+
+            <!-- CATEGORY NAME -->
 
             <div class="form-group">
 
                 <label for="name">
                     Category Name
+                    <span class="required">*</span>
                 </label>
 
-                <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value="<%= categoryName %>"
-                    placeholder="Enter category name"
-                    autocomplete="off"
-                    required
-                >
+                <div class="input-wrapper">
+
+                    <i class="fas fa-tag"></i>
+
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value="<%= categoryName %>"
+                        placeholder="Enter category name"
+                        autocomplete="off"
+                        required
+                    >
+
+                </div>
 
             </div>
+
+
+            <!-- DESCRIPTION -->
 
             <div class="form-group">
 
@@ -78,12 +164,18 @@ const selectedBusinessTypeId =
                     Description
                 </label>
 
-                <textarea
-                    id="description"
-                    name="description"
-                    rows="4"
-                    placeholder="Enter category description"
-                ><%= categoryDescription %></textarea>
+                <div class="input-wrapper">
+
+                    <i class="fas fa-align-left"></i>
+
+                    <textarea
+                        id="description"
+                        name="description"
+                        rows="4"
+                        placeholder="Enter category description"
+                    ><%= categoryDescription %></textarea>
+
+                </div>
 
             </div>
 
@@ -97,43 +189,70 @@ const selectedBusinessTypeId =
         <section class="form-section">
 
             <div class="section-heading">
-                <span class="section-number">02</span>
-                <h2>Business Type</h2>
+
+                <span class="section-number">
+                    02
+                </span>
+
+                <div>
+
+                    <h2>
+                        Business Type
+                    </h2>
+
+                    <p>
+                        Select the business type this category belongs to.
+                    </p>
+
+                </div>
+
             </div>
+
 
             <div class="form-group">
 
                 <label for="businessTypeId">
                     Business Type
+                    <span class="required">*</span>
                 </label>
 
-                <select
-                    id="businessTypeId"
-                    name="businessTypeId"
-                    required
-                    <%= businessTypes.length ? "" : "disabled" %>
-                >
+                <div class="input-wrapper">
 
-                    <option value="">
+                    <i class="fas fa-briefcase"></i>
+
+                    <select
+                        id="businessTypeId"
+                        name="businessTypeId"
+                        required
                         <%= businessTypes.length
-                            ? "Select business type"
-                            : "No business types available" %>
-                    </option>
+                            ? ""
+                            : "disabled" %>
+                    >
 
-                    <% businessTypes.forEach(type => { %>
+                        <option value="">
 
-                        <option
-                            value="<%= type._id %>"
-                            <%= String(type._id) === selectedBusinessTypeId
-                                ? "selected"
-                                : "" %>
-                        >
-                            <%= type.name %>
+                            <%= businessTypes.length
+                                ? "Select business type"
+                                : "No business types available" %>
+
                         </option>
 
-                    <% }) %>
+                        <% businessTypes.forEach(type => { %>
 
-                </select>
+                            <option
+                                value="<%= type._id %>"
+                                <%= String(type._id) === selectedBusinessTypeId
+                                    ? "selected"
+                                    : "" %>
+                            >
+                                <%= type.name %>
+                            </option>
+
+                        <% }) %>
+
+                    </select>
+
+                </div>
 
             </div>
 
@@ -147,76 +266,302 @@ const selectedBusinessTypeId =
         <section class="form-section">
 
             <div class="section-heading">
-                <span class="section-number">03</span>
-                <h2>Category Image</h2>
-            </div>
 
-            <div class="form-group">
+                <span class="section-number">
+                    03
+                </span>
 
-                <label for="categoryIcon">
-                    Upload Image
-                </label>
+                <div>
 
-                <input
-                    type="file"
-                    id="categoryIcon"
-                    name="categoryIcon"
-                    accept="image/*"
-                >
+                    <h2>
+                        Category Image
+                    </h2>
 
-            </div>
-
-            <div class="form-group">
-
-                <label for="categoryIconUrl">
-                    Or Image URL
-                </label>
-
-                <input
-                    type="url"
-                    id="categoryIconUrl"
-                    name="categoryIconUrl"
-                    value="<%= formData?.categoryIconUrl || "" %>"
-                    placeholder="https://example.com/image.jpg"
-                    autocomplete="off"
-                >
-
-            </div>
-
-
-            <% if (existingImage) { %>
-
-                <div
-                    id="currentImageWrapper"
-                    class="category-image-preview"
-                >
-
-                    <p>Current Image</p>
-
-                    <img
-                        id="currentImagePreview"
-                        src="<%= existingImage %>"
-                        alt="<%= categoryName %>"
-                    >
+                    <p>
+                        Upload an image or provide an image URL.
+                    </p>
 
                 </div>
 
-            <% } %>
+            </div>
 
+
+            <!-- =================================================
+                 IMAGE SOURCE OPTIONS
+            ================================================== -->
+
+            <div class="image-source-grid">
+
+
+                <!-- =================================================
+                     UPLOAD METHOD
+                ================================================== -->
+
+                <div class="image-method selected">
+
+                    <div class="image-method-header">
+
+                        <div class="method-radio">
+
+                            <input
+                                type="radio"
+                                name="imageMethod"
+                                value="upload"
+                                checked
+                            >
+
+                            <span class="custom-radio"></span>
+
+                        </div>
+
+                        <div class="method-icon upload-icon">
+
+                            <i class="fas fa-cloud-upload-alt"></i>
+
+                        </div>
+
+                        <div class="method-title">
+
+                            <strong>
+                                Upload Image
+                            </strong>
+
+                            <span>
+                                Select an image from your device
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="image-method-content">
+
+                        <label
+                            for="categoryIcon"
+                            class="file-upload-box"
+                        >
+
+                            <div class="upload-cloud">
+
+                                <i class="fas fa-cloud-upload-alt"></i>
+
+                            </div>
+
+                            <strong>
+                                Choose category image
+                            </strong>
+
+                            <span>
+                                Tap to browse your device
+                            </span>
+
+                            <small>
+                                JPG, JPEG, PNG, WEBP
+                            </small>
+
+                        </label>
+
+
+                        <input
+                            type="file"
+                            id="categoryIcon"
+                            name="categoryIcon"
+                            accept="image/*"
+                        >
+
+
+                        <!-- SELECTED FILE -->
+
+                        <div
+                            id="selectedFile"
+                            class="selected-file"
+                            style="display:none;"
+                        >
+
+                            <div class="selected-file-icon">
+
+                                <i class="fas fa-image"></i>
+
+                            </div>
+
+                            <div class="selected-file-info">
+
+                                <strong id="selectedFileName">
+                                    Selected image
+                                </strong>
+
+                                <span id="selectedFileSize">
+                                    Image selected
+                                </span>
+
+                            </div>
+
+                            <button
+                                type="button"
+                                id="removeFile"
+                                class="remove-file"
+                                aria-label="Remove selected image"
+                            >
+                                <i class="fas fa-times"></i>
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     URL METHOD
+                ================================================== -->
+
+                <div class="image-method">
+
+                    <div class="image-method-header">
+
+                        <div class="method-radio">
+
+                            <input
+                                type="radio"
+                                name="imageMethod"
+                                value="url"
+                            >
+
+                            <span class="custom-radio"></span>
+
+                        </div>
+
+                        <div class="method-icon url-icon">
+
+                            <i class="fas fa-link"></i>
+
+                        </div>
+
+                        <div class="method-title">
+
+                            <strong>
+                                Image URL
+                            </strong>
+
+                            <span>
+                                Use an image hosted online
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="image-method-content">
+
+                        <label
+                            for="categoryIconUrl"
+                            class="url-label"
+                        >
+                            Image URL
+                        </label>
+
+                        <div class="url-input-wrapper">
+
+                            <i class="fas fa-link"></i>
+
+                            <input
+                                type="url"
+                                id="categoryIconUrl"
+                                name="categoryIconUrl"
+                                value="<%= formData?.categoryIconUrl || "" %>"
+                                placeholder="https://example.com/image.jpg"
+                                autocomplete="off"
+                            >
+
+                        </div>
+
+                        <div class="url-hint">
+
+                            <i class="fas fa-info-circle"></i>
+
+                            <span>
+                                Enter a direct URL to the category image.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 IMAGE PREVIEW
+            ================================================== -->
 
             <div
-                id="newImageWrapper"
-                class="category-image-preview"
-                style="display:none;"
+                id="imagePreviewWrapper"
+                class="image-preview-wrapper"
+                style="<%= existingImage ? "" : "display:none;" %>"
             >
 
-                <p>New Image Preview</p>
+                <div class="preview-heading">
 
-                <img
-                    id="newImagePreview"
-                    src=""
-                    alt="New category image"
-                >
+                    <div>
+
+                        <span class="preview-label">
+                            Image Preview
+                        </span>
+
+                        <span class="preview-description">
+                            This is how the category image will appear.
+                        </span>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        id="clearPreview"
+                        class="clear-preview"
+                    >
+                        Clear
+                    </button>
+
+                </div>
+
+
+                <div class="image-preview-card">
+
+                    <div class="preview-image-container">
+
+                        <img
+                            id="imagePreview"
+                            src="<%= existingImage %>"
+                            alt="<%= categoryName %>"
+                        >
+
+                    </div>
+
+
+                    <div class="preview-details">
+
+                        <span class="preview-details-label">
+                            CATEGORY IMAGE
+                        </span>
+
+                        <strong>
+                            <%= categoryName || "Category" %>
+                        </strong>
+
+                        <span>
+                            <%= existingImage
+                                ? "Current category image"
+                                : "New image preview" %>
+                        </span>
+
+                    </div>
+
+                </div>
 
             </div>
 
@@ -227,32 +572,36 @@ const selectedBusinessTypeId =
              ACTIONS
         ================================================== -->
 
-        <section class="form-actions">
+        <section class="category-form-actions">
+
+            <a
+                href="/products/category"
+                class="category-btn category-btn-secondary"
+            >
+                <i class="fas fa-arrow-left"></i>
+
+                Cancel
+            </a>
+
 
             <button
                 type="submit"
-                class="btn btn-primary"
+                class="category-btn category-btn-primary"
             >
+                <i class="fas fa-save"></i>
+
                 <%= isEdit
                     ? "Update Category"
                     : "Create Category" %>
             </button>
 
-            <a
-                href="/products/category"
-                class="btn btn-secondary"
-            >
-                Cancel
-            </a>
-
         </section>
 
     </form>
 
-</section>
+</div>
 
-
-<script>
+</section><script>
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -271,14 +620,64 @@ document.addEventListener("DOMContentLoaded", () => {
     const imageUrlInput =
         document.getElementById("categoryIconUrl");
 
-    const newImageWrapper =
-        document.getElementById("newImageWrapper");
+    const imagePreviewWrapper =
+        document.getElementById("imagePreviewWrapper");
 
-    const newImagePreview =
-        document.getElementById("newImagePreview");
+    const imagePreview =
+        document.getElementById("imagePreview");
 
-    const currentImageWrapper =
-        document.getElementById("currentImageWrapper");
+    const clearPreview =
+        document.getElementById("clearPreview");
+
+    const selectedFile =
+        document.getElementById("selectedFile");
+
+    const selectedFileName =
+        document.getElementById("selectedFileName");
+
+    const selectedFileSize =
+        document.getElementById("selectedFileSize");
+
+    const removeFile =
+        document.getElementById("removeFile");
+
+    const imageMethods =
+        document.querySelectorAll(".image-method");
+
+    const imageMethodRadios =
+        document.querySelectorAll(
+            'input[name="imageMethod"]'
+        );
+
+
+    const hasExistingImage =
+        <%= existingImage ? "true" : "false" %>;
+
+
+    /* =====================================================
+       IMAGE METHOD SELECTION
+    ====================================================== */
+
+    imageMethodRadios.forEach(radio => {
+
+        radio.addEventListener("change", () => {
+
+            imageMethods.forEach(method => {
+
+                method.classList.remove("selected");
+
+            });
+
+            const method =
+                radio.closest(".image-method");
+
+            if (method) {
+                method.classList.add("selected");
+            }
+
+        });
+
+    });
 
 
     /* =====================================================
@@ -295,29 +694,170 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!file) {
 
-                if (newImageWrapper) {
-                    newImageWrapper.style.display = "none";
+                if (selectedFile) {
+                    selectedFile.style.display =
+                        "none";
                 }
 
-                newImagePreview.src = "";
+                if (!imageUrlInput || !imageUrlInput.value.trim()) {
+
+                    if (imagePreviewWrapper) {
+                        imagePreviewWrapper.style.display =
+                            hasExistingImage
+                                ? "block"
+                                : "none";
+                    }
+
+                    if (imagePreview) {
+                        imagePreview.src =
+                            hasExistingImage
+                                ? "<%= existingImage %>"
+                                : "";
+                    }
+
+                }
 
                 return;
             }
+
+
+            /* FILE INFORMATION */
+
+            if (selectedFileName) {
+
+                selectedFileName.textContent =
+                    file.name;
+
+            }
+
+
+            if (selectedFileSize) {
+
+                const size =
+                    file.size >= 1024 * 1024
+                        ? (
+                            file.size /
+                            (1024 * 1024)
+                        ).toFixed(2) + " MB"
+                        : (
+                            file.size /
+                            1024
+                        ).toFixed(1) + " KB";
+
+                selectedFileSize.textContent =
+                    size;
+
+            }
+
+
+            if (selectedFile) {
+
+                selectedFile.style.display =
+                    "flex";
+
+            }
+
+
+            /* IMAGE PREVIEW */
 
             const reader =
                 new FileReader();
 
             reader.onload = event => {
 
-                newImagePreview.src =
-                    event.target.result;
+                if (imagePreview) {
 
-                newImageWrapper.style.display =
-                    "block";
+                    imagePreview.src =
+                        event.target.result;
+
+                }
+
+                if (imagePreviewWrapper) {
+
+                    imagePreviewWrapper.style.display =
+                        "block";
+
+                }
 
             };
 
             reader.readAsDataURL(file);
+
+        });
+
+    }
+
+
+    /* =====================================================
+       REMOVE FILE
+    ====================================================== */
+
+    if (removeFile) {
+
+        removeFile.addEventListener("click", event => {
+
+            event.preventDefault();
+
+            if (imageInput) {
+
+                imageInput.value = "";
+
+            }
+
+            if (selectedFile) {
+
+                selectedFile.style.display =
+                    "none";
+
+            }
+
+
+            const url =
+                imageUrlInput
+                    ? imageUrlInput.value.trim()
+                    : "";
+
+
+            if (url) {
+
+                if (imagePreview) {
+                    imagePreview.src = url;
+                }
+
+                if (imagePreviewWrapper) {
+                    imagePreviewWrapper.style.display =
+                        "block";
+                }
+
+                return;
+
+            }
+
+
+            if (hasExistingImage) {
+
+                if (imagePreview) {
+                    imagePreview.src =
+                        "<%= existingImage %>";
+                }
+
+                if (imagePreviewWrapper) {
+                    imagePreviewWrapper.style.display =
+                        "block";
+                }
+
+            } else {
+
+                if (imagePreview) {
+                    imagePreview.src = "";
+                }
+
+                if (imagePreviewWrapper) {
+                    imagePreviewWrapper.style.display =
+                        "none";
+                }
+
+            }
 
         });
 
@@ -335,25 +875,163 @@ document.addEventListener("DOMContentLoaded", () => {
             const url =
                 imageUrlInput.value.trim();
 
+
             if (!url) {
 
-                if (imageInput && imageInput.files.length) {
+                if (
+                    imageInput &&
+                    imageInput.files &&
+                    imageInput.files.length
+                ) {
+
                     return;
+
                 }
 
-                if (newImageWrapper) {
-                    newImageWrapper.style.display = "none";
-                }
 
-                newImagePreview.src = "";
+                if (hasExistingImage) {
+
+                    if (imagePreview) {
+                        imagePreview.src =
+                            "<%= existingImage %>";
+                    }
+
+                    if (imagePreviewWrapper) {
+                        imagePreviewWrapper.style.display =
+                            "block";
+                    }
+
+                } else {
+
+                    if (imagePreview) {
+                        imagePreview.src = "";
+                    }
+
+                    if (imagePreviewWrapper) {
+                        imagePreviewWrapper.style.display =
+                            "none";
+                    }
+
+                }
 
                 return;
+
             }
 
-            newImagePreview.src = url;
 
-            newImageWrapper.style.display =
-                "block";
+            if (imagePreview) {
+
+                imagePreview.src =
+                    url;
+
+            }
+
+
+            if (imagePreviewWrapper) {
+
+                imagePreviewWrapper.style.display =
+                    "block";
+
+            }
+
+        });
+
+    }
+
+
+    /* =====================================================
+       PREVIEW ERROR
+    ====================================================== */
+
+    if (imagePreview) {
+
+        imagePreview.addEventListener(
+            "error",
+            () => {
+
+                imagePreview.classList.add(
+                    "preview-error"
+                );
+
+            }
+        );
+
+
+        imagePreview.addEventListener(
+            "load",
+            () => {
+
+                imagePreview.classList.remove(
+                    "preview-error"
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       CLEAR PREVIEW
+    ====================================================== */
+
+    if (clearPreview) {
+
+        clearPreview.addEventListener("click", () => {
+
+            if (imageInput) {
+
+                imageInput.value = "";
+
+            }
+
+            if (imageUrlInput) {
+
+                imageUrlInput.value = "";
+
+            }
+
+            if (selectedFile) {
+
+                selectedFile.style.display =
+                    "none";
+
+            }
+
+
+            if (hasExistingImage) {
+
+                if (imagePreview) {
+
+                    imagePreview.src =
+                        "<%= existingImage %>";
+
+                }
+
+                if (imagePreviewWrapper) {
+
+                    imagePreviewWrapper.style.display =
+                        "block";
+
+                }
+
+            } else {
+
+                if (imagePreview) {
+
+                    imagePreview.src =
+                        "";
+
+                }
+
+                if (imagePreviewWrapper) {
+
+                    imagePreviewWrapper.style.display =
+                        "none";
+
+                }
+
+            }
 
         });
 
@@ -388,9 +1066,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     ? imageUrlInput.value.trim()
                     : "";
 
-            const hasExistingImage =
-                <%= existingImage ? "true" : "false" %>;
-
 
             if (!name) {
 
@@ -400,9 +1075,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Please enter a category name."
                 );
 
-                nameInput.focus();
+                if (nameInput) {
+                    nameInput.focus();
+                }
 
                 return;
+
             }
 
 
@@ -414,9 +1092,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Please select a business type."
                 );
 
-                businessTypeInput.focus();
+                if (businessTypeInput) {
+                    businessTypeInput.focus();
+                }
 
                 return;
+
             }
 
 
@@ -433,6 +1114,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
                 return;
+
             }
 
         });
