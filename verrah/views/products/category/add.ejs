@@ -1,3 +1,1481 @@
+// ==========================================================
+// verrah/services/categoryService.js
+// CATEGORY SERVICE
+// ==========================================================
+
+const mongoose =
+  require("mongoose");
+
+const Category =
+  require("../models/category");
+
+const Product =
+  require("../models/products");
+
+const Substation =
+  require("../models/substations");
+
+
+// ==========================================================
+// HELPERS
+// ==========================================================
+
+function text(value) {
+
+  return String(
+    value ?? ""
+  ).trim();
+
+}
+
+
+// ----------------------------------------------------------
+// NORMALIZE CATEGORY NAME
+// ----------------------------------------------------------
+
+function cleanCategoryName(value) {
+
+  return text(value)
+    .replace(/\s+/g, " ");
+
+}
+
+
+// ----------------------------------------------------------
+// VALIDATE IMAGE URL
+// ----------------------------------------------------------
+
+function isValidImageUrl(value) {
+
+  if (!value) {
+    return false;
+  }
+
+  try {
+
+    const url =
+      new URL(value);
+
+    return (
+      url.protocol === "http:" ||
+      url.protocol === "https:"
+    );
+
+  } catch (error) {
+
+    return false;
+
+  }
+
+}
+
+
+// ==========================================================
+// GET BUSINESS TYPES
+// ==========================================================
+//
+// Business types are maintained through substations.
+//
+// Each active substation contains:
+//
+//     businessType.id
+//     businessType.name
+//
+// The category form receives one unique list from the
+// backend.
+//
+// ==========================================================
+
+exports.getBusinessTypes = async () => {
+
+  const substations =
+    await Substation.find({
+
+      isActive:
+        true,
+
+      "businessType.id":
+        {
+          $ne: null
+        }
+
+    })
+    .select(
+      "businessType"
+    )
+    .lean();
+
+
+  const businessTypes =
+    new Map();
+
+
+  for (
+    const substation
+    of substations
+  ) {
+
+    if (
+      !substation.businessType ||
+      !substation.businessType.id
+    ) {
+
+      continue;
+
+    }
+
+
+    const id =
+      String(
+        substation.businessType.id
+      );
+
+
+    const name =
+      text(
+        substation.businessType.name
+      );
+
+
+    if (!name) {
+
+      continue;
+
+    }
+
+
+    if (
+      !businessTypes.has(id)
+    ) {
+
+      businessTypes.set(
+
+        id,
+
+        {
+          id,
+          name
+        }
+
+      );
+
+    }
+
+  }
+
+
+  return Array.from(
+    businessTypes.values()
+  ).sort(
+
+    (a, b) =>
+      a.name.localeCompare(
+        b.name
+      )
+
+  );
+
+};
+
+
+// ==========================================================
+// GET BUSINESS TYPE
+// ==========================================================
+//
+// Validates that the selected business type exists in the
+// backend business-type options.
+//
+// ==========================================================
+
+exports.getBusinessType = async (
+  businessTypeId
+) => {
+
+  const id =
+    text(
+      businessTypeId
+    );
+
+
+  if (
+    !id ||
+    !mongoose.Types.ObjectId.isValid(
+      id
+    )
+  ) {
+
+    const error =
+      new Error(
+        "Please select a valid business type."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  const businessTypes =
+    await exports.getBusinessTypes();
+
+
+  const businessType =
+    businessTypes.find(
+
+      item =>
+        String(
+          item.id
+        ) === id
+
+    );
+
+
+  if (!businessType) {
+
+    const error =
+      new Error(
+        "The selected business type is not available."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  return businessType;
+
+};
+
+
+// ==========================================================
+// CREATE CATEGORY
+// ==========================================================
+
+exports.createCategory = async (
+  body = {},
+  file = null
+) => {
+
+  const name =
+    cleanCategoryName(
+      body.name
+    );
+
+
+  const categoryIconUrl =
+    text(
+      body.categoryIconUrl
+    );
+
+
+  const businessTypeId =
+    text(
+      body.businessTypeId
+    );
+
+
+  // --------------------------------------------------------
+  // CATEGORY NAME
+  // --------------------------------------------------------
+
+  if (!name) {
+
+    const error =
+      new Error(
+        "Category name is required."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  // --------------------------------------------------------
+  // BUSINESS TYPE
+  // --------------------------------------------------------
+
+  const businessType =
+    await exports.getBusinessType(
+      businessTypeId
+    );
+
+
+  // --------------------------------------------------------
+  // IMAGE SOURCE
+  //
+  // Exactly one of:
+  //
+  // 1. uploaded file
+  // 2. image URL
+  // --------------------------------------------------------
+
+  const hasUpload =
+    Boolean(file);
+
+  const hasUrl =
+    Boolean(categoryIconUrl);
+
+
+  if (
+    !hasUpload &&
+    !hasUrl
+  ) {
+
+    const error =
+      new Error(
+        "Choose either an image to upload or enter an image URL."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  // --------------------------------------------------------
+  // DO NOT ALLOW BOTH
+  // --------------------------------------------------------
+
+  if (
+    hasUpload &&
+    hasUrl
+  ) {
+
+    const error =
+      new Error(
+        "Use either an uploaded image or an image URL, not both."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  // --------------------------------------------------------
+  // IMAGE URL VALIDATION
+  // --------------------------------------------------------
+
+  if (
+    hasUrl &&
+    !isValidImageUrl(
+      categoryIconUrl
+    )
+  ) {
+
+    const error =
+      new Error(
+        "The image URL must be a valid HTTP or HTTPS URL."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  // --------------------------------------------------------
+  // CHECK DUPLICATE CATEGORY
+  // --------------------------------------------------------
+
+  const normalizedName =
+    name.toLowerCase();
+
+
+  const existing =
+    await Category.findOne({
+
+      name:
+        normalizedName
+
+    });
+
+
+  if (existing) {
+
+    const error =
+      new Error(
+        `The category "${name}" already exists.`
+      );
+
+    error.statusCode = 409;
+
+    throw error;
+
+  }
+
+
+  // --------------------------------------------------------
+  // DETERMINE STORED IMAGE
+  // --------------------------------------------------------
+
+  let categoryIcon =
+    "";
+
+
+  if (file) {
+
+    categoryIcon =
+      `/uploads/categories/${file.filename}`;
+
+  }
+
+
+  if (categoryIconUrl) {
+
+    categoryIcon =
+      categoryIconUrl;
+
+  }
+
+
+  // --------------------------------------------------------
+  // CREATE CATEGORY
+  // --------------------------------------------------------
+
+  const category =
+    await Category.create({
+
+      name:
+        normalizedName,
+
+      businessType: {
+
+        id:
+          businessType.id,
+
+        name:
+          businessType.name
+
+      },
+
+      categoryIcon,
+
+      isActive:
+        true
+
+    });
+
+
+  return category;
+
+};
+
+
+// ==========================================================
+// GET CATEGORY BY ID
+//
+// Used by the category edit page.
+//
+// Unlike getCategory(), this does not require
+// isActive:true.
+// ==========================================================
+
+exports.getCategoryById = async (
+  categoryId
+) => {
+
+  if (
+    !categoryId ||
+    !mongoose.Types.ObjectId.isValid(
+      categoryId
+    )
+  ) {
+
+    const error =
+      new Error(
+        "Invalid category ID."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  const category =
+    await Category.findById(
+      categoryId
+    ).lean();
+
+
+  if (!category) {
+
+    const error =
+      new Error(
+        "Category not found."
+      );
+
+    error.statusCode = 404;
+
+    throw error;
+
+  }
+
+
+  return category;
+
+};
+
+
+// ==========================================================
+// UPDATE CATEGORY
+// ==========================================================
+
+exports.updateCategory = async (
+  categoryId,
+  body = {},
+  file = null
+) => {
+
+  // --------------------------------------------------------
+  // VALIDATE CATEGORY ID
+  // --------------------------------------------------------
+
+  if (
+    !categoryId ||
+    !mongoose.Types.ObjectId.isValid(
+      categoryId
+    )
+  ) {
+
+    const error =
+      new Error(
+        "Invalid category ID."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  // --------------------------------------------------------
+  // FIND CATEGORY
+  // --------------------------------------------------------
+
+  const category =
+    await Category.findById(
+      categoryId
+    );
+
+
+  if (!category) {
+
+    const error =
+      new Error(
+        "Category not found."
+      );
+
+    error.statusCode = 404;
+
+    throw error;
+
+  }
+
+
+  // --------------------------------------------------------
+  // CATEGORY NAME
+  // --------------------------------------------------------
+
+  const name =
+    cleanCategoryName(
+      body.name
+    );
+
+
+  if (!name) {
+
+    const error =
+      new Error(
+        "Category name is required."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  // --------------------------------------------------------
+  // BUSINESS TYPE
+  // --------------------------------------------------------
+
+  const businessTypeId =
+    text(
+      body.businessTypeId
+    );
+
+
+  const businessType =
+    await exports.getBusinessType(
+      businessTypeId
+    );
+
+
+  // --------------------------------------------------------
+  // IMAGE URL
+  // --------------------------------------------------------
+
+  const categoryIconUrl =
+    text(
+      body.categoryIconUrl
+    );
+
+
+  const hasUpload =
+    Boolean(file);
+
+  const hasUrl =
+    Boolean(categoryIconUrl);
+
+
+  // --------------------------------------------------------
+  // DO NOT ALLOW BOTH
+  // --------------------------------------------------------
+
+  if (
+    hasUpload &&
+    hasUrl
+  ) {
+
+    const error =
+      new Error(
+        "Use either an uploaded image or an image URL, not both."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  // --------------------------------------------------------
+  // IMAGE URL VALIDATION
+  // --------------------------------------------------------
+
+  if (
+    hasUrl &&
+    !isValidImageUrl(
+      categoryIconUrl
+    )
+  ) {
+
+    const error =
+      new Error(
+        "The image URL must be a valid HTTP or HTTPS URL."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  // --------------------------------------------------------
+  // CHECK DUPLICATE CATEGORY NAME
+  //
+  // Exclude the category currently being edited.
+  // --------------------------------------------------------
+
+  const normalizedName =
+    name.toLowerCase();
+
+
+  const existing =
+    await Category.findOne({
+
+      name:
+        normalizedName,
+
+      _id: {
+        $ne:
+          categoryId
+      }
+
+    });
+
+
+  if (existing) {
+
+    const error =
+      new Error(
+        `The category "${name}" already exists.`
+      );
+
+    error.statusCode = 409;
+
+    throw error;
+
+  }
+
+
+  // --------------------------------------------------------
+  // UPDATE NAME
+  // --------------------------------------------------------
+
+  category.name =
+    normalizedName;
+
+
+  // --------------------------------------------------------
+  // UPDATE BUSINESS TYPE
+  // --------------------------------------------------------
+
+  category.businessType = {
+
+    id:
+      businessType.id,
+
+    name:
+      businessType.name
+
+  };
+
+
+  // --------------------------------------------------------
+  // UPDATE IMAGE ONLY WHEN A NEW IMAGE
+  // SOURCE WAS PROVIDED
+  // --------------------------------------------------------
+
+  if (file) {
+
+    category.categoryIcon =
+      `/uploads/categories/${file.filename}`;
+
+  }
+
+
+  if (categoryIconUrl) {
+
+    category.categoryIcon =
+      categoryIconUrl;
+
+  }
+
+
+  // --------------------------------------------------------
+  // SAVE
+  // --------------------------------------------------------
+
+  await category.save();
+
+
+  return category;
+
+};
+
+
+// ==========================================================
+// GET CATEGORY
+// ==========================================================
+
+exports.getCategory = async (
+  categoryId
+) => {
+
+  if (
+    !categoryId ||
+    !mongoose.Types.ObjectId.isValid(
+      categoryId
+    )
+  ) {
+
+    const error =
+      new Error(
+        "Invalid category ID."
+      );
+
+    error.statusCode = 400;
+
+    throw error;
+
+  }
+
+
+  const category =
+    await Category.findOne({
+
+      _id:
+        categoryId,
+
+      isActive:
+        true
+
+    }).lean();
+
+
+  if (!category) {
+
+    const error =
+      new Error(
+        "Category not found."
+      );
+
+    error.statusCode = 404;
+
+    throw error;
+
+  }
+
+
+  return category;
+
+};
+
+
+// ==========================================================
+// GET PRODUCTS IN CATEGORY
+// ==========================================================
+
+exports.getCategoryProducts = async (
+  categoryId
+) => {
+
+  const category =
+    await exports.getCategory(
+      categoryId
+    );
+
+
+  const products =
+    await Product.find({
+
+      category:
+        category._id,
+
+      isActive:
+        true
+
+    })
+    .sort({
+
+      subcategory: 1,
+      name: 1,
+      createdAt: 1
+
+    })
+    .lean();
+
+
+  return {
+
+    category,
+
+    products
+
+  };
+
+};
+
+
+// ==========================================================
+// GET ACTIVE CATEGORIES
+// ==========================================================
+
+exports.getCategories =
+  async () => {
+
+    return Category.find({
+
+      isActive:
+        true
+
+    })
+    .select(
+      "_id name categoryIcon isActive businessType"
+    )
+    .sort({
+
+      name: 1
+
+    })
+    .lean();
+
+  };
+
+"verrah/controllers/categoryController.js"
+
+:::writing{variant="standard" id="74106" title="categoryController.js"}
+
+// ==========================================================
+// verrah/controllers/categoryController.js
+// CATEGORY CONTROLLER
+// ==========================================================
+
+const categoryService =
+  require("../services/categoryService");
+
+
+// ==========================================================
+// ADMIN STATUS
+// ==========================================================
+
+function getIsAdmin(req) {
+
+  return Boolean(
+
+    req.user &&
+
+    String(
+      req.user.role || ""
+    ).toLowerCase() === "admin"
+
+  );
+
+}
+
+
+// ==========================================================
+// FORM DATA
+// ==========================================================
+
+function buildFormData(
+  body = {},
+  category = null
+) {
+
+  return {
+
+    name:
+      body.name ||
+      category?.name ||
+      "",
+
+    businessTypeId:
+      body.businessTypeId ||
+      category?.businessType?.id ||
+      "",
+
+    categoryIconUrl:
+      body.categoryIconUrl ||
+      ""
+
+  };
+
+}
+
+
+// ==========================================================
+// ADD CATEGORY FORM
+// GET /products/category/add
+// ==========================================================
+
+exports.addForm = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const businessTypes =
+      await categoryService.getBusinessTypes();
+
+
+    return res.render(
+
+      "products/category/add",
+
+      {
+
+        title:
+          "Add Category | Verrah Cosmetics",
+
+        error:
+          null,
+
+        success:
+          null,
+
+        category:
+          null,
+
+        businessTypes,
+
+        formData:
+          buildFormData(),
+
+        isAdmin:
+          getIsAdmin(req)
+
+      }
+
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Add category form error:",
+      error
+    );
+
+
+    return res
+      .status(
+        error.statusCode || 500
+      )
+      .render(
+
+        "products/category/add",
+
+        {
+
+          title:
+            "Add Category | Verrah Cosmetics",
+
+          error:
+            error.message ||
+            "Unable to load category form.",
+
+          success:
+            null,
+
+          category:
+            null,
+
+          businessTypes:
+            [],
+
+          formData:
+            buildFormData(),
+
+          isAdmin:
+            getIsAdmin(req)
+
+        }
+
+      );
+
+  }
+
+};
+
+
+// ==========================================================
+// CREATE CATEGORY
+// POST /products/category/add
+// ==========================================================
+
+exports.create = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const category =
+      await categoryService.createCategory(
+
+        req.body,
+
+        req.file
+
+      );
+
+
+    return res.redirect(
+
+      `/products/category/${category._id}`
+
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Create category error:",
+      error
+    );
+
+
+    let businessTypes =
+      [];
+
+
+    try {
+
+      businessTypes =
+        await categoryService.getBusinessTypes();
+
+    } catch (loadError) {
+
+      console.error(
+        "Reload business types error:",
+        loadError
+      );
+
+    }
+
+
+    return res
+      .status(
+        error.statusCode || 400
+      )
+      .render(
+
+        "products/category/add",
+
+        {
+
+          title:
+            "Add Category | Verrah Cosmetics",
+
+          error:
+            error.message ||
+            "Unable to create category.",
+
+          success:
+            null,
+
+          category:
+            null,
+
+          businessTypes,
+
+          formData:
+            buildFormData(
+              req.body
+            ),
+
+          isAdmin:
+            getIsAdmin(req)
+
+        }
+
+      );
+
+  }
+
+};
+
+
+// ==========================================================
+// EDIT CATEGORY FORM
+// GET /products/category/add/:id
+// ==========================================================
+
+exports.editForm = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const category =
+      await categoryService.getCategoryById(
+        req.params.id
+      );
+
+
+    const businessTypes =
+      await categoryService.getBusinessTypes();
+
+
+    return res.render(
+
+      "products/category/add",
+
+      {
+
+        title:
+          `Edit ${category.name} | Verrah Cosmetics`,
+
+        error:
+          null,
+
+        success:
+          null,
+
+        category,
+
+        businessTypes,
+
+        formData:
+          buildFormData(
+            {},
+            category
+          ),
+
+        isAdmin:
+          getIsAdmin(req)
+
+      }
+
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Edit category form error:",
+      error
+    );
+
+
+    return res
+      .status(
+        error.statusCode || 404
+      )
+      .render(
+
+        "products/category/add",
+
+        {
+
+          title:
+            "Edit Category | Verrah Cosmetics",
+
+          error:
+            error.message ||
+            "Unable to load category.",
+
+          success:
+            null,
+
+          category:
+            null,
+
+          businessTypes:
+            [],
+
+          formData:
+            buildFormData(),
+
+          isAdmin:
+            getIsAdmin(req)
+
+        }
+
+      );
+
+  }
+
+};
+
+
+// ==========================================================
+// UPDATE CATEGORY
+// POST /products/category/add/:id
+// ==========================================================
+
+exports.update = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const category =
+      await categoryService.updateCategory(
+
+        req.params.id,
+
+        req.body,
+
+        req.file
+
+      );
+
+
+    return res.redirect(
+
+      `/products/category/${category._id}`
+
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Update category error:",
+      error
+    );
+
+
+    let category =
+      null;
+
+
+    try {
+
+      category =
+        await categoryService.getCategoryById(
+          req.params.id
+        );
+
+    } catch (loadError) {
+
+      console.error(
+        "Reload category after update error:",
+        loadError
+      );
+
+    }
+
+
+    let businessTypes =
+      [];
+
+
+    try {
+
+      businessTypes =
+        await categoryService.getBusinessTypes();
+
+    } catch (loadError) {
+
+      console.error(
+        "Reload business types error:",
+        loadError
+      );
+
+    }
+
+
+    return res
+      .status(
+        error.statusCode || 400
+      )
+      .render(
+
+        "products/category/add",
+
+        {
+
+          title:
+            "Edit Category | Verrah Cosmetics",
+
+          error:
+            error.message ||
+            "Unable to update category.",
+
+          success:
+            null,
+
+          category,
+
+          businessTypes,
+
+          formData:
+            buildFormData(
+              req.body,
+              category
+            ),
+
+          isAdmin:
+            getIsAdmin(req)
+
+        }
+
+      );
+
+  }
+
+};
+
+
+// ==========================================================
+// CATEGORY PRODUCTS
+// GET /products/category/:id
+// ==========================================================
+
+exports.products = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const {
+      category,
+      products
+    } =
+      await categoryService.getCategoryProducts(
+        req.params.id
+      );
+
+
+    return res.render(
+
+      "products/category",
+
+      {
+
+        title:
+          `${category.name} | Verrah Cosmetics`,
+
+        category,
+
+        products,
+
+        isAdmin:
+          getIsAdmin(req),
+
+        error:
+          null
+
+      }
+
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Category products error:",
+      error
+    );
+
+
+    return res
+      .status(
+        error.statusCode || 500
+      )
+      .render(
+
+        "products/category",
+
+        {
+
+          title:
+            "Category | Verrah Cosmetics",
+
+          category:
+            null,
+
+          products:
+            [],
+
+          isAdmin:
+            getIsAdmin(req),
+
+          error:
+            error.message ||
+            "Unable to load category."
+
+        }
+
+      );
+
+  }
+
+};
+
+"verrah/views/products/category/add.ejs"
+
+Your existing UI can stay almost entirely unchanged. The new field belongs in the Category details section.
+
+:::writing{variant="document" id="32648" title="add.ejs — complete replacement"}
+
 <!-- ======================================================
      verrah/views/products/category/add.ejs
 
@@ -5,10 +1483,6 @@
 ====================================================== -->
 
 <%
-/* ==========================================================
-   DETERMINE MODE
-========================================================== */
-
 const isEdit =
   typeof category !== "undefined" &&
   category &&
@@ -20,32 +1494,38 @@ const categoryId =
     : null;
 
 
-/* ==========================================================
-   FORM DATA
-
-   During edit:
-       category.name
-       category.description
-       category.categoryIcon
-
-   During create after validation error:
-       formData
-========================================================== */
-
 const categoryName =
   isEdit
     ? (category.name || "")
     : (formData?.name || "");
+
 
 const categoryDescription =
   isEdit
     ? (category.description || "")
     : (formData?.description || "");
 
+
 const existingImage =
   isEdit
     ? (category.categoryIcon || "")
     : "";
+
+
+const availableBusinessTypes =
+  Array.isArray(businessTypes)
+    ? businessTypes
+    : [];
+
+
+const selectedBusinessTypeId =
+  isEdit
+    ? String(
+        category?.businessType?.id || ""
+      )
+    : String(
+        formData?.businessTypeId || ""
+      );
 %>
 
 
@@ -131,7 +1611,7 @@ const existingImage =
 
     <!-- ==================================================
          FORM
-    =================================================== -->
+    ================================================== -->
 
     <form
       id="categoryForm"
@@ -146,7 +1626,7 @@ const existingImage =
 
 
       <!-- =================================================
-           CATEGORY NAME
+           CATEGORY DETAILS
       ================================================== -->
 
       <div class="form-section">
@@ -171,6 +1651,10 @@ const existingImage =
 
         </div>
 
+
+        <!-- ===============================================
+             CATEGORY NAME
+        ================================================ -->
 
         <div class="form-group">
 
@@ -198,6 +1682,78 @@ const existingImage =
             />
 
           </div>
+
+        </div>
+
+
+        <!-- ===============================================
+             BUSINESS TYPE
+        ================================================ -->
+
+        <div class="form-group">
+
+          <label for="businessTypeId">
+
+            Business Type
+
+            <span class="required">*</span>
+
+          </label>
+
+
+          <div class="input-wrapper">
+
+            <i class="fas fa-building"></i>
+
+            <select
+              id="businessTypeId"
+              name="businessTypeId"
+              required
+            >
+
+              <option value="">
+                Select business type
+              </option>
+
+
+              <% availableBusinessTypes.forEach(
+                function(businessType)
+              { %>
+
+                <option
+                  value="<%= businessType.id %>"
+                  <%= selectedBusinessTypeId === String(businessType.id)
+                    ? "selected"
+                    : ""
+                  %>
+                >
+
+                  <%= businessType.name %>
+
+                </option>
+
+              <% }); %>
+
+            </select>
+
+          </div>
+
+
+          <% if (!availableBusinessTypes.length) { %>
+
+            <small
+              style="
+                display: block;
+                margin-top: 8px;
+                opacity: 0.75;
+              "
+            >
+
+              No business types are currently available.
+
+            </small>
+
+          <% } %>
 
         </div>
 
@@ -564,7 +2120,9 @@ const existingImage =
               id="clearPreview"
               class="clear-preview"
             >
+
               Clear
+
             </button>
 
           </div>
@@ -613,8 +2171,6 @@ const existingImage =
       <div class="category-form-actions">
 
 
-        <!-- CANCEL -->
-
         <a
           href="/products"
           class="category-btn category-btn-secondary"
@@ -628,8 +2184,6 @@ const existingImage =
 
         </a>
 
-
-        <!-- CREATE / SAVE -->
 
         <button
           type="submit"
@@ -683,6 +2237,9 @@ const existingImage =
 
   const nameInput =
     document.getElementById("name");
+
+  const businessTypeInput =
+    document.getElementById("businessTypeId");
 
   const uploadRadio =
     document.getElementById("sourceUpload");
@@ -792,13 +2349,15 @@ const existingImage =
 
     }
 
-    imagePreview.src = src;
+    imagePreview.src =
+      src;
 
     previewCategoryName.textContent =
       nameInput.value.trim() ||
       "New Category";
 
-    previewWrapper.hidden = false;
+    previewWrapper.hidden =
+      false;
 
   }
 
@@ -814,7 +2373,8 @@ const existingImage =
 
     if (!file) {
 
-      selectedFile.hidden = true;
+      selectedFile.hidden =
+        true;
 
       hidePreview();
 
@@ -823,13 +2383,16 @@ const existingImage =
     }
 
 
-    selectedFile.hidden = false;
+    selectedFile.hidden =
+      false;
 
     selectedFileName.textContent =
       file.name;
 
     selectedFileSize.textContent =
-      formatFileSize(file.size);
+      formatFileSize(
+        file.size
+      );
 
 
     const reader =
@@ -846,7 +2409,9 @@ const existingImage =
       };
 
 
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(
+      file
+    );
 
   }
 
@@ -868,7 +2433,9 @@ const existingImage =
 
     }
 
-    showPreview(url);
+    showPreview(
+      url
+    );
 
   }
 
@@ -883,7 +2450,8 @@ const existingImage =
 
       updateMethod();
 
-      urlInput.value = "";
+      urlInput.value =
+        "";
 
       hidePreview();
 
@@ -901,9 +2469,11 @@ const existingImage =
 
       updateMethod();
 
-      fileInput.value = "";
+      fileInput.value =
+        "";
 
-      selectedFile.hidden = true;
+      selectedFile.hidden =
+        true;
 
       previewUrlImage();
 
@@ -919,16 +2489,22 @@ const existingImage =
     "change",
     function() {
 
-      if (!fileInput.files.length) {
+      if (
+        !fileInput.files.length
+      ) {
+
         return;
+
       }
 
 
-      uploadRadio.checked = true;
+      uploadRadio.checked =
+        true;
 
       updateMethod();
 
-      urlInput.value = "";
+      urlInput.value =
+        "";
 
       previewUploadedImage();
 
@@ -944,15 +2520,20 @@ const existingImage =
     "input",
     function() {
 
-      if (urlInput.value.trim()) {
+      if (
+        urlInput.value.trim()
+      ) {
 
-        urlRadio.checked = true;
+        urlRadio.checked =
+          true;
 
         updateMethod();
 
-        fileInput.value = "";
+        fileInput.value =
+          "";
 
-        selectedFile.hidden = true;
+        selectedFile.hidden =
+          true;
 
         previewUrlImage();
 
@@ -974,9 +2555,11 @@ const existingImage =
     "click",
     function() {
 
-      fileInput.value = "";
+      fileInput.value =
+        "";
 
-      selectedFile.hidden = true;
+      selectedFile.hidden =
+        true;
 
       hidePreview();
 
@@ -992,15 +2575,20 @@ const existingImage =
     "click",
     function() {
 
-      if (uploadRadio.checked) {
+      if (
+        uploadRadio.checked
+      ) {
 
-        fileInput.value = "";
+        fileInput.value =
+          "";
 
-        selectedFile.hidden = true;
+        selectedFile.hidden =
+          true;
 
       } else {
 
-        urlInput.value = "";
+        urlInput.value =
+          "";
 
       }
 
@@ -1073,7 +2661,9 @@ const existingImage =
       // NAME REQUIRED
       // -----------------------------------------------
 
-      if (!nameInput.value.trim()) {
+      if (
+        !nameInput.value.trim()
+      ) {
 
         event.preventDefault();
 
@@ -1085,10 +2675,30 @@ const existingImage =
 
 
       // -----------------------------------------------
+      // BUSINESS TYPE REQUIRED
+      // -----------------------------------------------
+
+      if (
+        !businessTypeInput.value
+      ) {
+
+        event.preventDefault();
+
+        businessTypeInput.focus();
+
+        return;
+
+      }
+
+
+      // -----------------------------------------------
       // BOTH IMAGE SOURCES USED
       // -----------------------------------------------
 
-      if (hasFile && hasUrl) {
+      if (
+        hasFile &&
+        hasUrl
+      ) {
 
         event.preventDefault();
 
@@ -1103,8 +2713,6 @@ const existingImage =
 
       // -----------------------------------------------
       // CREATE MODE
-      //
-      // New category must have an image.
       // -----------------------------------------------
 
       if (
@@ -1126,8 +2734,6 @@ const existingImage =
 
       // -----------------------------------------------
       // EDIT MODE
-      //
-      // Existing image is allowed to remain.
       // -----------------------------------------------
 
       if (
