@@ -14,9 +14,16 @@ const {
     prepareSubstation
 } = require("./helpers");
 
+const {
+    resolveBusinessType
+} = require("./create");
+
 exports.update = async (id, body) => {
+
     if (!mongoose.isValidObjectId(id)) {
-        throw new Error("Invalid substation ID.");
+        throw new Error(
+            "Invalid substation ID."
+        );
     }
 
     body = body || {};
@@ -25,10 +32,17 @@ exports.update = async (id, body) => {
         await Substation.findById(id);
 
     if (!existing) {
-        throw new Error("Substation not found.");
+        throw new Error(
+            "Substation not found."
+        );
     }
 
-    const name = text(body.name);
+    // ======================================================
+    // BASIC INFORMATION
+    // ======================================================
+
+    const name =
+        text(body.name);
 
     if (!name) {
         throw new Error(
@@ -50,19 +64,61 @@ exports.update = async (id, body) => {
         );
     }
 
-    const gps = buildGPS(body);
+    // ======================================================
+    // GPS
+    // ======================================================
+
+    const gps =
+        buildGPS(body);
+
+    // ======================================================
+    // PHONE
+    // ======================================================
 
     const phoneNumber =
         normalizePhoneNumber(
             body.phoneNumber
         );
 
+    // ======================================================
+    // DIRECTIONS
+    // ======================================================
+
     const directions =
         normalizeDirections(
             body.directions
         );
 
+    // ======================================================
+    // BUSINESS TYPE
+    // ======================================================
+    //
+    // Only change the business type when the edit request
+    // actually provides one.
+    //
+    // This prevents an edit that does not contain the field
+    // from accidentally removing the existing business type.
+    //
+    // ======================================================
+
+    let businessType;
+
+    if (
+        body.businessType !== undefined
+    ) {
+
+        businessType =
+            await resolveBusinessType(
+                body.businessType
+            );
+    }
+
+    // ======================================================
+    // UPDATE DATA
+    // ======================================================
+
     const updateData = {
+
         name,
 
         location:
@@ -87,19 +143,44 @@ exports.update = async (id, body) => {
                 )
     };
 
+    // ======================================================
+    // BUSINESS TYPE
+    // ======================================================
+
+    if (
+        businessType !== undefined
+    ) {
+
+        updateData.businessType =
+            businessType;
+    }
+
+    // ======================================================
+    // SUBSTATION ICON
+    // ======================================================
+
     if (
         body.substationIcon !== undefined
     ) {
+
         const icon =
             text(body.substationIcon);
 
         if (icon) {
-            updateData.substationIcon = icon;
+
+            updateData.substationIcon =
+                icon;
+
         } else {
+
             updateData.substationIcon =
                 existing.substationIcon || "";
         }
     }
+
+    // ======================================================
+    // UPDATE
+    // ======================================================
 
     const updated =
         await Substation.findByIdAndUpdate(
@@ -113,5 +194,7 @@ exports.update = async (id, body) => {
             }
         ).lean();
 
-    return prepareSubstation(updated);
+    return prepareSubstation(
+        updated
+    );
 };
