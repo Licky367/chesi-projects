@@ -115,8 +115,43 @@ router.post(
 );
 
 
+// ==========================================================
+// CATEGORY SUBCATEGORIES
+// ==========================================================
+
+// ----------------------------------------------------------
+// DISPLAY CATEGORY SUBCATEGORIES
+//
+// GET /products/category/:id/categories
+//
+// Displays the category together with all its subcategories.
+// ----------------------------------------------------------
+
+router.get(
+  "/category/:id/categories",
+  requireAdmin,
+  categoryController.subcategories
+);
+
+
+// ----------------------------------------------------------
+// ADD CATEGORY SUBCATEGORY
+//
+// POST /products/category/:id/subcategory
+//
+// Adds one subcategory to the selected category.
+// ----------------------------------------------------------
+
+router.post(
+  "/category/:id/subcategory",
+  requireAdmin,
+  categoryController.addSubcategory
+);
+
+
 // ----------------------------------------------------------
 // CATEGORY PRODUCTS
+//
 // GET /products/category/:id
 // ----------------------------------------------------------
 
