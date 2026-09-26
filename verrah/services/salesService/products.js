@@ -16,77 +16,52 @@
 //         -> selected substation.businessType
 //
 //     Admin + no selected substation
-//         -> existing global logic
+//         -> global products
 //
-// CATEGORIES:
-//
-//     Staff / Admin + selected substation
-//         -> categories whose businessType.id matches
-//            the substation businessType.id
-//
-// PRODUCTS:
-//
-//     Staff / Admin + selected substation
-//         -> products whose category belongs to the
-//            matching business type
-//
-// marketAvailable:
-//
-//     Staff
-//         -> Substation.productInventory.units
-//            for their assigned substation
-//
-//     Admin + no substation filter
-//         -> Product.units
-//
-//     Admin + substation filter
-//         -> Substation.productInventory.units
-//            for the selected substation
-//
-// sales:
-//
-//     Delivered packages
-//         -> filtered by packageSubstation when a
-//            substation is active
-//
-// stockAvailable:
-//
-//     Remains GLOBAL and unchanged.
-//
-// stockProductId:
-//
-//     Product.stock
-//         -> ID of the Stock record related to the Product
-//
-// category:
+// PRODUCT RELATION:
 //
 //     Product.category
-//         -> Category document from models/category.js
+//          ↓
+//     Category.businessType.id
 //
-// category filter:
+// STOCK:
 //
-//     filter.category
-//         -> Product.category
-//            when a category is selected
+//     Always GLOBAL.
+//
+// MARKET:
+//
+//     Staff
+//         -> assigned substation.productInventory
+//
+//     Admin + selected substation
+//         -> selected substation.productInventory
+//
+//     Admin + no selected substation
+//         -> Product.units
+//
+// SALES:
+//
+//     Delivered packages.
+//     When a substation is active, sales are restricted to
+//     that substation's packageSubstation.
 //
 // ==========================================================
 
 
+const mongoose =
+    require("mongoose");
+
 const Product =
     require("../../models/products");
-
 
 const Stock =
     require("../../models/stock");
 
-
 const Package =
     require("../../models/package");
 
-
 const Substation =
     require("../../models/substations");
-
 
 const Category =
     require("../../models/category");
@@ -133,17 +108,8 @@ function getIdValue(
 // ==========================================================
 
 function getUserRole(
-    user
+    user = {}
 ) {
-
-    if (
-        !user
-    ) {
-
-        return "";
-
-    }
-
 
     return String(
         user.role || ""
@@ -155,10 +121,24 @@ function getUserRole(
 // ==========================================================
 // GET EFFECTIVE SUBSTATION ID
 // ==========================================================
+//
+// STAFF:
+//
+//     Always use assignedSubstation.
+//
+// ADMIN:
+//
+//     Use selected products-filter substation.
+//
+// ADMIN WITHOUT SUBSTATION:
+//
+//     null.
+//
+// ==========================================================
 
 function getEffectiveSubstationId(
-    filter,
-    user
+    filter = {},
+    user = {}
 ) {
 
     const role =
@@ -166,10 +146,6 @@ function getEffectiveSubstationId(
             user
         );
 
-
-    // ======================================================
-    // STAFF
-    // ======================================================
 
     if (
         role === "staff"
@@ -182,13 +158,8 @@ function getEffectiveSubstationId(
     }
 
 
-    // ======================================================
-    // ADMIN + SELECTED SUBSTATION
-    // ======================================================
-
     if (
         role === "admin" &&
-        filter &&
         filter.substation
     ) {
 
@@ -198,10 +169,6 @@ function getEffectiveSubstationId(
 
     }
 
-
-    // ======================================================
-    // ADMIN WITHOUT SELECTED SUBSTATION
-    // ======================================================
 
     return null;
 
@@ -213,8 +180,8 @@ function getEffectiveSubstationId(
 // ==========================================================
 
 async function getEffectiveBusinessType(
-    filter,
-    user
+    filter = {},
+    user = {}
 ) {
 
     const substationId =
@@ -223,10 +190,6 @@ async function getEffectiveBusinessType(
             user
         );
 
-
-    // ======================================================
-    // NO SUBSTATION
-    // ======================================================
 
     if (
         !substationId
@@ -237,14 +200,31 @@ async function getEffectiveBusinessType(
     }
 
 
-    const substation =
-        await Substation.findById(
+    if (
+        !mongoose.Types.ObjectId.isValid(
             substationId
         )
-            .select(
-                "businessType"
-            )
-            .lean();
+    ) {
+
+        return null;
+
+    }
+
+
+    const substation =
+        await Substation.findOne({
+
+            _id:
+                substationId,
+
+            isActive:
+                true
+
+        })
+        .select(
+            "businessType"
+        )
+        .lean();
 
 
     if (
@@ -261,7 +241,9 @@ async function getEffectiveBusinessType(
     return {
 
         id:
-            substation.businessType.id,
+            String(
+                substation.businessType.id
+            ),
 
         name:
             substation.businessType.name || ""
@@ -272,7 +254,7 @@ async function getEffectiveBusinessType(
 
 
 // ==========================================================
-// BUILD SUBSTATION QUERY
+// GET SUBSTATION QUERY
 // ==========================================================
 
 function getSubstationQuery(
@@ -308,7 +290,10 @@ async function getSubstationProductInventory(
 ) {
 
     if (
-        !substationId
+        !substationId ||
+        !mongoose.Types.ObjectId.isValid(
+            substationId
+        )
     ) {
 
         return new Map();
@@ -326,10 +311,10 @@ async function getSubstationProductInventory(
                 true
 
         })
-            .select(
-                "productInventory"
-            )
-            .lean();
+        .select(
+            "productInventory"
+        )
+        .lean();
 
 
     const inventoryByProduct =
@@ -354,6 +339,7 @@ async function getSubstationProductInventory(
     ) {
 
         if (
+            !inventory ||
             !inventory.productId
         ) {
 
@@ -387,9 +373,15 @@ async function getSubstationProductInventory(
 // ==========================================================
 
 async function getProductAnalytics(
-    filter,
+    filter = {},
     user = {}
 ) {
+
+    const role =
+        getUserRole(
+            user
+        );
+
 
     // ======================================================
     // EFFECTIVE SUBSTATION
@@ -400,6 +392,24 @@ async function getProductAnalytics(
             filter,
             user
         );
+
+
+    // ======================================================
+    // DETERMINE WHETHER THIS REQUEST IS RESTRICTED
+    // ======================================================
+
+    const isStaff =
+        role === "staff";
+
+    const isAdminWithSubstation =
+        role === "admin" &&
+        Boolean(
+            effectiveSubstationId
+        );
+
+    const isBusinessTypeRestricted =
+        isStaff ||
+        isAdminWithSubstation;
 
 
     // ======================================================
@@ -414,71 +424,80 @@ async function getProductAnalytics(
 
 
     // ======================================================
-    // LOAD ALL ACTIVE CATEGORIES
+    // LOAD ACTIVE CATEGORIES
+    // ======================================================
+    //
+    // ADMIN WITHOUT SUBSTATION:
+    //
+    //     All active categories.
+    //
+    // STAFF / ADMIN WITH SUBSTATION:
+    //
+    //     Only categories belonging to the
+    //     effective substation business type.
+    //
     // ======================================================
 
-    const categories =
-        await Category.find({
+    let categories;
 
-            isActive:
-                true
 
-        })
+    if (
+        businessType
+    ) {
+
+        categories =
+            await Category.find({
+
+                isActive:
+                    true,
+
+                "businessType.id":
+                    businessType.id
+
+            })
             .select(
                 "_id name categoryIcon isActive businessType"
             )
             .lean();
 
+    } else if (
+        isBusinessTypeRestricted
+    ) {
 
-    // ======================================================
-    // FILTER CATEGORIES BY BUSINESS TYPE
-    // ======================================================
-    //
-    // ADMIN WITHOUT SUBSTATION:
-    //     ALL active categories.
-    //
-    // STAFF:
-    //     Only categories belonging to the assigned
-    //     substation business type.
-    //
-    // ADMIN + SELECTED SUBSTATION:
-    //     Only categories belonging to the selected
-    //     substation business type.
-    //
-    // ======================================================
+        // --------------------------------------------------
+        // A restricted user MUST NOT fall back to the
+        // global product list when the business type cannot
+        // be resolved.
+        // --------------------------------------------------
 
-    const filteredCategories =
-        businessType
-            ? categories.filter(
+        return [];
 
-                category => {
+    } else {
 
-                    if (
-                        !category.businessType ||
-                        !category.businessType.id
-                    ) {
+        categories =
+            await Category.find({
 
-                        return false;
+                isActive:
+                    true
 
-                    }
-
-
-                    return (
-
-                        String(
-                            category.businessType.id
-                        ) ===
-
-                        String(
-                            businessType.id
-                        )
-
-                    );
-
-                }
-
+            })
+            .select(
+                "_id name categoryIcon isActive businessType"
             )
-            : categories;
+            .lean();
+
+    }
+
+
+    // ======================================================
+    // CATEGORY IDS
+    // ======================================================
+
+    const categoryIds =
+        categories.map(
+            category =>
+                category._id
+        );
 
 
     // ======================================================
@@ -523,31 +542,23 @@ async function getProductAnalytics(
     // BUSINESS TYPE PRODUCT FILTER
     // ======================================================
     //
-    // Product does not contain businessType directly.
-    //
     // Product.category
-    //       ↓
-    // Category.businessType.id
+    //      ↓
+    // Category._id
+    //
+    // Only categories belonging to the effective
+    // business type are allowed.
     //
     // ======================================================
 
     if (
-        businessType
+        isBusinessTypeRestricted
     ) {
-
-        const businessTypeCategoryIds =
-            filteredCategories.map(
-
-                category =>
-                    category._id
-
-            );
-
 
         productQuery.category = {
 
             $in:
-                businessTypeCategoryIds
+                categoryIds
 
         };
 
@@ -557,35 +568,19 @@ async function getProductAnalytics(
     // ======================================================
     // CATEGORY FILTER
     // ======================================================
-    //
-    // If a category is selected:
-    //
-    //     ADMIN WITHOUT SUBSTATION
-    //         -> use selected category.
-    //
-    //     STAFF / ADMIN + SUBSTATION
-    //         -> use selected category only when it
-    //            belongs to the active business type.
-    //
-    // A stale category from another business type is
-    // ignored rather than turning the entire query into
-    // category: { $in: [] }.
-    //
-    // ======================================================
 
     if (
-        filter &&
         filter.category
     ) {
 
         const selectedCategoryId =
-            String(
+            getIdValue(
                 filter.category
             );
 
 
         if (
-            !businessType
+            !isBusinessTypeRestricted
         ) {
 
             productQuery.category =
@@ -593,8 +588,8 @@ async function getProductAnalytics(
 
         } else {
 
-            const categoryBelongsToBusinessType =
-                filteredCategories.some(
+            const selectedCategoryBelongs =
+                categories.some(
 
                     category =>
 
@@ -607,7 +602,7 @@ async function getProductAnalytics(
 
 
             if (
-                categoryBelongsToBusinessType
+                selectedCategoryBelongs
             ) {
 
                 productQuery.category =
@@ -628,10 +623,10 @@ async function getProductAnalytics(
         await Product.find(
             productQuery
         )
-            .select(
-                "_id name category subcategory units stock"
-            )
-            .lean();
+        .select(
+            "_id name category subcategory units stock"
+        )
+        .lean();
 
 
     // ======================================================
@@ -647,10 +642,10 @@ async function getProductAnalytics(
                 true
 
         })
-            .select(
-                "subcategory units substation"
-            )
-            .lean();
+        .select(
+            "subcategory units substation"
+        )
+        .lean();
 
 
     // ======================================================
@@ -670,8 +665,8 @@ async function getProductAnalytics(
             String(
                 stock.subcategory || ""
             )
-                .trim()
-                .toLowerCase();
+            .trim()
+            .toLowerCase();
 
 
         if (
@@ -757,10 +752,10 @@ async function getProductAnalytics(
         await Package.find(
             deliveredPackageQuery
         )
-            .select(
-                "items packageSubstation"
-            )
-            .lean();
+        .select(
+            "items packageSubstation"
+        )
+        .lean();
 
 
     // ======================================================
@@ -801,11 +796,9 @@ async function getProductAnalytics(
                 key,
 
                 (
-
                     salesByProduct.get(
                         key
                     ) || 0
-
                 ) +
 
                 Number(
@@ -821,7 +814,7 @@ async function getProductAnalytics(
 
     // ======================================================
     // RETURN PRODUCT ANALYTICS
-    // ==========================================================
+    // ======================================================
 
     return products
 
@@ -833,8 +826,8 @@ async function getProductAnalytics(
                     String(
                         product.subcategory || ""
                     )
-                        .trim()
-                        .toLowerCase();
+                    .trim()
+                    .toLowerCase();
 
 
                 const productId =
@@ -855,9 +848,9 @@ async function getProductAnalytics(
                         : null;
 
 
-                // ==================================================
+                // ==========================================
                 // MARKET AVAILABLE
-                // ==================================================
+                // ==========================================
 
                 let marketAvailable;
 
@@ -925,11 +918,9 @@ async function getProductAnalytics(
                 String(
                     a.name
                 ).localeCompare(
-
                     String(
                         b.name
                     )
-
                 )
 
         );
@@ -938,7 +929,7 @@ async function getProductAnalytics(
 
 
 // ==========================================================
-// EXPORTS
+// EXPORT
 // ==========================================================
 
 module.exports = {
