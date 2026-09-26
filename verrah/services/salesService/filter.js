@@ -136,13 +136,6 @@ function isValidDateString(
             .map(Number);
 
 
-    // ======================================================
-    // BASIC CALENDAR VALIDATION
-    //
-    // Prevents JavaScript Date.parse() from accepting
-    // invalid dates such as 2026-02-31.
-    // ======================================================
-
     const date =
         new Date(
             Date.UTC(
@@ -427,10 +420,6 @@ function normalizeSubstationId(
     }
 
 
-    // ======================================================
-    // POPULATED MONGOOSE DOCUMENT / OBJECT
-    // ======================================================
-
     if (
         typeof value === "object" &&
         value._id
@@ -442,10 +431,6 @@ function normalizeSubstationId(
 
     }
 
-
-    // ======================================================
-    // MONGOOSE OBJECTID
-    // ======================================================
 
     if (
         typeof value === "object" &&
@@ -464,10 +449,6 @@ function normalizeSubstationId(
 
     }
 
-
-    // ======================================================
-    // STRING
-    // ======================================================
 
     if (
         typeof value === "string"
@@ -499,8 +480,10 @@ function getSubstationFilter(
 ) {
 
     const role =
-        user &&
-        user.role;
+        String(
+            user &&
+            user.role || ""
+        ).toLowerCase();
 
 
     // ======================================================
