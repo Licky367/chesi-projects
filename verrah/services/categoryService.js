@@ -1,511 +1,482 @@
 // ==========================================================
 // verrah/services/categoryService.js
+//
 // CATEGORY SERVICE
 // ==========================================================
 
 const mongoose =
-  require("mongoose");
+    require("mongoose");
 
 const Category =
-  require("../models/category");
+    require("../models/category");
 
 const Product =
-  require("../models/products");
+    require("../models/products");
+
+const Substation =
+    require("../models/substations");
+
 
 // ==========================================================
 // HELPERS
 // ==========================================================
 
 function text(value) {
-  return String(
-    value ?? ""
-  ).trim();
+
+    return String(value || "").trim();
+
 }
 
-// ----------------------------------------------------------
-// NORMALIZE CATEGORY NAME
-// ----------------------------------------------------------
 
-function cleanCategoryName(value) {
-  return text(value)
-    .replace(/\s+/g, " ");
+// ==========================================================
+// BUSINESS TYPES
+// ==========================================================
+
+async function getBusinessTypes() {
+
+    const substations =
+        await Substation.find({
+            isActive: true,
+            "businessType.id": {
+                $ne: null
+            }
+        })
+        .select("businessType")
+        .lean();
+
+    const map =
+        new Map();
+
+    for (const substation of substations) {
+
+        const businessType =
+            substation.businessType || {};
+
+        const id =
+            businessType.id;
+
+        const name =
+            text(businessType.name);
+
+        if (!id) {
+            continue;
+        }
+
+        const key =
+            String(id);
+
+        if (!map.has(key)) {
+
+            map.set(
+                key,
+                {
+                    _id: id,
+                    name
+                }
+            );
+
+        }
+
+    }
+
+    return Array
+        .from(map.values())
+        .sort(
+            (a, b) =>
+                String(a.name)
+                    .localeCompare(
+                        String(b.name)
+                    )
+        );
+
 }
 
-// ----------------------------------------------------------
-// VALIDATE IMAGE URL
-// ----------------------------------------------------------
 
-function isValidImageUrl(value) {
-  if (!value) {
-    return false;
-  }
+// ==========================================================
+// GET BUSINESS TYPE BY ID
+// ==========================================================
 
-  try {
-    const url =
-      new URL(value);
+async function getBusinessTypeById(
+    businessTypeId
+) {
 
-    return (
-      url.protocol === "http:" ||
-      url.protocol === "https:"
-    );
-  } catch (error) {
-    return false;
-  }
+    const id =
+        text(businessTypeId);
+
+    if (!id) {
+
+        throw new Error(
+            "Business type is required."
+        );
+
+    }
+
+    if (
+        !mongoose.Types.ObjectId.isValid(id)
+    ) {
+
+        throw new Error(
+            "Invalid business type."
+        );
+
+    }
+
+    const substation =
+        await Substation.findOne({
+            isActive: true,
+            "businessType.id": id
+        })
+        .select("businessType")
+        .lean();
+
+    if (
+        !substation ||
+        !substation.businessType ||
+        !substation.businessType.id
+    ) {
+
+        throw new Error(
+            "Selected business type is not available."
+        );
+
+    }
+
+    return {
+        id:
+            substation.businessType.id,
+
+        name:
+            text(
+                substation.businessType.name
+            )
+    };
+
 }
+
 
 // ==========================================================
 // CREATE CATEGORY
 // ==========================================================
 
-exports.createCategory = async (
-  body = {},
-  file = null
-) => {
-  const name =
-    cleanCategoryName(body.name);
+async function createCategory(
+    body = {},
+    file = null
+) {
 
-  const categoryIconUrl =
-    text(body.categoryIconUrl);
+    const name =
+        text(body.name);
 
-  // --------------------------------------------------------
-  // CATEGORY NAME
-  // --------------------------------------------------------
+    if (!name) {
 
-  if (!name) {
-    const error =
-      new Error(
-        "Category name is required."
-      );
+        throw new Error(
+            "Category name is required."
+        );
 
-    error.statusCode = 400;
+    }
 
-    throw error;
-  }
+    const businessType =
+        await getBusinessTypeById(
+            body.businessTypeId
+        );
 
-  // --------------------------------------------------------
-  // IMAGE SOURCE
-  //
-  // Exactly one of:
-  //
-  // 1. uploaded file
-  // 2. image URL
-  // --------------------------------------------------------
 
-  const hasUpload =
-    Boolean(file);
+    // ------------------------------------------------------
+    // IMAGE
+    // ------------------------------------------------------
 
-  const hasUrl =
-    Boolean(categoryIconUrl);
+    let categoryIcon =
+        text(body.categoryIconUrl);
 
-  if (!hasUpload && !hasUrl) {
-    const error =
-      new Error(
-        "Choose either an image to upload or enter an image URL."
-      );
+    if (file) {
 
-    error.statusCode = 400;
+        categoryIcon =
+            file.path ||
+            file.secure_url ||
+            file.url ||
+            "";
 
-    throw error;
-  }
+    }
 
-  // --------------------------------------------------------
-  // DO NOT ALLOW BOTH
-  // --------------------------------------------------------
+    if (!categoryIcon) {
 
-  if (hasUpload && hasUrl) {
-    const error =
-      new Error(
-        "Use either an uploaded image or an image URL, not both."
-      );
+        throw new Error(
+            "Category image is required."
+        );
 
-    error.statusCode = 400;
+    }
 
-    throw error;
-  }
 
-  // --------------------------------------------------------
-  // IMAGE URL VALIDATION
-  // --------------------------------------------------------
+    // ------------------------------------------------------
+    // DUPLICATE CATEGORY
+    // ------------------------------------------------------
 
-  if (
-    hasUrl &&
-    !isValidImageUrl(categoryIconUrl)
-  ) {
-    const error =
-      new Error(
-        "The image URL must be a valid HTTP or HTTPS URL."
-      );
+    const existing =
+        await Category.findOne({
+            name: name.toLowerCase()
+        });
 
-    error.statusCode = 400;
+    if (existing) {
 
-    throw error;
-  }
+        throw new Error(
+            "A category with this name already exists."
+        );
 
-  // --------------------------------------------------------
-  // CHECK DUPLICATE CATEGORY
-  // --------------------------------------------------------
+    }
 
-  const normalizedName =
-    name.toLowerCase();
 
-  const existing =
-    await Category.findOne({
-      name: normalizedName
+    // ------------------------------------------------------
+    // CREATE
+    // ------------------------------------------------------
+
+    return Category.create({
+
+        name:
+            name.toLowerCase(),
+
+        businessType: {
+            id:
+                businessType.id,
+
+            name:
+                businessType.name
+        },
+
+        categoryIcon,
+
+        description:
+            text(body.description),
+
+        isActive: true
+
     });
 
-  if (existing) {
-    const error =
-      new Error(
-        `The category "${name}" already exists.`
-      );
+}
 
-    error.statusCode = 409;
-
-    throw error;
-  }
-
-  // --------------------------------------------------------
-  // DETERMINE STORED IMAGE
-  // --------------------------------------------------------
-
-  let categoryIcon = "";
-
-  if (file) {
-    categoryIcon =
-      `/uploads/categories/${file.filename}`;
-  }
-
-  if (categoryIconUrl) {
-    categoryIcon =
-      categoryIconUrl;
-  }
-
-  // --------------------------------------------------------
-  // CREATE CATEGORY
-  // --------------------------------------------------------
-
-  const category =
-    await Category.create({
-      name: normalizedName,
-
-      categoryIcon,
-
-      isActive: true
-    });
-
-  return category;
-};
 
 // ==========================================================
 // GET CATEGORY BY ID
-//
-// Used by the category edit page.
-//
-// Unlike getCategory(), this does not require isActive:true.
-// This allows an admin to edit an inactive category as well.
 // ==========================================================
 
-exports.getCategoryById = async (
-  categoryId
-) => {
-  if (
-    !categoryId ||
-    !mongoose.Types.ObjectId.isValid(
-      categoryId
-    )
-  ) {
-    const error =
-      new Error(
-        "Invalid category ID."
-      );
+async function getCategoryById(id) {
 
-    error.statusCode = 400;
+    if (
+        !id ||
+        !mongoose.Types.ObjectId.isValid(id)
+    ) {
 
-    throw error;
-  }
+        return null;
 
-  const category =
-    await Category.findById(
-      categoryId
-    ).lean();
+    }
 
-  if (!category) {
-    const error =
-      new Error(
-        "Category not found."
-      );
+    return Category.findById(id);
 
-    error.statusCode = 404;
+}
 
-    throw error;
-  }
-
-  return category;
-};
 
 // ==========================================================
 // UPDATE CATEGORY
 // ==========================================================
 
-exports.updateCategory = async (
-  categoryId,
-  body = {},
-  file = null
-) => {
-  // --------------------------------------------------------
-  // VALIDATE CATEGORY ID
-  // --------------------------------------------------------
+async function updateCategory(
+    id,
+    body = {},
+    file = null
+) {
 
-  if (
-    !categoryId ||
-    !mongoose.Types.ObjectId.isValid(
-      categoryId
-    )
-  ) {
-    const error =
-      new Error(
-        "Invalid category ID."
-      );
+    if (
+        !id ||
+        !mongoose.Types.ObjectId.isValid(id)
+    ) {
 
-    error.statusCode = 400;
+        throw new Error(
+            "Invalid category ID."
+        );
 
-    throw error;
-  }
+    }
 
-  // --------------------------------------------------------
-  // FIND CATEGORY
-  // --------------------------------------------------------
+    const category =
+        await Category.findById(id);
 
-  const category =
-    await Category.findById(
-      categoryId
-    );
+    if (!category) {
 
-  if (!category) {
-    const error =
-      new Error(
-        "Category not found."
-      );
+        throw new Error(
+            "Category not found."
+        );
 
-    error.statusCode = 404;
+    }
 
-    throw error;
-  }
 
-  // --------------------------------------------------------
-  // CATEGORY NAME
-  // --------------------------------------------------------
+    const name =
+        text(body.name);
 
-  const name =
-    cleanCategoryName(body.name);
+    if (!name) {
 
-  if (!name) {
-    const error =
-      new Error(
-        "Category name is required."
-      );
+        throw new Error(
+            "Category name is required."
+        );
 
-    error.statusCode = 400;
+    }
 
-    throw error;
-  }
 
-  // --------------------------------------------------------
-  // IMAGE URL
-  // --------------------------------------------------------
+    const businessType =
+        await getBusinessTypeById(
+            body.businessTypeId
+        );
 
-  const categoryIconUrl =
-    text(body.categoryIconUrl);
 
-  const hasUpload =
-    Boolean(file);
+    // ------------------------------------------------------
+    // DUPLICATE CATEGORY
+    // ------------------------------------------------------
 
-  const hasUrl =
-    Boolean(categoryIconUrl);
+    const existing =
+        await Category.findOne({
+            name: name.toLowerCase(),
+            _id: {
+                $ne: category._id
+            }
+        });
 
-  // --------------------------------------------------------
-  // DO NOT ALLOW BOTH
-  // --------------------------------------------------------
+    if (existing) {
 
-  if (hasUpload && hasUrl) {
-    const error =
-      new Error(
-        "Use either an uploaded image or an image URL, not both."
-      );
+        throw new Error(
+            "A category with this name already exists."
+        );
 
-    error.statusCode = 400;
+    }
 
-    throw error;
-  }
 
-  // --------------------------------------------------------
-  // IMAGE URL VALIDATION
-  // --------------------------------------------------------
+    // ------------------------------------------------------
+    // UPDATE BASIC DETAILS
+    // ------------------------------------------------------
 
-  if (
-    hasUrl &&
-    !isValidImageUrl(categoryIconUrl)
-  ) {
-    const error =
-      new Error(
-        "The image URL must be a valid HTTP or HTTPS URL."
-      );
+    category.name =
+        name.toLowerCase();
 
-    error.statusCode = 400;
+    category.businessType = {
+        id:
+            businessType.id,
 
-    throw error;
-  }
+        name:
+            businessType.name
+    };
 
-  // --------------------------------------------------------
-  // CHECK DUPLICATE CATEGORY NAME
-  //
-  // Exclude the category currently being edited.
-  // --------------------------------------------------------
+    category.description =
+        text(body.description);
 
-  const normalizedName =
-    name.toLowerCase();
 
-  const existing =
-    await Category.findOne({
-      name: normalizedName,
-      _id: {
-        $ne: categoryId
-      }
-    });
+    // ------------------------------------------------------
+    // IMAGE
+    // ------------------------------------------------------
 
-  if (existing) {
-    const error =
-      new Error(
-        `The category "${name}" already exists.`
-      );
+    if (file) {
 
-    error.statusCode = 409;
+        category.categoryIcon =
+            file.path ||
+            file.secure_url ||
+            file.url ||
+            category.categoryIcon;
 
-    throw error;
-  }
+    } else if (
+        text(body.categoryIconUrl)
+    ) {
 
-  // --------------------------------------------------------
-  // UPDATE NAME
-  // --------------------------------------------------------
+        category.categoryIcon =
+            text(body.categoryIconUrl);
 
-  category.name =
-    normalizedName;
+    }
 
-  // --------------------------------------------------------
-  // UPDATE IMAGE ONLY WHEN A NEW IMAGE
-  // SOURCE WAS PROVIDED
-  //
-  // If neither file nor URL is supplied,
-  // the existing image is preserved.
-  // --------------------------------------------------------
 
-  if (file) {
-    category.categoryIcon =
-      `/uploads/categories/${file.filename}`;
-  }
+    if (!category.categoryIcon) {
 
-  if (categoryIconUrl) {
-    category.categoryIcon =
-      categoryIconUrl;
-  }
+        throw new Error(
+            "Category image is required."
+        );
 
-  // --------------------------------------------------------
-  // SAVE
-  // --------------------------------------------------------
+    }
 
-  await category.save();
 
-  return category;
-};
+    await category.save();
+
+    return category;
+
+}
+
 
 // ==========================================================
 // GET CATEGORY
 // ==========================================================
 
-exports.getCategory = async (
-  categoryId
-) => {
-  if (
-    !categoryId ||
-    !mongoose.Types.ObjectId.isValid(
-      categoryId
-    )
-  ) {
-    const error =
-      new Error(
-        "Invalid category ID."
-      );
+async function getCategory(
+    query = {}
+) {
 
-    error.statusCode = 400;
+    return Category.findOne(query);
 
-    throw error;
-  }
+}
 
-  const category =
-    await Category.findOne({
-      _id: categoryId,
-      isActive: true
-    }).lean();
 
-  if (!category) {
-    const error =
-      new Error(
-        "Category not found."
-      );
+// ==========================================================
+// GET CATEGORY PRODUCTS
+// ==========================================================
 
-    error.statusCode = 404;
+async function getCategoryProducts(
+    categoryId
+) {
 
-    throw error;
-  }
+    if (
+        !categoryId ||
+        !mongoose.Types.ObjectId.isValid(
+            categoryId
+        )
+    ) {
 
-  return category;
+        return [];
+
+    }
+
+    return Product.find({
+        category: categoryId
+    });
+
+}
+
+
+// ==========================================================
+// GET CATEGORIES
+// ==========================================================
+
+async function getCategories(
+    query = {}
+) {
+
+    return Category.find(query)
+        .sort({
+            name: 1
+        });
+
+}
+
+
+// ==========================================================
+// EXPORTS
+// ==========================================================
+
+module.exports = {
+
+    getBusinessTypes,
+
+    getBusinessTypeById,
+
+    createCategory,
+
+    getCategoryById,
+
+    updateCategory,
+
+    getCategory,
+
+    getCategoryProducts,
+
+    getCategories
+
 };
-
-// ==========================================================
-// GET PRODUCTS IN CATEGORY
-// ==========================================================
-
-exports.getCategoryProducts = async (
-  categoryId
-) => {
-  const category =
-    await exports.getCategory(
-      categoryId
-    );
-
-  const products =
-    await Product.find({
-      category: category._id,
-
-      isActive: true
-    })
-      .sort({
-        subcategory: 1,
-        name: 1,
-        createdAt: 1
-      })
-      .lean();
-
-  return {
-    category,
-    products
-  };
-};
-
-// ==========================================================
-// GET ACTIVE CATEGORIES
-// ==========================================================
-
-exports.getCategories =
-  async () => {
-    return Category.find({
-      isActive: true
-    })
-      .select(
-        "_id name categoryIcon isActive"
-      )
-      .sort({
-        name: 1
-      })
-      .lean();
-  };
