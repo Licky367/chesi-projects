@@ -7,6 +7,9 @@
 const categoryService =
     require("../services/categoryService");
 
+const stockService =
+    require("../services/stockService");
+
 
 // ==========================================================
 // ADMIN CHECK
@@ -398,15 +401,6 @@ exports.products = async (
 
         // ======================================================
         // RENDER CATEGORY PRODUCTS
-        //
-        // Matches the data expected by:
-        //
-        // views/products/category.ejs
-        //
-        // category
-        // products
-        // isAdmin
-        // error
         // ======================================================
 
         return res.render(
@@ -433,10 +427,6 @@ exports.products = async (
         );
 
 
-        // ======================================================
-        // RENDER THE SAME CATEGORY VIEW WITH ERROR
-        // ======================================================
-
         return res.status(500).render(
             "products/category",
             {
@@ -459,5 +449,256 @@ exports.products = async (
 
 
 // ==========================================================
+// ADD SUBCATEGORY
+//
+// POST /products/category/:id/subcategory
+// ==========================================================
+
+exports.addSubcategory = async (
+    req,
+    res
+) => {
+
+    try {
+
+        // ------------------------------------------------------
+        // ADMIN ONLY
+        // ------------------------------------------------------
+
+        if (!getIsAdmin(req)) {
+            return res.redirect("/");
+        }
+
+
+        // ------------------------------------------------------
+        // CATEGORY ID
+        // ------------------------------------------------------
+
+        const categoryId =
+            String(
+                req.params.id || ""
+            ).trim();
+
+
+        // ------------------------------------------------------
+        // SUBCATEGORY
+        // ------------------------------------------------------
+
+        const subcategory =
+            String(
+                req.body?.subcategory || ""
+            ).trim();
+
+
+        // ------------------------------------------------------
+        // ADD SUBCATEGORY
+        // ------------------------------------------------------
+
+        await stockService.addSubcategory(
+            categoryId,
+            subcategory
+        );
+
+
+        // ------------------------------------------------------
+        // RETURN TO CATEGORY SUBCATEGORIES
+        // ------------------------------------------------------
+
+        return res.redirect(
+            `/products/category/${categoryId}/categories`
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Add subcategory error:",
+            error
+        );
+
+
+        // ------------------------------------------------------
+        // RELOAD CATEGORY
+        // ------------------------------------------------------
+
+        let category = null;
+
+        try {
+
+            category =
+                await stockService.getCategory(
+                    req.params.id
+                );
+
+        } catch (categoryError) {
+
+            console.error(
+                "Category reload error:",
+                categoryError
+            );
+
+        }
+
+
+        return res.status(400).render(
+            "products/category-subcategories",
+            {
+                title:
+                    category
+                        ? `${category.name} Subcategories`
+                        : "Category Subcategories",
+
+                category,
+
+                subcategories:
+                    Array.isArray(
+                        category?.subcategory
+                    )
+                        ? category.subcategory
+                        : [],
+
+                error:
+                    error.message ||
+                    "Unable to add subcategory.",
+
+                saved: "",
+
+                old: {
+                    subcategory:
+                        req.body?.subcategory || ""
+                }
+            }
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// CATEGORY SUBCATEGORIES
+//
+// GET /products/category/:id/categories
+//
+// Displays the selected category and ALL of its
+// subcategories.
+// ==========================================================
+
+exports.subcategories = async (
+    req,
+    res
+) => {
+
+    try {
+
+        // ------------------------------------------------------
+        // ADMIN ONLY
+        // ------------------------------------------------------
+
+        if (!getIsAdmin(req)) {
+            return res.redirect("/");
+        }
+
+
+        // ------------------------------------------------------
+        // GET CATEGORY
+        // ------------------------------------------------------
+
+        const category =
+            await stockService.getCategory(
+                req.params.id
+            );
+
+
+        // ------------------------------------------------------
+        // GET SUBCATEGORIES
+        // ------------------------------------------------------
+
+        const subcategories =
+            Array.isArray(
+                category.subcategory
+            )
+                ? category.subcategory
+                : [];
+
+
+        // ------------------------------------------------------
+        // RENDER
+        // ------------------------------------------------------
+
+        return res.render(
+            "products/category-subcategories",
+            {
+                title:
+                    `${category.name} Subcategories`,
+
+                category,
+
+                subcategories,
+
+                error: null,
+
+                saved: "",
+
+                old: {}
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Category subcategories error:",
+            error
+        );
+
+
+        return res.status(
+            error.message ===
+            "The selected category was not found or is inactive."
+                ? 404
+                : 500
+        ).render(
+            "products/category-subcategories",
+            {
+                title:
+                    "Category Subcategories",
+
+                category: null,
+
+                subcategories: [],
+
+                error:
+                    error.message ||
+                    "Unable to load category subcategories.",
+
+                saved: "",
+
+                old: {}
+            }
+        );
+
+    }
+
+};
+
+
+// ==========================================================
 // EXPORTS
 // ==========================================================
+
+module.exports = {
+
+    addForm,
+
+    create,
+
+    editForm,
+
+    update,
+
+    products,
+
+    addSubcategory,
+
+    subcategories
+
+};
