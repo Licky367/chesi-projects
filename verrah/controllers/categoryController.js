@@ -14,7 +14,7 @@ const categoryService =
 
 function getIsAdmin(req) {
 
-    return (
+    return !!(
         req.user &&
         req.user.role === "admin"
     );
@@ -352,7 +352,7 @@ exports.products = async (
     try {
 
         // ======================================================
-        // CATEGORY
+        // GET CATEGORY
         // ======================================================
 
         const category =
@@ -379,7 +379,7 @@ exports.products = async (
 
 
         // ======================================================
-        // PRODUCTS
+        // GET PRODUCTS
         // ======================================================
 
         const products =
@@ -397,7 +397,16 @@ exports.products = async (
 
 
         // ======================================================
-        // RENDER CATEGORY PRODUCTS PAGE
+        // RENDER CATEGORY PRODUCTS
+        //
+        // Matches the data expected by:
+        //
+        // views/products/category.ejs
+        //
+        // category
+        // products
+        // isAdmin
+        // error
         // ======================================================
 
         return res.render(
@@ -425,9 +434,7 @@ exports.products = async (
 
 
         // ======================================================
-        // RENDER THE CATEGORY PAGE WITH ERROR
-        //
-        // This keeps the expected view contract intact.
+        // RENDER THE SAME CATEGORY VIEW WITH ERROR
         // ======================================================
 
         return res.status(500).render(
@@ -449,3 +456,8 @@ exports.products = async (
     }
 
 };
+
+
+// ==========================================================
+// EXPORTS
+// ==========================================================
