@@ -2058,28 +2058,19 @@ padding: 16px;
 
 /* =========================================================
 PRODUCT ANALYTICS ACTION BUTTONS
-BOTTOM FIXED — ABOVE 50PX FOOTER
+BOTTOM FIXED — CLEAR OF FIXED FOOTER
 ========================================================= */
-
-/*
-Footer height:
-50px
-
-Button clearance above footer:
-16px
-
-Therefore:
-50px + 16px = 66px
-*/
 
 #addManyToCartActions,
 #updateMarketAvailableActions {
 
-position: fixed;
+position: fixed !important;
 
-bottom: 66px;
+bottom: 110px !important;
 
-z-index: 100000;
+margin: 0 !important;
+
+z-index: 2147483647 !important;
 
 }
 
@@ -2090,7 +2081,7 @@ ADD TO CART — BOTTOM LEFT
 
 #addManyToCartActions {
 
-left: 20px;
+left: 20px !important;
 
 }
 
@@ -2101,7 +2092,7 @@ UPDATE MARKET — BOTTOM RIGHT
 
 #updateMarketAvailableActions {
 
-right: 20px;
+right: 20px !important;
 
 }
 
@@ -2210,21 +2201,21 @@ MOBILE
 #addManyToCartActions,
 #updateMarketAvailableActions {
 
-bottom: 64px;
+bottom: 110px !important;
 
-z-index: 100000;
+z-index: 2147483647 !important;
 
 }
 
 #addManyToCartActions {
 
-left: 12px;
+left: 12px !important;
 
 }
 
 #updateMarketAvailableActions {
 
-right: 12px;
+right: 12px !important;
 
 }
 
