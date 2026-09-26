@@ -59,11 +59,42 @@ async (
 
 
         // ----------------------------------------------------
-        // GET SUBSTATIONS
+        // GET ALL SUBSTATIONS
+        // ----------------------------------------------------
+
+        const allSubstations =
+            await service.list();
+
+
+        // ----------------------------------------------------
+        // PRODUCT CATEGORY BUSINESS TYPE
+        // ----------------------------------------------------
+
+        const businessTypeId =
+            product.category &&
+            product.category.businessType &&
+            product.category.businessType.id
+                ? String(
+                    product.category.businessType.id
+                )
+                : null;
+
+
+        // ----------------------------------------------------
+        // FILTER SUBSTATIONS BY PRODUCT BUSINESS TYPE
         // ----------------------------------------------------
 
         const substations =
-            await service.list();
+            businessTypeId
+                ? allSubstations.filter(
+                    substation =>
+                        substation.businessType &&
+                        substation.businessType.id &&
+                        String(
+                            substation.businessType.id
+                        ) === businessTypeId
+                )
+                : [];
 
 
         // ----------------------------------------------------
