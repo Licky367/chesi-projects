@@ -1,160 +1,221 @@
-const service = require("../../services/stockService");
-const { getProductsForAllocation } = require("./helpers");
+const service =
+require("../../services/stockService");
 
-async function entry(req, res) {
-    try {
-        const [stock, products, allSubstations] = await Promise.all([
-            service.getStock(req.params.id),
-            getProductsForAllocation(),
-            service.getSubstations()
-        ]);
+const {
+getProductsForAllocation
+} = require("./helpers");
 
-        if (!stock) {
-            return res.redirect(
-                "/stock?error=Stock+not+found"
-            );
-        }
+async function entry(
+req,
+res
+) {
 
-        // ==================================================
-        // FILTER SUBSTATIONS BY STOCK CATEGORY BUSINESS TYPE
-        // ==================================================
+try {
 
-        const businessTypeId =
-            stock.categoryDocument &&
-            stock.categoryDocument.businessType &&
-            stock.categoryDocument.businessType.id
-                ? String(
-                    stock.categoryDocument.businessType.id
-                )
-                : null;
+    const [
+        stock,
+        products,
+        allSubstations
+    ] = await Promise.all([
 
-        const substations =
-            businessTypeId
-                ? allSubstations.filter(
-                    substation =>
-                        substation.businessType &&
-                        substation.businessType.id &&
-                        String(
-                            substation.businessType.id
-                        ) === businessTypeId
-                )
-                : [];
+        service.getStock(
+            req.params.id
+        ),
 
-        return res.render(
-            "stock/stock-entry",
-            {
-                title: "Allocate Product",
-                stock,
-                products,
-                substations,
-                error: req.query.error || null,
-                old: {},
-                saved: req.query.saved || ""
-            }
-        );
+        getProductsForAllocation(),
 
-    } catch (error) {
+        service.getSubstations()
 
-        console.error(
-            "Stock entry error:",
-            error
-        );
+    ]);
+
+
+    if (!stock) {
 
         return res.redirect(
-            `/stock?error=${encodeURIComponent(
-                error.message
-            )}`
+            "/stock?error=Stock+not+found"
         );
     }
-}
 
 
-async function createProduct(req, res) {
-    try {
+    // ==================================================
+    // FILTER SUBSTATIONS BY STOCK CATEGORY BUSINESS TYPE
+    // ==================================================
 
-        await service.createProductFromStock(
-            req.params.id,
-            req.body
-        );
+    const businessTypeId =
+        stock.categoryDocument &&
+        stock.categoryDocument.businessType &&
+        stock.categoryDocument.businessType.id
+            ? String(
+                stock.categoryDocument
+                    .businessType
+                    .id
+            )
+            : null;
 
-        return res.redirect(
-            `/stock/${req.params.id}?saved=1`
-        );
 
-    } catch (error) {
+    const substations =
+        businessTypeId
+            ? allSubstations.filter(
+                substation =>
+                    substation.businessType &&
+                    substation.businessType.id &&
+                    String(
+                        substation.businessType.id
+                    ) ===
+                    businessTypeId
+            )
+            : [];
 
-        console.error(
-            "Create product from stock error:",
-            error
-        );
 
-        const [
+    return res.render(
+        "stock/stock-entry",
+        {
+            title:
+                "Allocate Product",
+
             stock,
+
             products,
-            allSubstations
-        ] = await Promise.all([
 
-            service.getStock(
-                req.params.id
-            ),
+            substations,
 
-            getProductsForAllocation(),
+            error:
+                req.query.error || null,
 
-            service.getSubstations()
+            old:
+                {},
 
-        ]);
-
-
-        if (!stock) {
-            return res.redirect(
-                "/stock"
-            );
+            saved:
+                req.query.saved || ""
         }
+    );
 
 
-        // ==================================================
-        // FILTER SUBSTATIONS BY STOCK CATEGORY BUSINESS TYPE
-        // ==================================================
+} catch (error) {
 
-        const businessTypeId =
-            stock.categoryDocument &&
-            stock.categoryDocument.businessType &&
-            stock.categoryDocument.businessType.id
-                ? String(
-                    stock.categoryDocument.businessType.id
-                )
-                : null;
-
-        const substations =
-            businessTypeId
-                ? allSubstations.filter(
-                    substation =>
-                        substation.businessType &&
-                        substation.businessType.id &&
-                        String(
-                            substation.businessType.id
-                        ) === businessTypeId
-                )
-                : [];
+    console.error(
+        "Stock entry error:",
+        error
+    );
 
 
-        return res.status(400).render(
-            "stock/stock-entry",
-            {
-                title: "Allocate Product",
-                stock,
-                products,
-                substations,
-                error: error.message,
-                old: req.body,
-                saved: ""
-            }
-        );
-    }
+    return res.redirect(
+        `/stock?error=${encodeURIComponent(
+            error.message
+        )}`
+    );
 }
 
+}
+
+async function createProduct(
+req,
+res
+) {
+
+try {
+
+    await service.createProductFromStock(
+        req.params.id,
+        req.body
+    );
+
+
+    return res.redirect(
+        `/stock/${req.params.id}?saved=1`
+    );
+
+
+} catch (error) {
+
+    console.error(
+        "Create product from stock error:",
+        error
+    );
+
+
+    const [
+        stock,
+        products,
+        allSubstations
+    ] = await Promise.all([
+
+        service.getStock(
+            req.params.id
+        ),
+
+        getProductsForAllocation(),
+
+        service.getSubstations()
+
+    ]);
+
+
+    if (!stock) {
+
+        return res.redirect(
+            "/stock"
+        );
+    }
+
+
+    // ==================================================
+    // FILTER SUBSTATIONS BY STOCK CATEGORY BUSINESS TYPE
+    // ==================================================
+
+    const businessTypeId =
+        stock.categoryDocument &&
+        stock.categoryDocument.businessType &&
+        stock.categoryDocument.businessType.id
+            ? String(
+                stock.categoryDocument
+                    .businessType
+                    .id
+            )
+            : null;
+
+
+    const substations =
+        businessTypeId
+            ? allSubstations.filter(
+                substation =>
+                    substation.businessType &&
+                    substation.businessType.id &&
+                    String(
+                        substation.businessType.id
+                    ) ===
+                    businessTypeId
+            )
+            : [];
+
+
+    return res.status(400).render(
+        "stock/stock-entry",
+        {
+            title:
+                "Allocate Product",
+
+            stock,
+
+            products,
+
+            substations,
+
+            error:
+                error.message,
+
+            old:
+                req.body,
+
+            saved:
+                ""
+        }
+    );
+}
+
+}
 
 module.exports = {
-    entry,
-    createProduct
+entry,
+createProduct
 };
