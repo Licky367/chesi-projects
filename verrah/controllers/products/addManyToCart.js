@@ -20,12 +20,6 @@ exports.addManyToCart = async (req, res) => {
                 ? req.body.products
                 : [];
 
-        const cartSubstation =
-            String(
-                req.body?.cartSubstation ||
-                ""
-            ).trim();
-
 
         // ======================================================
         // VALIDATE PRODUCTS
@@ -58,8 +52,7 @@ exports.addManyToCart = async (req, res) => {
             await cartService.addToCart(
                 req,
                 item.productId,
-                item.qty,
-                cartSubstation
+                item.qty
             );
 
         }
