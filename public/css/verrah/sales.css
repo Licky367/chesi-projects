@@ -6,6 +6,7 @@ SALES / ANALYTICS
 BROWN THEME
 ========================================================== */
 
+
 /* ==========================================================
 SALES PAGE
 ========================================================== */
@@ -39,6 +40,7 @@ box-sizing: border-box;
 color: var(--sales-text);
 
 }
+
 
 /* ==========================================================
 SALES HEADER
@@ -77,6 +79,7 @@ rgba(74, 43, 25, 0.07);
 
 }
 
+
 /* ==========================================================
 SALES HEADER ICON
 ========================================================== */
@@ -109,6 +112,7 @@ rgba(74, 43, 25, 0.16);
 
 }
 
+
 /* ==========================================================
 SALES HEADER ICON
 ========================================================== */
@@ -120,6 +124,7 @@ font-size: 21px;
 line-height: 1;
 
 }
+
 
 /* ==========================================================
 SALES TITLE
@@ -141,6 +146,7 @@ letter-spacing: -0.2px;
 
 }
 
+
 /* ==========================================================
 SALES SUBTITLE
 ========================================================== */
@@ -158,6 +164,7 @@ font-weight: 500;
 line-height: 1.5;
 
 }
+
 
 /* ==========================================================
 SALES NAVIGATION TABS
@@ -197,6 +204,7 @@ scrollbar-width: none;
 
 }
 
+
 /* ==========================================================
 HIDE SCROLLBAR
 ========================================================== */
@@ -206,6 +214,7 @@ HIDE SCROLLBAR
 display: none;
 
 }
+
 
 /* ==========================================================
 SALES TAB
@@ -251,15 +260,16 @@ cursor: pointer;
 
 transition:
 
-background 0.2s ease,  
+background 0.2s ease,
 
-color 0.2s ease,  
+color 0.2s ease,
 
-border-color 0.2s ease,  
+border-color 0.2s ease,
 
 transform 0.2s ease;
 
 }
+
 
 /* ==========================================================
 TAB HOVER
@@ -275,6 +285,7 @@ background: #fff;
 
 }
 
+
 /* ==========================================================
 ACTIVE TAB
 ========================================================== */
@@ -288,6 +299,7 @@ border-color: var(--sales-brown);
 color: #fff;
 
 }
+
 
 /* ==========================================================
 ACTIVE TAB HOVER
@@ -303,6 +315,7 @@ color: #fff;
 
 }
 
+
 /* ==========================================================
 TAB FOCUS
 ========================================================== */
@@ -314,6 +327,7 @@ outline: 2px solid var(--sales-brown-light);
 outline-offset: 2px;
 
 }
+
 
 /* ==========================================================
 FILTER
@@ -450,6 +464,7 @@ background: #fff;
 
 }
 
+
 /* ==========================================================
 FILTER HIDE / UNHIDE
 ========================================================== */
@@ -518,6 +533,7 @@ display: none !important;
 
 }
 
+
 /* ==========================================================
 SALES CONTENT
 ========================================================== */
@@ -527,6 +543,7 @@ SALES CONTENT
 width: 100%;
 
 }
+
 
 /* ==========================================================
 SALES PANELS
@@ -543,6 +560,7 @@ width: 100%;
 display: none;
 
 }
+
 
 /* ==========================================================
 SALES SECTIONS
@@ -573,6 +591,7 @@ margin: 0 0 5px;
 font-size: 22px;
 
 }
+
 
 /* ==========================================================
 SUMMARY CARDS
@@ -637,6 +656,7 @@ line-height: 1.2;
 
 }
 
+
 /* ==========================================================
 TABLE WRAPPER
 ========================================================== */
@@ -654,6 +674,7 @@ border-radius: 12px;
 background: #fff;
 
 }
+
 
 /* ==========================================================
 SALES TABLE
@@ -731,6 +752,7 @@ outline-offset: -2px;
 
 }
 
+
 /* ==========================================================
 SALES LINKS
 ========================================================== */
@@ -755,6 +777,7 @@ text-decoration: underline;
 
 }
 
+
 /* ==========================================================
 ARREARS
 ========================================================== */
@@ -771,6 +794,7 @@ color: var(--sales-muted);
 
 }
 
+
 /* ==========================================================
 EMPTY STATE
 ========================================================== */
@@ -784,6 +808,7 @@ text-align: center !important;
 color: var(--sales-muted);
 
 }
+
 
 /* ==========================================================
 LIABILITY ENTRY
@@ -958,6 +983,7 @@ border-color: var(--sales-brown-dark);
 
 }
 
+
 /* ==========================================================
 LIABILITY RECORDS
 ========================================================== */
@@ -1008,6 +1034,7 @@ border-radius: 12px;
 background: #fff;
 
 }
+
 
 /* ==========================================================
 MOBILE — FILTER / LIABILITY ENTRY
@@ -1060,6 +1087,7 @@ width: 100%;
 
 }
 
+
 /* ==========================================================
 MOBILE — SALES PAGE
 ========================================================== */
@@ -1068,7 +1096,7 @@ MOBILE — SALES PAGE
 
 .sales-page {
 
-padding-left: 12px;  
+padding-left: 12px;
 
 padding-right: 12px;
 
@@ -1088,11 +1116,11 @@ font-size: 23px;
 
 .sales-navigation {
 
-gap: 7px;  
+gap: 7px;
 
-padding: 8px 10px;  
+padding: 8px 10px;
 
-margin-bottom: 16px;  
+margin-bottom: 16px;
 
 border-radius: 11px;
 
@@ -1100,9 +1128,9 @@ border-radius: 11px;
 
 .sales-navigation-tab {
 
-min-height: 36px;  
+min-height: 36px;
 
-padding: 8px 14px;  
+padding: 8px 14px;
 
 font-size: 12px;
 
@@ -1122,458 +1150,562 @@ min-width: 850px;
 
 }
 
+
 /* =========================================================
 SUBSTATION BALANCES
 EDIT INPUT + SAVE BUTTON
 VERRAH COSMETICS
 ========================================================= */
 
+
 /* =========================================================
 UNITS EDIT INPUT
 ========================================================= */
 
-.sales-table input[type="number"]{
-width:90px;
-max-width:100%;
-height:40px;
+.sales-table input[type="number"] {
 
-padding:0 10px;  
+width: 90px;
 
-background:#ffffff;  
-color:var(--text);  
+max-width: 100%;
 
-border:1.5px solid var(--border);  
-border-radius:8px;  
+height: 40px;
 
-font-size:14px;  
-font-weight:600;  
+padding: 0 10px;
 
-text-align:center;  
+background: #ffffff;
 
-outline:none;  
+color: var(--text);
 
-transition:  
-    border-color .2s ease,  
-    box-shadow .2s ease,  
-    background .2s ease;
+border: 1.5px solid var(--border);
+
+border-radius: 8px;
+
+font-size: 14px;
+
+font-weight: 600;
+
+text-align: center;
+
+outline: none;
+
+transition:
+
+border-color .2s ease,
+
+box-shadow .2s ease,
+
+background .2s ease;
+
+}
+
+.sales-table input[type="number"]:hover {
+
+border-color: var(--primary);
 
 }
 
-.sales-table input[type="number"]:hover{
-border-color:var(--primary);
-}
+.sales-table input[type="number"]:focus {
 
-.sales-table input[type="number"]:focus{
-border-color:var(--primary);
+border-color: var(--primary);
 
-background:var(--primary-soft);  
+background: var(--primary-soft);
 
-box-shadow:  
-    0 0 0 3px rgba(111,78,55,.12);
+box-shadow:
+0 0 0 3px rgba(111,78,55,.12);
 
 }
+
 
 /* =========================================================
 REMOVE NUMBER INPUT ARROWS
 ========================================================= */
 
 .sales-table input[type="number"]::-webkit-inner-spin-button,
-.sales-table input[type="number"]::-webkit-outer-spin-button{
-margin:0;
-opacity:.7;
+.sales-table input[type="number"]::-webkit-outer-spin-button {
+
+margin: 0;
+
+opacity: .7;
+
 }
+
 
 /* =========================================================
 SAVE BUTTON
 ========================================================= */
 
-.sales-table button[type="submit"]{
-height:40px;
-min-width:82px;
+.sales-table button[type="submit"] {
 
-display:inline-flex;  
-align-items:center;  
-justify-content:center;  
-gap:7px;  
+height: 40px;
 
-padding:0 13px;  
+min-width: 82px;
 
-border:1px solid var(--primary);  
-border-radius:8px;  
+display: inline-flex;
 
-background:var(--primary);  
-color:#ffffff;  
+align-items: center;
 
-font-size:13px;  
-font-weight:600;  
+justify-content: center;
 
-cursor:pointer;  
+gap: 7px;
 
-white-space:nowrap;  
+padding: 0 13px;
 
-box-shadow:  
-    0 2px 5px rgba(78,52,36,.14);  
+border: 1px solid var(--primary);
 
-transition:  
-    background .2s ease,  
-    border-color .2s ease,  
-    transform .15s ease,  
-    box-shadow .2s ease;
+border-radius: 8px;
+
+background: var(--primary);
+
+color: #ffffff;
+
+font-size: 13px;
+
+font-weight: 600;
+
+cursor: pointer;
+
+white-space: nowrap;
+
+box-shadow:
+0 2px 5px rgba(78,52,36,.14);
+
+transition:
+
+background .2s ease,
+
+border-color .2s ease,
+
+transform .15s ease,
+
+box-shadow .2s ease;
 
 }
+
 
 /* =========================================================
 SAVE BUTTON HOVER
 ========================================================= */
 
-.sales-table button[type="submit"]:hover{
-background:var(--primary-dark);
-border-color:var(--primary-dark);
+.sales-table button[type="submit"]:hover {
 
-box-shadow:  
-    0 4px 10px rgba(78,52,36,.18);
+background: var(--primary-dark);
+
+border-color: var(--primary-dark);
+
+box-shadow:
+0 4px 10px rgba(78,52,36,.18);
 
 }
+
 
 /* =========================================================
 SAVE BUTTON ACTIVE
 ========================================================= */
 
-.sales-table button[type="submit"]:active{
-transform:translateY(1px);
+.sales-table button[type="submit"]:active {
 
-box-shadow:  
-    0 2px 5px rgba(78,52,36,.12);
+transform: translateY(1px);
+
+box-shadow:
+0 2px 5px rgba(78,52,36,.12);
 
 }
+
 
 /* =========================================================
 SAVE ICON
 ========================================================= */
 
-.sales-table button[type="submit"] i{
-font-size:13px;
-line-height:1;
+.sales-table button[type="submit"] i {
+
+font-size: 13px;
+
+line-height: 1;
+
 }
+
 
 /* =========================================================
 MOBILE
 ========================================================= */
 
-@media(max-width:600px){
+@media (max-width: 600px) {
 
-.sales-table input[type="number"]{  
-    width:78px;  
-    height:38px;  
-    font-size:13px;  
-}  
+.sales-table input[type="number"] {
 
-.sales-table button[type="submit"]{  
-    min-width:72px;  
-    height:38px;  
+width: 78px;
 
-    padding:0 10px;  
+height: 38px;
 
-    font-size:12px;  
-}  
+font-size: 13px;
 
-.sales-table button[type="submit"] i{  
-    font-size:12px;  
+}
+
+.sales-table button[type="submit"] {
+
+min-width: 72px;
+
+height: 38px;
+
+padding: 0 10px;
+
+font-size: 12px;
+
+}
+
+.sales-table button[type="submit"] i {
+
+font-size: 12px;
+
 }
 
 }
+
 
 /* =========================================================
 VERRAH COSMETICS
 STOCK ENTRY TABS
 ========================================================= */
 
+
 /* =========================================================
 TABS CONTAINER
 ========================================================= */
 
 .verrah-tabs-container {
+
 width: 100%;
+
 max-width: 1300px;
+
 margin: 0 auto;
+
 }
+
 
 /* =========================================================
 TAB BAR
 ========================================================= */
 
 .verrah-tabs {
+
 display: flex;
+
 align-items: center;
+
 gap: 12px;
 
-width: 100%;  
+width: 100%;
 
-padding: 12px 8px;  
+padding: 12px 8px;
 
-overflow-x: auto;  
-overflow-y: hidden;  
+overflow-x: auto;
 
-background: #ffffff;  
+overflow-y: hidden;
 
-border-bottom: 1px solid #eadfd8;  
+background: #ffffff;
+
+border-bottom: 1px solid #eadfd8;
 
 scrollbar-width: none;
 
 }
 
 .verrah-tabs::-webkit-scrollbar {
+
 display: none;
+
 }
+
 
 /* =========================================================
 TAB BUTTON
 ========================================================= */
 
 .verrah-tab {
+
 flex: 0 0 auto;
 
-min-height: 48px;  
+min-height: 48px;
 
-padding: 11px 28px;  
+padding: 11px 28px;
 
-border: 1.5px solid #e2d5cc;  
+border: 1.5px solid #e2d5cc;
 
-border-radius: 30px;  
+border-radius: 30px;
 
-background: #ffffff;  
+background: #ffffff;
 
-color: #70452f;  
+color: #70452f;
 
-font-family: inherit;  
+font-family: inherit;
 
-font-size: 16px;  
+font-size: 16px;
 
-font-weight: 600;  
+font-weight: 600;
 
-white-space: nowrap;  
+white-space: nowrap;
 
-cursor: pointer;  
+cursor: pointer;
 
-transition:  
-    background-color 0.2s ease,  
-    color 0.2s ease,  
-    border-color 0.2s ease,  
-    transform 0.2s ease;
+transition:
+
+background-color 0.2s ease,
+
+color 0.2s ease,
+
+border-color 0.2s ease,
+
+transform 0.2s ease;
 
 }
+
 
 /* =========================================================
 TAB ACTIVE
 ========================================================= */
 
 .verrah-tab.active {
+
 background: #a84f0a;
 
-border-color: #a84f0a;  
+border-color: #a84f0a;
 
 color: #ffffff;
 
 }
+
 
 /* =========================================================
 TAB HOVER
 ========================================================= */
 
 .verrah-tab:hover {
+
 border-color: #a84f0a;
+
 }
+
 
 /* =========================================================
 TAB CONTENT
 ========================================================= */
 
 .verrah-tab-content {
+
 width: 100%;
+
 }
+
 
 /* =========================================================
 ALL TAB PANELS
 ========================================================= */
 
 .verrah-tab-panel {
+
 display: none;
 
-width: 100%;  
+width: 100%;
 
 padding: 20px 0;
 
 }
+
 
 /* =========================================================
 ACTIVE TAB PANEL
 ========================================================= */
 
 .verrah-tab-panel.active {
+
 display: block;
+
 }
+
 
 /* =========================================================
 STOCK SUMMARY CARD
 ========================================================= */
 
 .stock-summary-card {
+
 width: 100%;
 
-padding: 24px;  
+padding: 24px;
 
-background: #ffffff;  
+background: #ffffff;
 
-border: 1px solid #eadfd8;  
+border: 1px solid #eadfd8;
 
-border-radius: 16px;  
+border-radius: 16px;
 
 box-sizing: border-box;
 
 }
+
 
 /* =========================================================
 SUMMARY HEADING
 ========================================================= */
 
 .stock-summary-heading h2 {
+
 margin: 0 0 6px;
 
-color: #70452f;  
+color: #70452f;
 
 font-size: 22px;
 
 }
 
 .stock-summary-heading p {
+
 margin: 0 0 24px;
 
-color: #766d68;  
+color: #766d68;
 
 font-size: 14px;
 
 }
+
 
 /* =========================================================
 SUMMARY GRID
 ========================================================= */
 
 .allocation-summary {
+
 display: grid;
 
-grid-template-columns:  
-    repeat(3, minmax(0, 1fr));  
+grid-template-columns:
+repeat(3, minmax(0, 1fr));
 
-gap: 16px;  
+gap: 16px;
 
 width: 100%;
 
 }
+
 
 /* =========================================================
 SUMMARY ITEM
 ========================================================= */
 
 .allocation-summary-item {
+
 display: flex;
 
-flex-direction: column;  
+flex-direction: column;
 
-gap: 8px;  
+gap: 8px;
 
-min-width: 0;  
+min-width: 0;
 
-padding: 20px;  
+padding: 20px;
 
-background: #faf7f4;  
+background: #faf7f4;
 
-border: 1px solid #eadfd8;  
+border: 1px solid #eadfd8;
 
 border-radius: 14px;
 
 }
 
 .allocation-summary-item span {
+
 color: #766d68;
 
-font-size: 14px;  
+font-size: 14px;
 
 font-weight: 500;
 
 }
 
 .allocation-summary-item strong {
+
 color: #70452f;
 
-font-size: 25px;  
+font-size: 25px;
 
 font-weight: 700;
 
 }
+
 
 /* =========================================================
 WARNING
 ========================================================= */
 
 .allocation-warning {
+
 margin-top: 18px;
+
 }
+
 
 /* =========================================================
 ACTIONS CARD
 ========================================================= */
 
 .stock-actions-card {
+
 width: 100%;
 
-padding: 24px;  
+padding: 24px;
 
-background: #ffffff;  
+background: #ffffff;
 
-border: 1px solid #eadfd8;  
+border: 1px solid #eadfd8;
 
-border-radius: 16px;  
+border-radius: 16px;
 
 box-sizing: border-box;
 
 }
+
 
 /* =========================================================
 ACTIONS HEADING
 ========================================================= */
 
 .stock-actions-heading h2 {
+
 margin: 0 0 6px;
 
-color: #70452f;  
+color: #70452f;
 
 font-size: 22px;
 
 }
 
 .stock-actions-heading p {
+
 margin: 0 0 24px;
 
-color: #766d68;  
+color: #766d68;
 
 font-size: 14px;
 
 }
+
 
 /* =========================================================
 ACTION BUTTONS
 ========================================================= */
 
 .stock-actions-card .form-actions {
+
 display: flex;
 
-flex-wrap: wrap;  
+flex-wrap: wrap;
 
-gap: 12px;  
+gap: 12px;
 
 align-items: center;
 
 }
+
 
 /* =========================================================
 MOBILE
@@ -1581,57 +1713,63 @@ MOBILE
 
 @media (max-width: 700px) {
 
-.verrah-tabs {  
-    gap: 10px;  
+.verrah-tabs {
 
-    padding: 10px 4px;  
-}  
+gap: 10px;
 
-
-.verrah-tab {  
-    padding: 10px 22px;  
-
-    font-size: 15px;  
-}  
-
-
-.verrah-tab-panel {  
-    padding: 16px 0;  
-}  
-
-
-.stock-summary-card,  
-.stock-actions-card {  
-    padding: 18px;  
-}  
-
-
-.allocation-summary {  
-    grid-template-columns: 1fr;  
-}  
-
-
-.stock-actions-card .form-actions {  
-    flex-direction: column;  
-
-    align-items: stretch;  
-}  
-
-
-.stock-actions-card .form-actions  
-.primary-btn,  
-.stock-actions-card .form-actions  
-.secondary-btn {  
-    width: 100%;  
-
-    box-sizing: border-box;  
-
-    text-align: center;  
-}
+padding: 10px 4px;
 
 }
 
+.verrah-tab {
 
+padding: 10px 22px;
+
+font-size: 15px;
+
+}
+
+.verrah-tab-panel {
+
+padding: 16px 0;
+
+}
+
+.stock-summary-card,
+.stock-actions-card {
+
+padding: 18px;
+
+}
+
+.allocation-summary {
+
+grid-template-columns: 1fr;
+
+}
+
+.stock-actions-card .form-actions {
+
+flex-direction: column;
+
+align-items: stretch;
+
+}
+
+.stock-actions-card .form-actions
+.primary-btn,
+.stock-actions-card .form-actions
+.secondary-btn {
+
+width: 100%;
+
+box-sizing: border-box;
+
+text-align: center;
+
+}
+
+}
 
 
 /* ==========================================================
@@ -1640,49 +1778,71 @@ ADDITIVE ONLY
 ========================================================== */
 
 #menuIcon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
 
-    width: 38px;
-    height: 38px;
+display: inline-flex;
 
-    margin-left: 10px;
+align-items: center;
 
-    border: 1px solid #eadbd0;
-    border-radius: 8px;
+justify-content: center;
 
-    background: #fffaf5;
-    color: #7a4b2a;
+width: 38px;
 
-    font-size: 17px;
-    line-height: 1;
+height: 38px;
 
-    cursor: pointer;
+margin-left: 10px;
 
-    box-sizing: border-box;
+border: 1px solid #eadbd0;
 
-    transition:
-        background-color 0.2s ease,
-        color 0.2s ease,
-        border-color 0.2s ease,
-        transform 0.2s ease;
+border-radius: 8px;
+
+background: #fffaf5;
+
+color: #7a4b2a;
+
+font-size: 17px;
+
+line-height: 1;
+
+cursor: pointer;
+
+box-sizing: border-box;
+
+transition:
+
+background-color 0.2s ease,
+
+color 0.2s ease,
+
+border-color 0.2s ease,
+
+transform 0.2s ease;
+
 }
 
 #menuIcon:hover {
-    background: #7a4b2a;
-    border-color: #7a4b2a;
-    color: #ffffff;
+
+background: #7a4b2a;
+
+border-color: #7a4b2a;
+
+color: #ffffff;
+
 }
 
 #menuIcon:active {
-    transform: translateY(1px);
+
+transform: translateY(1px);
+
 }
 
 #menuIcon:focus-visible {
-    outline: 2px solid #a66a3f;
-    outline-offset: 2px;
+
+outline: 2px solid #a66a3f;
+
+outline-offset: 2px;
+
 }
+
 
 /* ==========================================================
 CATEGORY FILTER MODAL
@@ -1690,184 +1850,261 @@ ADDITIVE ONLY
 ========================================================== */
 
 #categoryFilterModal {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
 
-    display: none;
+position: fixed;
+
+inset: 0;
+
+z-index: 9999;
+
+display: none;
+
 }
 
 #categoryFilterModal.active {
-    display: block;
+
+display: block;
+
 }
 
 #categoryFilterOverlay {
-    position: absolute;
-    inset: 0;
 
-    background: rgba(47, 33, 26, 0.45);
+position: absolute;
+
+inset: 0;
+
+background: rgba(47, 33, 26, 0.45);
+
 }
 
 #categoryFilterPopup {
-    position: absolute;
 
-    top: 50%;
-    left: 50%;
+position: absolute;
 
-    width: calc(100% - 32px);
-    max-width: 420px;
+top: 50%;
 
-    max-height: 80vh;
+left: 50%;
 
-    overflow-y: auto;
+width: calc(100% - 32px);
 
-    transform: translate(-50%, -50%);
+max-width: 420px;
 
-    box-sizing: border-box;
+max-height: 80vh;
 
-    padding: 18px;
+overflow-y: auto;
 
-    background: #ffffff;
+transform: translate(-50%, -50%);
 
-    border: 1px solid #eadbd0;
-    border-left: 4px solid #7a4b2a;
-    border-radius: 14px;
+box-sizing: border-box;
 
-    box-shadow:
-        0 12px 35px rgba(74, 43, 25, 0.20);
+padding: 18px;
+
+background: #ffffff;
+
+border: 1px solid #eadbd0;
+
+border-left: 4px solid #7a4b2a;
+
+border-radius: 14px;
+
+box-shadow:
+0 12px 35px rgba(74, 43, 25, 0.20);
+
 }
 
 #categoryFilterHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
 
-    gap: 12px;
+display: flex;
 
-    margin-bottom: 15px;
+align-items: center;
+
+justify-content: space-between;
+
+gap: 12px;
+
+margin-bottom: 15px;
+
 }
 
 #categoryFilterTitle {
-    margin: 0;
 
-    color: #5d351d;
+margin: 0;
 
-    font-size: 18px;
-    font-weight: 700;
+color: #5d351d;
+
+font-size: 18px;
+
+font-weight: 700;
+
 }
 
 #closeCategoryFilter {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
 
-    width: 34px;
-    height: 34px;
+display: inline-flex;
 
-    border: 1px solid #eadbd0;
-    border-radius: 8px;
+align-items: center;
 
-    background: #fffaf5;
-    color: #7a4b2a;
+justify-content: center;
 
-    cursor: pointer;
+width: 34px;
 
-    font-size: 15px;
+height: 34px;
+
+border: 1px solid #eadbd0;
+
+border-radius: 8px;
+
+background: #fffaf5;
+
+color: #7a4b2a;
+
+cursor: pointer;
+
+font-size: 15px;
+
 }
 
 #closeCategoryFilter:hover {
-    background: #7a4b2a;
-    border-color: #7a4b2a;
-    color: #ffffff;
+
+background: #7a4b2a;
+
+border-color: #7a4b2a;
+
+color: #ffffff;
+
 }
 
 #categoryFilterOptions {
-    display: flex;
-    flex-direction: column;
 
-    gap: 8px;
+display: flex;
+
+flex-direction: column;
+
+gap: 8px;
+
 }
 
 .category-filter-option {
-    width: 100%;
 
-    padding: 11px 13px;
+width: 100%;
 
-    box-sizing: border-box;
+padding: 11px 13px;
 
-    border: 1px solid #eadbd0;
-    border-radius: 8px;
+box-sizing: border-box;
 
-    background: #fffaf5;
-    color: #5d351d;
+border: 1px solid #eadbd0;
 
-    font: inherit;
-    font-size: 14px;
-    font-weight: 600;
+border-radius: 8px;
 
-    text-align: left;
+background: #fffaf5;
 
-    cursor: pointer;
+color: #5d351d;
 
-    transition:
-        background-color 0.2s ease,
-        color 0.2s ease,
-        border-color 0.2s ease;
+font: inherit;
+
+font-size: 14px;
+
+font-weight: 600;
+
+text-align: left;
+
+cursor: pointer;
+
+transition:
+
+background-color 0.2s ease,
+
+color 0.2s ease,
+
+border-color 0.2s ease;
+
 }
 
 .category-filter-option:hover,
 .category-filter-option.active {
-    background: #7a4b2a;
-    border-color: #7a4b2a;
-    color: #ffffff;
+
+background: #7a4b2a;
+
+border-color: #7a4b2a;
+
+color: #ffffff;
+
 }
 
 @media (max-width: 520px) {
 
-    #menuIcon {
-        width: 36px;
-        height: 36px;
+#menuIcon {
 
-        margin-left: 7px;
+width: 36px;
 
-        font-size: 16px;
-    }
+height: 36px;
 
-    #categoryFilterPopup {
-        width: calc(100% - 24px);
-        padding: 16px;
-    }
+margin-left: 7px;
+
+font-size: 16px;
 
 }
+
+#categoryFilterPopup {
+
+width: calc(100% - 24px);
+
+padding: 16px;
+
+}
+
+}
+
+
 /* =========================================================
 PRODUCT ANALYTICS ACTION BUTTONS
+BOTTOM FIXED — ABOVE 50PX FOOTER
 ========================================================= */
+
+/*
+Footer height:
+50px
+
+Button clearance above footer:
+16px
+
+Therefore:
+50px + 16px = 66px
+*/
 
 #addManyToCartActions,
 #updateMarketAvailableActions {
+
 position: fixed;
 
-bottom: 70px;
+bottom: 66px;
 
-z-index: 99999;
+z-index: 100000;
 
 }
+
 
 /* =========================================================
 ADD TO CART — BOTTOM LEFT
 ========================================================= */
 
 #addManyToCartActions {
+
 left: 20px;
+
 }
+
 
 /* =========================================================
 UPDATE MARKET — BOTTOM RIGHT
 ========================================================= */
 
 #updateMarketAvailableActions {
+
 right: 20px;
+
 }
+
 
 /* =========================================================
 ACTION BUTTON
@@ -1875,9 +2112,11 @@ ACTION BUTTON
 
 #addManyToCartActions .sales-filter-button,
 #updateMarketAvailableActions .sales-filter-button {
+
 display: inline-flex;
 
 align-items: center;
+
 justify-content: center;
 
 gap: 8px;
@@ -1887,12 +2126,15 @@ min-height: 44px;
 padding: 11px 18px;
 
 border: none;
+
 border-radius: 8px;
 
 background: #6f4e37;
+
 color: #ffffff;
 
 font-size: 0.9rem;
+
 font-weight: 600;
 
 line-height: 1.2;
@@ -1902,14 +2144,18 @@ white-space: nowrap;
 cursor: pointer;
 
 box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.18);
+0 4px 12px rgba(0, 0, 0, 0.18);
 
 transition:
-    background 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+
+background 0.2s ease,
+
+transform 0.2s ease,
+
+box-shadow 0.2s ease;
 
 }
+
 
 /* =========================================================
 HOVER
@@ -1917,14 +2163,16 @@ HOVER
 
 #addManyToCartActions .sales-filter-button:hover,
 #updateMarketAvailableActions .sales-filter-button:hover {
+
 background: #4b2e1f;
 
 transform: translateY(-1px);
 
 box-shadow:
-    0 6px 16px rgba(0, 0, 0, 0.22);
+0 6px 16px rgba(0, 0, 0, 0.22);
 
 }
+
 
 /* =========================================================
 ACTIVE
@@ -1932,12 +2180,14 @@ ACTIVE
 
 #addManyToCartActions .sales-filter-button:active,
 #updateMarketAvailableActions .sales-filter-button:active {
+
 transform: translateY(0);
 
 box-shadow:
-    0 3px 8px rgba(0, 0, 0, 0.18);
+0 3px 8px rgba(0, 0, 0, 0.18);
 
 }
+
 
 /* =========================================================
 ICON
@@ -1945,8 +2195,11 @@ ICON
 
 #addManyToCartActions .sales-filter-button i,
 #updateMarketAvailableActions .sales-filter-button i {
+
 font-size: 0.9rem;
+
 }
+
 
 /* =========================================================
 MOBILE
@@ -1956,28 +2209,36 @@ MOBILE
 
 #addManyToCartActions,
 #updateMarketAvailableActions {
-    bottom: 64px;
 
-    z-index: 99999;
+bottom: 64px;
+
+z-index: 100000;
+
 }
 
 #addManyToCartActions {
-    left: 12px;
+
+left: 12px;
+
 }
 
 #updateMarketAvailableActions {
-    right: 12px;
+
+right: 12px;
+
 }
 
 #addManyToCartActions .sales-filter-button,
 #updateMarketAvailableActions .sales-filter-button {
-    min-height: 42px;
 
-    padding: 10px 13px;
+min-height: 42px;
 
-    font-size: 0.8rem;
+padding: 10px 13px;
 
-    gap: 6px;
+font-size: 0.8rem;
+
+gap: 6px;
+
 }
 
 }
