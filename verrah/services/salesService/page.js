@@ -1,164 +1,27 @@
 // ==========================================================
 // verrah/services/salesService/page.js
-//
-// VERRAH COSMETICS
-// SALES / ANALYTICS PAGE SERVICE
+// SALES PAGE SERVICE
 // ==========================================================
 
-const mongoose =
-    require("mongoose");
+const mongoose = require("mongoose");
 
+const filterService = require("./filter");
 
-// ==========================================================
-// SERVICES
-// ==========================================================
+const summaryService = require("./summary");
 
-const filterService =
-    require("./filter");
+const staffSalesService = require("./staffSales");
 
-const summaryService =
-    require("./summary");
+const productsService = require("./products");
 
-const staffSalesService =
-    require("./staffSales");
+const arrearsService = require("./arrears");
 
-const productsService =
-    require("./products");
+const dailyCashSalesService = require("./dailyCashSales");
 
-const arrearsService =
-    require("./arrears");
+const substationService = require("../substationService");
 
-const dailyCashSalesService =
-    require("./dailyCashSales");
+const Product = require("../../models/products");
 
-const substationService =
-    require("../substationService");
-
-
-// ==========================================================
-// MODELS
-// ==========================================================
-
-const Product =
-    require("../../models/products");
-
-const Category =
-    require("../../models/category");
-
-
-// ==========================================================
-// HELPERS
-// ==========================================================
-
-function getIdValue(
-    value
-) {
-
-    if (!value) {
-
-        return null;
-
-    }
-
-
-    if (
-        typeof value === "object" &&
-        value._id
-    ) {
-
-        return String(
-            value._id
-        );
-
-    }
-
-
-    return String(
-        value
-    );
-
-}
-
-
-function getRole(
-    user = {}
-) {
-
-    return String(
-        user.role || ""
-    ).toLowerCase();
-
-}
-
-
-// ==========================================================
-// EFFECTIVE SUBSTATION
-// ==========================================================
-//
-// STAFF:
-//
-//     user.assignedSubstation
-//
-// ADMIN:
-//
-//     productsFilter.substation
-//
-// ADMIN WITHOUT SUBSTATION:
-//
-//     null
-//
-// ==========================================================
-
-function getEffectiveSubstationId(
-    productsFilter,
-    user = {}
-) {
-
-    const role =
-        getRole(
-            user
-        );
-
-
-    // ======================================================
-    // STAFF
-    // ======================================================
-
-    if (
-        role === "staff"
-    ) {
-
-        return getIdValue(
-            user.assignedSubstation
-        );
-
-    }
-
-
-    // ======================================================
-    // ADMIN + SELECTED SUBSTATION
-    // ======================================================
-
-    if (
-        role === "admin" &&
-        productsFilter &&
-        productsFilter.substation
-    ) {
-
-        return getIdValue(
-            productsFilter.substation
-        );
-
-    }
-
-
-    // ======================================================
-    // ADMIN WITHOUT SUBSTATION
-    // ======================================================
-
-    return null;
-
-}
+const Category = require("../../models/category");
 
 
 // ==========================================================
@@ -170,28 +33,14 @@ async function getSalesPageData(
     user = {}
 ) {
 
-    // ======================================================
-    // ALLOWED TABS
-    // ======================================================
-
     const allowedTabs = [
-
         "summary",
-
         "staff-sales",
-
         "products",
-
         "arrears",
-
         "daily-cash-sales"
-
     ];
 
-
-    // ======================================================
-    // ACTIVE TAB
-    // ======================================================
 
     const activeTab =
         allowedTabs.includes(
@@ -202,14 +51,7 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // SUBSTATIONS
-    //
-    // KEEP THIS VARIABLE NAME.
-    //
-    // sales.ejs and sales-partials/filter.ejs expect:
-    //
-    //     substations
-    //
+    // LOAD ACTIVE SUBSTATIONS
     // ======================================================
 
     const substations =
@@ -217,7 +59,7 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // FILTER STATES
+    // FILTERS
     // ======================================================
 
     const summaryFilter =
@@ -264,56 +106,49 @@ async function getSalesPageData(
     // PRODUCT CATEGORY FILTER
     // ======================================================
 
-    if (
-        query.category &&
+    const requestedCategory =
+        query.category
+            ? String(
+                query.category
+            ).trim()
+            : "";
+
+
+    const categoryId =
+        requestedCategory &&
         mongoose.Types.ObjectId.isValid(
-            query.category
+            requestedCategory
         )
-    ) {
+            ? requestedCategory
+            : "";
+
+
+    if (categoryId) {
 
         productsFilter.category =
-            query.category;
+            categoryId;
 
     }
 
 
     // ======================================================
-    // LOAD PAGE DATA
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // productsService MUST receive user.
-    //
-    // This allows it to determine:
-    //
-    // STAFF
-    //     -> assignedSubstation
-    //
-    // ADMIN + SUBSTATION
-    //     -> selected substation
-    //
-    // ADMIN WITHOUT SUBSTATION
-    //     -> global
-    //
+    // LOAD ALL TAB DATA
     // ======================================================
 
-    const [
+    let [
         summary,
         staffSales,
         productAnalytics,
-        arrears,
+        arrearsPackages,
         dailyCashSales
     ] = await Promise.all([
 
         summaryService.getSummary(
-            summaryFilter,
-            user
+            summaryFilter
         ),
 
         staffSalesService.getStaffSales(
-            staffSalesFilter,
-            user
+            staffSalesFilter
         ),
 
         productsService.getProductAnalytics(
@@ -321,89 +156,69 @@ async function getSalesPageData(
             user
         ),
 
-        arrearsService.getArrears(
-            arrearsFilter,
-            user
+        arrearsService.getCustomerArrears(
+            arrearsFilter
         ),
 
         dailyCashSalesService.getDailyCashSales(
-            dailyCashSalesFilter,
-            user
+            dailyCashSalesFilter
         )
 
     ]);
 
 
     // ======================================================
-    // EFFECTIVE SUBSTATION
+    // DETERMINE EFFECTIVE SUBSTATION
+    // ======================================================
     //
-    // Used only to make the category dropdown match the
-    // same business type being used by product analytics.
+    // STAFF:
+    //     user.assignedSubstation
+    //
+    // ADMIN + SELECTED:
+    //     active products filter substation
+    //
+    // ADMIN + NO SELECTED:
+    //     null
+    //
     // ======================================================
 
-    const effectiveSubstationId =
-        getEffectiveSubstationId(
-            productsFilter,
-            user
-        );
+    const userRole =
+        String(
+            user.role || ""
+        ).toLowerCase();
 
 
-    let effectiveSubstation =
+    let effectiveSubstationId =
         null;
 
 
     if (
-        effectiveSubstationId
+        userRole === "staff"
     ) {
 
-        effectiveSubstation =
-            substations.find(
-                substation =>
-                    getIdValue(
-                        substation._id
-                    ) ===
-                    effectiveSubstationId
-            ) || null;
+        effectiveSubstationId =
+            user.assignedSubstation
+                ? String(
+                    user.assignedSubstation._id ||
+                    user.assignedSubstation
+                )
+                : null;
+
+    } else if (
+        userRole === "admin" &&
+        productsFilter.substation
+    ) {
+
+        effectiveSubstationId =
+            String(
+                productsFilter.substation
+            );
 
     }
 
 
     // ======================================================
-    // LOAD ACTIVE CATEGORIES
-    // ======================================================
-
-    let categories =
-        await Category.find({
-
-            isActive:
-                true
-
-        })
-
-            .select(
-                "_id name categoryIcon isActive businessType"
-            )
-
-            .sort({
-                name: 1
-            })
-
-            .lean();
-
-
-    // ======================================================
-    // EFFECTIVE BUSINESS TYPE
-    // ======================================================
-    //
-    // STAFF:
-    //     assigned substation business type
-    //
-    // ADMIN + SUBSTATION:
-    //     selected substation business type
-    //
-    // ADMIN WITHOUT SUBSTATION:
-    //     no business type restriction
-    //
+    // GET EFFECTIVE BUSINESS TYPE
     // ======================================================
 
     let businessTypeId =
@@ -411,191 +226,203 @@ async function getSalesPageData(
 
 
     if (
-        effectiveSubstation &&
-        effectiveSubstation.businessType &&
-        effectiveSubstation.businessType.id
+        effectiveSubstationId
     ) {
 
-        businessTypeId =
-            String(
-                effectiveSubstation.businessType.id
+        // ==================================================
+        // USE THE SUBSTATION SERVICE
+        // ==================================================
+
+        const effectiveSubstation =
+            await substationService.getById(
+                effectiveSubstationId
             );
+
+
+        if (
+            effectiveSubstation &&
+            effectiveSubstation.businessType &&
+            effectiveSubstation.businessType.id
+        ) {
+
+            businessTypeId =
+                String(
+                    effectiveSubstation
+                        .businessType
+                        .id
+                );
+
+        } else {
+
+            // ==============================================
+            // FALLBACK TO ALREADY LOADED SUBSTATIONS
+            // ==============================================
+
+            const substation =
+                substations.find(
+                    item =>
+                        String(
+                            item._id
+                        ) ===
+                        effectiveSubstationId
+                );
+
+
+            if (
+                substation &&
+                substation.businessType &&
+                substation.businessType.id
+            ) {
+
+                businessTypeId =
+                    String(
+                        substation
+                            .businessType
+                            .id
+                    );
+
+            }
+
+        }
 
     }
 
 
     // ======================================================
-    // FILTER CATEGORY DROPDOWN
+    // LOAD ACTIVE CATEGORIES
     // ======================================================
     //
-    // Do the comparison in JavaScript rather than relying
-    // on MongoDB's nested businessType.id query.
+    // WITHOUT EFFECTIVE SUBSTATION:
     //
-    // This handles ObjectId/string representation safely.
+    //     ALL active categories.
+    //
+    // WITH EFFECTIVE SUBSTATION:
+    //
+    //     ONLY categories whose:
+    //
+    //     category.businessType.id
+    //
+    //     matches:
+    //
+    //     substation.businessType.id
+    //
     // ======================================================
+
+    const categoryQuery = {
+
+        isActive:
+            true
+
+    };
+
 
     if (
         businessTypeId
     ) {
 
-        categories =
-            categories.filter(
-                category => {
-
-                    if (
-                        !category.businessType ||
-                        !category.businessType.id
-                    ) {
-
-                        return false;
-
-                    }
-
-
-                    return (
-                        String(
-                            category.businessType.id
-                        ) ===
-                        businessTypeId
-                    );
-
-                }
-            );
+        categoryQuery[
+            "businessType.id"
+        ] =
+            businessTypeId;
 
     }
 
 
+    const categories =
+        await Category.find(
+            categoryQuery
+        )
+        .select(
+            "_id name categoryIcon isActive businessType"
+        )
+        .sort({
+            name: 1
+        })
+        .lean();
+
+
     // ======================================================
-    // PRODUCT SELLING PRICE
+    // ADD PRODUCT UNIT SELL PRICE TO ANALYTICS
     // ======================================================
-    //
-    // Keep unitSellPrice attached to the analytics result.
-    // ======================================================
-
-    const productIds =
-        productAnalytics
-            .map(
-                product =>
-                    product &&
-                    product._id
-                        ? product._id
-                        : null
-            )
-            .filter(
-                Boolean
-            );
-
-
-    let productPrices =
-        new Map();
-
 
     if (
-        productIds.length
+        Array.isArray(
+            productAnalytics
+        ) &&
+        productAnalytics.length
     ) {
 
-        const productsWithPrices =
-            await Product.find({
-
-                _id: {
-                    $in:
-                        productIds
-                },
-
-                isActive:
-                    true
-
-            })
-
-                .select(
-                    "_id unitSellPrice"
+        const productIds =
+            productAnalytics
+                .map(
+                    product =>
+                        product._id
                 )
+                .filter(Boolean);
 
-                .lean();
+
+        const productRecords =
+            await Product.find(
+                {
+                    _id: {
+                        $in:
+                            productIds
+                    }
+                },
+                {
+                    unitSellPrice:
+                        1
+                }
+            )
+            .lean();
 
 
-        productPrices =
+        const productPriceMap =
             new Map(
-
-                productsWithPrices.map(
+                productRecords.map(
                     product => [
-
                         String(
                             product._id
                         ),
-
                         product.unitSellPrice
-
                     ]
                 )
+            );
 
+
+        productAnalytics =
+            productAnalytics.map(
+                product => ({
+
+                    ...product,
+
+                    unitSellPrice:
+                        productPriceMap.get(
+                            String(
+                                product._id
+                            )
+                        ) || 0
+
+                })
             );
 
     }
-
-
-    const productsWithPrices =
-        productAnalytics.map(
-            product => ({
-
-                ...product,
-
-                unitSellPrice:
-                    productPrices.get(
-                        String(
-                            product._id
-                        )
-                    ) ?? null
-
-            })
-        );
 
 
     // ======================================================
     // STAFF SALES TOTALS
     // ======================================================
 
-    const staffSalesTotals = {
-
-        totalSales:
-            staffSales.reduce(
-
-                (
-                    total,
-                    sale
-                ) =>
-
-                    total +
-                    Number(
-                        sale.totalAmount ||
-                        sale.amount ||
-                        0
-                    ),
-
-                0
-
-            ),
-
-        totalQuantity:
-            staffSales.reduce(
-
-                (
-                    total,
-                    sale
-                ) =>
-
-                    total +
-                    Number(
-                        sale.quantity ||
-                        sale.qty ||
-                        0
-                    ),
-
-                0
-
-            )
-
-    };
+    const staffSalesTotals =
+        staffSales &&
+        staffSales.totals
+            ? staffSales.totals
+            : {
+                day: 0,
+                month: 0,
+                year: 0,
+                bySubstation: []
+            };
 
 
     // ======================================================
@@ -605,293 +432,250 @@ async function getSalesPageData(
     let activeFilter;
 
 
-    switch (
-        activeTab
+    if (
+        activeTab === "summary"
     ) {
 
-        case "summary":
+        activeFilter =
+            summaryFilter;
 
-            activeFilter =
-                summaryFilter;
+    } else if (
+        activeTab === "staff-sales"
+    ) {
 
-            break;
+        activeFilter =
+            staffSalesFilter;
 
+    } else if (
+        activeTab === "products"
+    ) {
 
-        case "staff-sales":
+        activeFilter =
+            productsFilter;
 
-            activeFilter =
-                staffSalesFilter;
+    } else if (
+        activeTab === "arrears"
+    ) {
 
-            break;
+        activeFilter =
+            arrearsFilter;
 
+    } else {
 
-        case "products":
-
-            activeFilter =
-                productsFilter;
-
-            break;
-
-
-        case "arrears":
-
-            activeFilter =
-                arrearsFilter;
-
-            break;
-
-
-        case "daily-cash-sales":
-
-            activeFilter =
-                dailyCashSalesFilter;
-
-            break;
-
-
-        default:
-
-            activeFilter =
-                productsFilter;
-
-            break;
+        activeFilter =
+            dailyCashSalesFilter;
 
     }
 
 
     // ======================================================
-    // SALES QUERY SUFFIX
-    // ======================================================
-    //
-    // Preserve the filters for each sales tab when moving
-    // between tabs.
+    // PRESERVE ALL TAB FILTERS
     // ======================================================
 
     const params =
         new URLSearchParams();
 
 
-    // ------------------------------------------------------
-    // SUMMARY
-    // ------------------------------------------------------
-
-    if (
+    params.set(
+        "summaryDate",
         summaryFilter.date
-    ) {
+    );
 
-        params.set(
-            "summaryDate",
-            summaryFilter.date
-        );
-
-    }
-
-
-    if (
+    params.set(
+        "summaryPeriod",
         summaryFilter.period
-    ) {
+    );
 
-        params.set(
-            "summaryPeriod",
-            summaryFilter.period
-        );
-
-    }
-
-
-    // ------------------------------------------------------
-    // STAFF SALES
-    // ------------------------------------------------------
-
-    if (
+    params.set(
+        "staffSalesDate",
         staffSalesFilter.date
-    ) {
+    );
 
-        params.set(
-            "staffSalesDate",
-            staffSalesFilter.date
-        );
-
-    }
-
-
-    if (
+    params.set(
+        "staffSalesPeriod",
         staffSalesFilter.period
-    ) {
+    );
 
-        params.set(
-            "staffSalesPeriod",
-            staffSalesFilter.period
-        );
-
-    }
-
-
-    // ------------------------------------------------------
-    // PRODUCTS
-    // ------------------------------------------------------
-
-    if (
+    params.set(
+        "productsDate",
         productsFilter.date
-    ) {
+    );
 
-        params.set(
-            "productsDate",
-            productsFilter.date
-        );
-
-    }
-
-
-    if (
+    params.set(
+        "productsPeriod",
         productsFilter.period
-    ) {
+    );
 
-        params.set(
-            "productsPeriod",
-            productsFilter.period
-        );
+    params.set(
+        "arrearsDate",
+        arrearsFilter.date
+    );
 
-    }
+    params.set(
+        "arrearsPeriod",
+        arrearsFilter.period
+    );
 
+    params.set(
+        "dailyCashSalesDate",
+        dailyCashSalesFilter.date
+    );
+
+    params.set(
+        "dailyCashSalesPeriod",
+        dailyCashSalesFilter.period
+    );
+
+
+    // ======================================================
+    // PRESERVE PRODUCT CATEGORY FILTER
+    // ======================================================
 
     if (
-        productsFilter.category
+        categoryId
     ) {
 
         params.set(
             "category",
-            productsFilter.category
+            categoryId
         );
 
     }
 
 
-    // ------------------------------------------------------
-    // ARREARS
-    // ------------------------------------------------------
-
-    if (
-        arrearsFilter.date
-    ) {
-
-        params.set(
-            "arrearsDate",
-            arrearsFilter.date
-        );
-
-    }
-
-
-    if (
-        arrearsFilter.period
-    ) {
-
-        params.set(
-            "arrearsPeriod",
-            arrearsFilter.period
-        );
-
-    }
-
-
-    // ------------------------------------------------------
-    // DAILY CASH SALES
-    // ------------------------------------------------------
-
-    if (
-        dailyCashSalesFilter.date
-    ) {
-
-        params.set(
-            "dailyCashSalesDate",
-            dailyCashSalesFilter.date
-        );
-
-    }
-
-
-    if (
-        dailyCashSalesFilter.period
-    ) {
-
-        params.set(
-            "dailyCashSalesPeriod",
-            dailyCashSalesFilter.period
-        );
-
-    }
-
-
-    // ------------------------------------------------------
-    // SUBSTATION
-    // ------------------------------------------------------
-    //
-    // Keep the selected substation in the query string.
-    //
-    // For staff, the filter service may already populate
-    // the effective substation.
-    //
+    // ======================================================
+    // GLOBAL SUBSTATION FILTER
     // ======================================================
 
     if (
-        activeFilter &&
         activeFilter.substation
     ) {
 
         params.set(
             "substation",
-            activeFilter.substation
+            String(
+                activeFilter.substation
+            )
         );
 
     }
 
 
     const salesQuerySuffix =
-        params.toString();
+        `&${params.toString()}`;
 
 
     // ======================================================
-    // RETURN PAGE DATA
-    //
-    // IMPORTANT:
-    //
-    // Keep these property names because the existing
-    // sales.ejs and sales-partials expect them.
+    // RETURN DATA
     // ======================================================
 
     return {
 
         activeTab,
 
-        // --------------------------------------------------
-        // REQUIRED BY sales.ejs / filter.ejs
-        // --------------------------------------------------
-
         substations,
 
         categories,
 
-        // --------------------------------------------------
-        // SALES DATA
-        // --------------------------------------------------
+        categoryId,
 
-        summary,
+        activeFilter,
+
+        activeFilterDate:
+            activeFilter.date,
+
+        activeFilterPeriod:
+            activeFilter.period,
+
+        activeSubstationId:
+            activeFilter.substation,
+
+        isSubstationRestricted:
+            activeFilter.isSubstationRestricted,
+
+        isAdmin:
+            activeFilter.isAdmin,
+
+        filterLabel:
+            filterService.getFilterLabel(
+                activeFilter
+            ),
+
+
+        // SUMMARY
+
+        totalRevenue:
+            summary.totalRevenue,
+
+        packageRevenue:
+            summary.packageRevenue,
+
+        staffSalesRevenue:
+            summary.staffSalesRevenue,
+
+        packageBuyingCost:
+            summary.packageBuyingCost,
+
+        staffSalesBuyingCost:
+            summary.staffSalesBuyingCost,
+
+        profit:
+            summary.profit,
+
+
+        // EXPENSES
+
+        expenses:
+            summary.expenses,
+
+
+        // NET PROFIT
+
+        netProfit:
+            summary.netProfit,
+
+        packageProfit:
+            summary.packageProfit,
+
+        staffSalesProfit:
+            summary.staffSalesProfit,
+
+        customerArrears:
+            summary.customerArrears,
+
+        assetCost:
+            summary.assetCost,
+
+        productAssetCost:
+            summary.productAssetCost,
+
+        stockAssetCost:
+            summary.stockAssetCost,
+
+
+        // STAFF SALES
 
         staffSales,
 
         staffSalesTotals,
 
-        productAnalytics:
-            productsWithPrices,
 
-        arrears,
+        // PRODUCT ANALYTICS
+
+        productAnalytics,
+
+
+        // ARREARS
+
+        arrearsPackages,
+
+
+        // DAILY CASH SALES
 
         dailyCashSales,
 
-        // --------------------------------------------------
-        // FILTERS
-        // --------------------------------------------------
+
+        // FILTER STATES
 
         summaryFilter,
 
@@ -903,11 +687,36 @@ async function getSalesPageData(
 
         dailyCashSalesFilter,
 
-        activeFilter,
 
-        // --------------------------------------------------
-        // QUERY
-        // --------------------------------------------------
+        // FILTER LABELS
+
+        summaryFilterLabel:
+            filterService.getFilterLabel(
+                summaryFilter
+            ),
+
+        staffSalesFilterLabel:
+            filterService.getFilterLabel(
+                staffSalesFilter
+            ),
+
+        productsFilterLabel:
+            filterService.getFilterLabel(
+                productsFilter
+            ),
+
+        arrearsFilterLabel:
+            filterService.getFilterLabel(
+                arrearsFilter
+            ),
+
+        dailyCashSalesFilterLabel:
+            filterService.getFilterLabel(
+                dailyCashSalesFilter
+            ),
+
+
+        // NAVIGATION QUERY STRING
 
         salesQuerySuffix
 
@@ -921,7 +730,5 @@ async function getSalesPageData(
 // ==========================================================
 
 module.exports = {
-
     getSalesPageData
-
 };
