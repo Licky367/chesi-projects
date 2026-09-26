@@ -102,17 +102,6 @@ const substationProductReductionSchema = new mongoose.Schema(
 //
 // Each record represents one day's cumulative cash sales.
 //
-// Mongoose automatically creates an _id for every record.
-//
-// Example:
-//
-// {
-//     _id: ObjectId("..."),
-//     amount: 18500,
-//     date: Date("2026-09-21"),
-//     isDeposited: false
-// }
-//
 // ==========================================================
 
 const dailyCashSaleSchema = new mongoose.Schema(
@@ -142,13 +131,6 @@ const dailyCashSaleSchema = new mongoose.Schema(
 // Stores the exact geographical coordinates of the
 // substation.
 //
-// Example:
-// latitude:  -1.28333
-// longitude: 36.81667
-//
-// These coordinates can later be used to generate a
-// Google Maps "Get Directions" link.
-//
 // ==========================================================
 
 const gpsSchema = new mongoose.Schema(
@@ -165,6 +147,55 @@ const gpsSchema = new mongoose.Schema(
             default: null,
             min: -180,
             max: 180
+        }
+    },
+    {
+        _id: false
+    }
+);
+
+// ==========================================================
+// BUSINESS TYPE SCHEMA
+// ==========================================================
+//
+// The businessType belongs to the Category system.
+//
+// businessType.id is the shared business-type ID stored
+// inside Category.businessType.id.
+//
+// Several categories can have the same businessType.
+//
+// Several substations can also have the same businessType.
+//
+// There is only ONE businessType per substation.
+//
+// Example:
+//
+// businessType: {
+//     id: ObjectId("..."),
+//     name: "cosmetics"
+// }
+//
+// Default:
+//
+// businessType: {
+//     id: null,
+//     name: ""
+// }
+//
+// ==========================================================
+
+const businessTypeSchema = new mongoose.Schema(
+    {
+        id: {
+            type: mongoose.Schema.Types.ObjectId,
+            default: null
+        },
+
+        name: {
+            type: String,
+            trim: true,
+            default: ""
         }
     },
     {
@@ -208,6 +239,28 @@ const substationSchema = new mongoose.Schema(
         },
 
         // ------------------------------------------------
+        // BUSINESS TYPE
+        // ------------------------------------------------
+        //
+        // ONE business type per substation.
+        //
+        // The ID corresponds to a businessType.id used
+        // by Category documents.
+        //
+        // Multiple substations may share the same
+        // business type.
+        //
+        // ------------------------------------------------
+
+        businessType: {
+            type: businessTypeSchema,
+            default: () => ({
+                id: null,
+                name: ""
+            })
+        },
+
+        // ------------------------------------------------
         // SUBSTATION MEDIA
         // ------------------------------------------------
 
@@ -235,16 +288,6 @@ const substationSchema = new mongoose.Schema(
         // DIRECTIONS
         // ------------------------------------------------
 
-        // Can contain human-readable directions or a
-        // directions/map URL.
-        //
-        // Example:
-        // "Next to the main shopping centre"
-        //
-        // Or:
-        // "https://www.google.com/maps/..."
-        // ------------------------------------------------
-
         directions: {
             type: String,
             trim: true,
@@ -253,10 +296,6 @@ const substationSchema = new mongoose.Schema(
 
         // ------------------------------------------------
         // GPS LOCATION
-        // ------------------------------------------------
-
-        // Stores the actual coordinates separately from
-        // the human-readable location/directions.
         // ------------------------------------------------
 
         gps: {
@@ -278,15 +317,6 @@ const substationSchema = new mongoose.Schema(
 
         // ------------------------------------------------
         // DAILY CASH SALES
-        // ------------------------------------------------
-        //
-        // Each item represents one day.
-        //
-        // The amount is the cumulative cash sales total
-        // for that particular date.
-        //
-        // Each item automatically receives an _id.
-        //
         // ------------------------------------------------
 
         dailyCashSales: {
