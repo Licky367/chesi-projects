@@ -14,14 +14,30 @@
 //     salesSubstation is the ONLY authoritative substation
 //     for staff sales.
 //
-//     soldBy.assignedSubstation is NOT used.
+//     soldBy.assignedSubstation is NOT used for sales records.
 //
-// This rule is used consistently for:
+// BUSINESS TYPE FILTERING:
 //
-//     1. Filtering
-//     2. Grouping
-//     3. Displaying
-//     4. Daily cash sales
+//     STAFF
+//         user.assignedSubstation
+//              ↓
+//         substation.businessType
+//              ↓
+//         categories.businessType
+//              ↓
+//         products.category
+//
+//     ADMIN + SELECTED SUBSTATION
+//         filter.substation
+//              ↓
+//         substation.businessType
+//              ↓
+//         categories.businessType
+//              ↓
+//         products.category
+//
+//     ADMIN + NO SELECTED SUBSTATION
+//         Existing category/product logic remains unchanged.
 //
 // ==========================================================
 
@@ -31,6 +47,12 @@ const StaffSale =
 
 const Substation =
     require("../../models/substations");
+
+const Category =
+    require("../../models/category");
+
+const Product =
+    require("../../models/products");
 
 const substationService =
     require("../substationService");
@@ -121,6 +143,405 @@ function getSaleSubstationId(
     return String(
         substation
     );
+
+}
+
+
+// ==========================================================
+// GET USER ROLE
+// ==========================================================
+
+function getUserRole(
+    user
+) {
+
+    if (
+        !user
+    ) {
+
+        return "";
+
+    }
+
+
+    return String(
+        user.role || ""
+    ).toLowerCase();
+
+}
+
+
+// ==========================================================
+// GET ID VALUE
+// ==========================================================
+//
+// Handles:
+//
+//     ObjectId
+//     String
+//     populated object
+//
+// ==========================================================
+
+function getIdValue(
+    value
+) {
+
+    if (
+        !value
+    ) {
+
+        return null;
+
+    }
+
+
+    if (
+        typeof value === "object" &&
+        value._id
+    ) {
+
+        return String(
+            value._id
+        );
+
+    }
+
+
+    return String(
+        value
+    );
+
+}
+
+
+// ==========================================================
+// GET APPLICABLE SUBSTATION ID
+// ==========================================================
+//
+// STAFF:
+//
+//     user.assignedSubstation
+//
+// ADMIN:
+//
+//     filter.substation
+//
+// ADMIN WITHOUT SELECTED SUBSTATION:
+//
+//     null
+//
+// ==========================================================
+
+function getApplicableSubstationId(
+    filter,
+    user
+) {
+
+    const role =
+        getUserRole(
+            user
+        );
+
+
+    // ======================================================
+    // STAFF
+    // ======================================================
+
+    if (
+        role === "staff"
+    ) {
+
+        return getIdValue(
+            user.assignedSubstation
+        );
+
+    }
+
+
+    // ======================================================
+    // ADMIN WITH SELECTED SUBSTATION
+    // ======================================================
+
+    if (
+        role === "admin" &&
+        filter &&
+        filter.substation
+    ) {
+
+        return getIdValue(
+            filter.substation
+        );
+
+    }
+
+
+    // ======================================================
+    // ADMIN WITHOUT SELECTED SUBSTATION
+    // ======================================================
+
+    return null;
+
+}
+
+
+// ==========================================================
+// GET APPLICABLE BUSINESS TYPE
+// ==========================================================
+//
+// Returns:
+//
+//     {
+//         id,
+//         name
+//     }
+//
+// or null.
+//
+// ==========================================================
+
+async function getApplicableBusinessType(
+    filter,
+    user
+) {
+
+    const substationId =
+        getApplicableSubstationId(
+            filter,
+            user
+        );
+
+
+    // ======================================================
+    // NO BUSINESS-TYPE RESTRICTION
+    // ======================================================
+    //
+    // This preserves the existing admin behaviour when
+    // admin has not selected a substation.
+    //
+    // ======================================================
+
+    if (
+        !substationId
+    ) {
+
+        return null;
+
+    }
+
+
+    const substation =
+        await Substation.findById(
+            substationId
+        )
+
+            .select(
+                "businessType"
+            )
+
+            .lean();
+
+
+    if (
+        !substation ||
+        !substation.businessType
+    ) {
+
+        return null;
+
+    }
+
+
+    const businessTypeId =
+        substation.businessType.id;
+
+
+    if (
+        !businessTypeId
+    ) {
+
+        return null;
+
+    }
+
+
+    return {
+
+        id:
+            businessTypeId,
+
+        name:
+            substation.businessType.name || ""
+
+    };
+
+}
+
+
+// ==========================================================
+// GET CATEGORIES AND PRODUCTS
+// ==========================================================
+//
+// STAFF:
+//
+//     Only categories whose businessType.id matches the
+//     assigned substation businessType.id.
+//
+//     Products are then restricted to those categories.
+//
+// ADMIN + SELECTED SUBSTATION:
+//
+//     Same business-type restriction.
+//
+// ADMIN + NO SELECTED SUBSTATION:
+//
+//     Existing behaviour:
+//
+//         all categories
+//         all products
+//
+// ==========================================================
+
+async function getBusinessTypeCatalog(
+    filter,
+    user
+) {
+
+    const businessType =
+        await getApplicableBusinessType(
+            filter,
+            user
+        );
+
+
+    // ======================================================
+    // ADMIN WITHOUT SELECTED SUBSTATION
+    // ======================================================
+    //
+    // No business-type restriction.
+    //
+    // ======================================================
+
+    if (
+        !businessType
+    ) {
+
+        const [
+            categories,
+            products
+        ] = await Promise.all([
+
+            Category.find({})
+                .sort({
+                    name: 1
+                })
+                .lean(),
+
+            Product.find({})
+                .sort({
+                    name: 1
+                })
+                .lean()
+
+        ]);
+
+
+        return {
+
+            businessType:
+                null,
+
+            categories,
+
+            products
+
+        };
+
+    }
+
+
+    // ======================================================
+    // FIND CATEGORIES BELONGING TO BUSINESS TYPE
+    // ======================================================
+
+    const categories =
+        await Category.find({
+
+            "businessType.id":
+                businessType.id
+
+        })
+
+            .sort({
+
+                name:
+                    1
+
+            })
+
+            .lean();
+
+
+    // ======================================================
+    // GET CATEGORY IDS
+    // ======================================================
+
+    const categoryIds =
+        categories.map(
+
+            category =>
+                category._id
+
+        );
+
+
+    // ======================================================
+    // FIND PRODUCTS WHOSE CATEGORY BELONGS TO THE
+    // BUSINESS TYPE
+    // ======================================================
+
+    let products = [];
+
+
+    if (
+        categoryIds.length > 0
+    ) {
+
+        products =
+            await Product.find({
+
+                category: {
+                    $in:
+                        categoryIds
+                }
+
+            })
+
+                .sort({
+
+                    name:
+                        1
+
+                })
+
+                .lean();
+
+    }
+
+
+    // ======================================================
+    // RETURN FILTERED CATALOG
+    // ======================================================
+
+    return {
+
+        businessType,
+
+        categories,
+
+        products
+
+    };
 
 }
 
@@ -645,7 +1066,8 @@ async function updateDailyCashSales(
 // ==========================================================
 
 async function getStaffSales(
-    filter
+    filter,
+    user = {}
 ) {
 
     // ======================================================
@@ -654,6 +1076,30 @@ async function getStaffSales(
 
     const substations =
         await substationService.list();
+
+
+    // ======================================================
+    // FETCH BUSINESS-TYPE FILTERED CATALOG
+    // ======================================================
+    //
+    // This is independent of StaffSale filtering.
+    //
+    // Staff:
+    //     assignedSubstation businessType
+    //
+    // Admin + selected substation:
+    //     selected substation businessType
+    //
+    // Admin + no selected substation:
+    //     existing behaviour
+    //
+    // ======================================================
+
+    const catalog =
+        await getBusinessTypeCatalog(
+            filter,
+            user
+        );
 
 
     // ======================================================
@@ -861,6 +1307,30 @@ async function getStaffSales(
 
     sales.totals =
         totals;
+
+
+    // ======================================================
+    // ATTACH BUSINESS TYPE
+    // ======================================================
+
+    sales.businessType =
+        catalog.businessType;
+
+
+    // ======================================================
+    // ATTACH FILTERED CATEGORIES
+    // ======================================================
+
+    sales.categories =
+        catalog.categories;
+
+
+    // ======================================================
+    // ATTACH FILTERED PRODUCTS
+    // ======================================================
+
+    sales.products =
+        catalog.products;
 
 
     // ======================================================
