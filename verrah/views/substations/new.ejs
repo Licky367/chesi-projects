@@ -62,15 +62,6 @@
 
     <!-- ======================================================
          CREATE / EDIT FORM
-
-         CREATE:
-             POST /substations
-
-         EDIT:
-             POST /substations/branch/:id/edit
-
-         multipart/form-data is required because the form
-         supports image uploading.
     ======================================================= -->
 
     <form
@@ -110,6 +101,160 @@
             required
             autocomplete="organization"
           >
+
+        </div>
+
+
+        <!-- ==================================================
+             BUSINESS TYPE
+        =================================================== -->
+
+        <div class="field">
+
+          <label for="businessTypeSelect">
+            Business Type
+          </label>
+
+
+          <%
+            const availableBusinessTypes =
+              typeof businessTypes !== "undefined" &&
+              Array.isArray(businessTypes)
+                ? businessTypes
+                : [];
+
+            const currentBusinessType =
+              typeof substation !== "undefined" &&
+              substation &&
+              substation.businessType
+                ? substation.businessType
+                : null;
+
+            const oldBusinessType =
+              typeof old !== "undefined" &&
+              old &&
+              old.businessType
+                ? old.businessType
+                : null;
+
+            let selectedBusinessTypeName = "";
+
+            if (currentBusinessType) {
+
+              selectedBusinessTypeName =
+                currentBusinessType.name || "";
+
+            } else if (oldBusinessType) {
+
+              selectedBusinessTypeName =
+                typeof oldBusinessType === "string"
+                  ? oldBusinessType
+                  : (
+                      oldBusinessType.name || ""
+                    );
+
+            } else if (
+              typeof old !== "undefined" &&
+              old &&
+              old.businessTypeName
+            ) {
+
+              selectedBusinessTypeName =
+                old.businessTypeName;
+            }
+          %>
+
+
+          <!-- ==============================================
+               EXISTING BUSINESS TYPES
+          =============================================== -->
+
+          <select
+            id="businessTypeSelect"
+            class="business-type-select"
+          >
+
+            <option value="">
+              Select an existing business type
+            </option>
+
+
+            <% availableBusinessTypes.forEach(function (businessType) { %>
+
+              <%
+                const businessTypeName =
+                  businessType.name || "";
+
+                const isSelected =
+                  String(
+                    selectedBusinessTypeName
+                  ).trim().toLowerCase() ===
+                  String(
+                    businessTypeName
+                  ).trim().toLowerCase();
+              %>
+
+              <option
+                value="<%= businessTypeName %>"
+                <%= isSelected ? "selected" : "" %>
+              >
+                <%= businessTypeName %>
+              </option>
+
+            <% }); %>
+
+
+            <option value="__new__">
+              + Create New Business Type
+            </option>
+
+          </select>
+
+
+          <!-- ==============================================
+               NEW BUSINESS TYPE NAME
+          =============================================== -->
+
+          <div
+            id="new-business-type-container"
+            style="display: none; margin-top: 10px;"
+          >
+
+            <label for="newBusinessType">
+              New Business Type Name
+            </label>
+
+            <input
+              type="text"
+              id="newBusinessType"
+              name="newBusinessType"
+              value=""
+              placeholder="e.g. Medical Supplies"
+              autocomplete="off"
+            >
+
+            <small class="field-help">
+              Enter the name of the new business type.
+            </small>
+
+          </div>
+
+
+          <!-- ==============================================
+               VALUE SENT TO SERVICE
+          =============================================== -->
+
+          <input
+            type="hidden"
+            id="businessType"
+            name="businessType"
+            value="<%= selectedBusinessTypeName %>"
+          >
+
+
+          <small class="field-help">
+            Select an existing business type or create a new one.
+          </small>
 
         </div>
 
@@ -208,8 +353,6 @@
 
           <div class="gps-fields">
 
-            <!-- LATITUDE -->
-
             <div class="gps-coordinate">
 
               <label for="latitude">
@@ -242,8 +385,6 @@
             </div>
 
 
-            <!-- LONGITUDE -->
-
             <div class="gps-coordinate">
 
               <label for="longitude">
@@ -275,8 +416,6 @@
 
             </div>
 
-
-            <!-- CURRENT LOCATION BUTTON -->
 
             <button
               type="button"
@@ -318,10 +457,6 @@
           <div class="icon-input-options">
 
 
-            <!-- ==============================================
-                 UPLOAD IMAGE
-            =============================================== -->
-
             <div class="icon-option">
 
               <div class="icon-option-heading">
@@ -347,10 +482,6 @@
 
             </div>
 
-
-            <!-- ==============================================
-                 IMAGE URL
-            =============================================== -->
 
             <div class="icon-option">
 
@@ -396,10 +527,6 @@
 
           </div>
 
-
-          <!-- ==============================================
-               CURRENT ICON
-          =============================================== -->
 
           <% if (
             typeof substation !== "undefined" &&
@@ -510,7 +637,7 @@
 
 
 <!-- ==========================================================
-     GPS CURRENT LOCATION SCRIPT
+     BUSINESS TYPE + GPS SCRIPT
 =========================================================== -->
 
 <script>
@@ -518,6 +645,154 @@
   document.addEventListener(
     "DOMContentLoaded",
     function () {
+
+      // ======================================================
+      // BUSINESS TYPE
+      // ======================================================
+
+      const businessTypeSelect =
+        document.getElementById(
+          "businessTypeSelect"
+        );
+
+      const businessTypeInput =
+        document.getElementById(
+          "businessType"
+        );
+
+      const newBusinessTypeContainer =
+        document.getElementById(
+          "new-business-type-container"
+        );
+
+      const newBusinessTypeInput =
+        document.getElementById(
+          "newBusinessType"
+        );
+
+
+      if (
+        businessTypeSelect &&
+        businessTypeInput &&
+        newBusinessTypeContainer &&
+        newBusinessTypeInput
+      ) {
+
+        function updateBusinessType() {
+
+          const selected =
+            businessTypeSelect.value;
+
+
+          // --------------------------------------------------
+          // CREATE NEW BUSINESS TYPE
+          // --------------------------------------------------
+
+          if (selected === "__new__") {
+
+            newBusinessTypeContainer.style.display =
+              "block";
+
+            newBusinessTypeInput.required =
+              true;
+
+            businessTypeInput.value =
+              newBusinessTypeInput.value.trim();
+
+            businessTypeInput.disabled =
+              false;
+
+            return;
+          }
+
+
+          // --------------------------------------------------
+          // EXISTING BUSINESS TYPE
+          // --------------------------------------------------
+
+          newBusinessTypeContainer.style.display =
+            "none";
+
+          newBusinessTypeInput.required =
+            false;
+
+          businessTypeInput.value =
+            selected;
+
+          newBusinessTypeInput.value =
+            "";
+        }
+
+
+        businessTypeSelect.addEventListener(
+          "change",
+          updateBusinessType
+        );
+
+
+        newBusinessTypeInput.addEventListener(
+          "input",
+          function () {
+
+            if (
+              businessTypeSelect.value ===
+              "__new__"
+            ) {
+
+              businessTypeInput.value =
+                newBusinessTypeInput.value.trim();
+            }
+
+          }
+        );
+
+
+        // ----------------------------------------------------
+        // INITIAL STATE
+        // ----------------------------------------------------
+
+        updateBusinessType();
+
+
+        // ----------------------------------------------------
+        // VALIDATE NEW BUSINESS TYPE
+        // ----------------------------------------------------
+
+        businessTypeSelect
+          .closest("form")
+          .addEventListener(
+            "submit",
+            function (event) {
+
+              if (
+                businessTypeSelect.value ===
+                "__new__"
+              ) {
+
+                const newName =
+                  newBusinessTypeInput.value.trim();
+
+                if (!newName) {
+
+                  event.preventDefault();
+
+                  newBusinessTypeInput.focus();
+
+                  return;
+                }
+
+                businessTypeInput.value =
+                  newName;
+              }
+
+            }
+          );
+      }
+
+
+      // ======================================================
+      // GPS CURRENT LOCATION
+      // ======================================================
 
       const button =
         document.getElementById(
