@@ -1,27 +1,143 @@
 // ==========================================================
 // verrah/services/salesService/page.js
+//
 // SALES PAGE SERVICE
 // ==========================================================
 
-const mongoose = require("mongoose");
+const mongoose =
+    require("mongoose");
 
-const filterService = require("./filter");
+const filterService =
+    require("./filter");
 
-const summaryService = require("./summary");
+const summaryService =
+    require("./summary");
 
-const staffSalesService = require("./staffSales");
+const staffSalesService =
+    require("./staffSales");
 
-const productsService = require("./products");
+const productsService =
+    require("./products");
 
-const arrearsService = require("./arrears");
+const arrearsService =
+    require("./arrears");
 
-const dailyCashSalesService = require("./dailyCashSales");
+const dailyCashSalesService =
+    require("./dailyCashSales");
 
-const substationService = require("../substationService");
+const substationService =
+    require("../substationService");
 
-const Product = require("../../models/products");
+const Product =
+    require("../../models/products");
 
-const Category = require("../../models/category");
+const Category =
+    require("../../models/category");
+
+
+// ==========================================================
+// HELPERS
+// ==========================================================
+
+function getIdValue(
+    value
+) {
+
+    if (
+        !value
+    ) {
+
+        return null;
+
+    }
+
+
+    if (
+        typeof value === "object" &&
+        value._id
+    ) {
+
+        return String(
+            value._id
+        );
+
+    }
+
+
+    return String(
+        value
+    );
+
+}
+
+
+function getRole(
+    user = {}
+) {
+
+    return String(
+        user.role || ""
+    ).toLowerCase();
+
+}
+
+
+// ==========================================================
+// EFFECTIVE SUBSTATION
+// ==========================================================
+//
+// STAFF:
+//
+//     assignedSubstation
+//
+// ADMIN:
+//
+//     selected products substation
+//
+// ADMIN WITHOUT SELECTION:
+//
+//     null
+//
+// ==========================================================
+
+function getEffectiveSubstationId(
+    productsFilter,
+    user = {}
+) {
+
+    const role =
+        getRole(
+            user
+        );
+
+
+    if (
+        role === "staff"
+    ) {
+
+        return getIdValue(
+            user.assignedSubstation
+        );
+
+    }
+
+
+    if (
+        role === "admin" &&
+        productsFilter &&
+        productsFilter.substation
+    ) {
+
+        return getIdValue(
+            productsFilter.substation
+        );
+
+    }
+
+
+    return null;
+
+}
 
 
 // ==========================================================
@@ -34,11 +150,13 @@ async function getSalesPageData(
 ) {
 
     const allowedTabs = [
+
         "summary",
         "staff-sales",
         "products",
         "arrears",
         "daily-cash-sales"
+
     ];
 
 
@@ -51,7 +169,7 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // LOAD ACTIVE SUBSTATIONS
+    // LOAD SUBSTATIONS
     // ======================================================
 
     const substations =
@@ -103,7 +221,7 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // PRODUCT CATEGORY FILTER
+    // CATEGORY FILTER
     // ======================================================
 
     const requestedCategory =
@@ -123,7 +241,9 @@ async function getSalesPageData(
             : "";
 
 
-    if (categoryId) {
+    if (
+        categoryId
+    ) {
 
         productsFilter.category =
             categoryId;
@@ -132,7 +252,18 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // LOAD ALL TAB DATA
+    // EFFECTIVE SUBSTATION
+    // ======================================================
+
+    const effectiveSubstationId =
+        getEffectiveSubstationId(
+            productsFilter,
+            user
+        );
+
+
+    // ======================================================
+    // LOAD TAB DATA
     // ======================================================
 
     let [
@@ -141,14 +272,17 @@ async function getSalesPageData(
         productAnalytics,
         arrearsPackages,
         dailyCashSales
+
     ] = await Promise.all([
 
         summaryService.getSummary(
-            summaryFilter
+            summaryFilter,
+            user
         ),
 
         staffSalesService.getStaffSales(
-            staffSalesFilter
+            staffSalesFilter,
+            user
         ),
 
         productsService.getProductAnalytics(
@@ -156,69 +290,26 @@ async function getSalesPageData(
             user
         ),
 
-        arrearsService.getCustomerArrears(
-            arrearsFilter
-        ),
+        arrearsService.getArrears
+            ? arrearsService.getArrears(
+                arrearsFilter,
+                user
+            )
+            : arrearsService.getCustomerArrears(
+                arrearsFilter,
+                user
+            ),
 
         dailyCashSalesService.getDailyCashSales(
-            dailyCashSalesFilter
+            dailyCashSalesFilter,
+            user
         )
 
     ]);
 
 
     // ======================================================
-    // DETERMINE EFFECTIVE SUBSTATION
-    // ======================================================
-    //
-    // STAFF:
-    //     user.assignedSubstation
-    //
-    // ADMIN + SELECTED:
-    //     active products filter substation
-    //
-    // ADMIN + NO SELECTED:
-    //     null
-    //
-    // ======================================================
-
-    const userRole =
-        String(
-            user.role || ""
-        ).toLowerCase();
-
-
-    let effectiveSubstationId =
-        null;
-
-
-    if (
-        userRole === "staff"
-    ) {
-
-        effectiveSubstationId =
-            user.assignedSubstation
-                ? String(
-                    user.assignedSubstation._id ||
-                    user.assignedSubstation
-                )
-                : null;
-
-    } else if (
-        userRole === "admin" &&
-        productsFilter.substation
-    ) {
-
-        effectiveSubstationId =
-            String(
-                productsFilter.substation
-            );
-
-    }
-
-
-    // ======================================================
-    // GET EFFECTIVE BUSINESS TYPE
+    // EFFECTIVE BUSINESS TYPE
     // ======================================================
 
     let businessTypeId =
@@ -230,11 +321,16 @@ async function getSalesPageData(
     ) {
 
         const effectiveSubstation =
-            await substationService.getById
-                ? await substationService.getById(
+            substations.find(
+
+                substation =>
+
+                    getIdValue(
+                        substation._id
+                    ) ===
                     effectiveSubstationId
-                )
-                : null;
+
+            );
 
 
         if (
@@ -250,77 +346,22 @@ async function getSalesPageData(
                         .id
                 );
 
-        } else {
-
-            const substation =
-                substations.find(
-                    item =>
-                        String(
-                            item._id
-                        ) ===
-                        effectiveSubstationId
-                );
-
-
-            if (
-                substation &&
-                substation.businessType &&
-                substation.businessType.id
-            ) {
-
-                businessTypeId =
-                    String(
-                        substation
-                            .businessType
-                            .id
-                    );
-
-            }
-
         }
 
     }
 
 
     // ======================================================
-    // LOAD ACTIVE CATEGORIES
-    // ======================================================
-    //
-    // WITHOUT EFFECTIVE SUBSTATION:
-    //
-    //     All active categories.
-    //
-    // WITH EFFECTIVE SUBSTATION:
-    //
-    //     Only categories whose businessType.id matches
-    //     the effective substation businessType.id.
-    //
+    // ACTIVE CATEGORIES
     // ======================================================
 
-    const categoryQuery = {
+    let categories =
+        await Category.find({
 
-        isActive:
-            true
+            isActive:
+                true
 
-    };
-
-
-    if (
-        businessTypeId
-    ) {
-
-        categoryQuery[
-            "businessType.id"
-        ] =
-            businessTypeId;
-
-    }
-
-
-    const categories =
-        await Category.find(
-            categoryQuery
-        )
+        })
         .select(
             "_id name categoryIcon isActive businessType"
         )
@@ -331,68 +372,149 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // ADD PRODUCT UNIT SELL PRICE TO ANALYTICS
+    // CATEGORY BUSINESS TYPE RESTRICTION
+    // ======================================================
+
+    if (
+        businessTypeId
+    ) {
+
+        categories =
+            categories.filter(
+
+                category => {
+
+                    if (
+                        !category.businessType ||
+                        !category.businessType.id
+                    ) {
+
+                        return false;
+
+                    }
+
+
+                    return (
+
+                        String(
+                            category.businessType.id
+                        ) ===
+                        businessTypeId
+
+                    );
+
+                }
+
+            );
+
+    } else if (
+        getRole(user) === "staff" ||
+        (
+            getRole(user) === "admin" &&
+            effectiveSubstationId
+        )
+    ) {
+
+        // --------------------------------------------------
+        // Restricted request with no business type:
+        // do NOT expose global categories.
+        // --------------------------------------------------
+
+        categories = [];
+
+    }
+
+
+    // ======================================================
+    // PRODUCT SELLING PRICE
     // ======================================================
 
     if (
         Array.isArray(
             productAnalytics
-        ) &&
-        productAnalytics.length
+        )
     ) {
 
         const productIds =
             productAnalytics
+
                 .map(
                     product =>
+                        product &&
                         product._id
+                            ? product._id
+                            : null
                 )
-                .filter(Boolean);
+
+                .filter(
+                    Boolean
+                );
 
 
-        const productRecords =
-            await Product.find(
-                {
+        let productPrices =
+            new Map();
+
+
+        if (
+            productIds.length
+        ) {
+
+            const productsWithPrices =
+                await Product.find({
+
                     _id: {
                         $in:
                             productIds
-                    }
-                },
-                {
-                    unitSellPrice:
-                        1
-                }
-            )
-            .lean();
+                    },
 
+                    isActive:
+                        true
 
-        const productPriceMap =
-            new Map(
-                productRecords.map(
-                    product => [
-                        String(
-                            product._id
-                        ),
-                        product.unitSellPrice
-                    ]
+                })
+                .select(
+                    "_id unitSellPrice"
                 )
-            );
+                .lean();
+
+
+            productPrices =
+                new Map(
+
+                    productsWithPrices.map(
+
+                        product => [
+
+                            String(
+                                product._id
+                            ),
+
+                            product.unitSellPrice
+
+                        ]
+
+                    )
+
+                );
+
+        }
 
 
         productAnalytics =
             productAnalytics.map(
+
                 product => ({
 
                     ...product,
 
                     unitSellPrice:
-                        productPriceMap.get(
+                        productPrices.get(
                             String(
                                 product._id
                             )
-                        ) || 0
+                        ) ?? null
 
                 })
+
             );
 
     }
@@ -405,12 +527,16 @@ async function getSalesPageData(
     const staffSalesTotals =
         staffSales &&
         staffSales.totals
+
             ? staffSales.totals
+
             : {
+
                 day: 0,
                 month: 0,
                 year: 0,
                 bySubstation: []
+
             };
 
 
@@ -458,104 +584,185 @@ async function getSalesPageData(
 
 
     // ======================================================
-    // PRESERVE ALL TAB FILTERS
+    // PRESERVE FILTERS
     // ======================================================
 
     const params =
         new URLSearchParams();
 
 
-    params.set(
-        "summaryDate",
-        summaryFilter.date
-    );
-
-    params.set(
-        "summaryPeriod",
-        summaryFilter.period
-    );
-
-    params.set(
-        "staffSalesDate",
-        staffSalesFilter.date
-    );
-
-    params.set(
-        "staffSalesPeriod",
-        staffSalesFilter.period
-    );
-
-    params.set(
-        "productsDate",
-        productsFilter.date
-    );
-
-    params.set(
-        "productsPeriod",
-        productsFilter.period
-    );
-
-    params.set(
-        "arrearsDate",
-        arrearsFilter.date
-    );
-
-    params.set(
-        "arrearsPeriod",
-        arrearsFilter.period
-    );
-
-    params.set(
-        "dailyCashSalesDate",
-        dailyCashSalesFilter.date
-    );
-
-    params.set(
-        "dailyCashSalesPeriod",
-        dailyCashSalesFilter.period
-    );
-
-
-    // ======================================================
-    // PRESERVE PRODUCT CATEGORY FILTER
-    // ======================================================
-
     if (
-        categoryId
+        summaryFilter.date
     ) {
 
         params.set(
-            "category",
-            categoryId
+            "summaryDate",
+            summaryFilter.date
         );
 
     }
 
 
-    // ======================================================
-    // GLOBAL SUBSTATION FILTER
-    // ======================================================
-
     if (
-        activeFilter.substation
+        summaryFilter.period
     ) {
 
         params.set(
-            "substation",
+            "summaryPeriod",
+            summaryFilter.period
+        );
+
+    }
+
+
+    if (
+        staffSalesFilter.date
+    ) {
+
+        params.set(
+            "staffSalesDate",
+            staffSalesFilter.date
+        );
+
+    }
+
+
+    if (
+        staffSalesFilter.period
+    ) {
+
+        params.set(
+            "staffSalesPeriod",
+            staffSalesFilter.period
+        );
+
+    }
+
+
+    if (
+        productsFilter.date
+    ) {
+
+        params.set(
+            "productsDate",
+            productsFilter.date
+        );
+
+    }
+
+
+    if (
+        productsFilter.period
+    ) {
+
+        params.set(
+            "productsPeriod",
+            productsFilter.period
+        );
+
+    }
+
+
+    if (
+        productsFilter.category
+    ) {
+
+        params.set(
+            "category",
             String(
-                activeFilter.substation
+                productsFilter.category
             )
         );
 
     }
 
 
-    const salesQuerySuffix =
-        `&${params.toString()}`;
+    if (
+        arrearsFilter.date
+    ) {
+
+        params.set(
+            "arrearsDate",
+            arrearsFilter.date
+        );
+
+    }
+
+
+    if (
+        arrearsFilter.period
+    ) {
+
+        params.set(
+            "arrearsPeriod",
+            arrearsFilter.period
+        );
+
+    }
+
+
+    if (
+        dailyCashSalesFilter.date
+    ) {
+
+        params.set(
+            "dailyCashSalesDate",
+            dailyCashSalesFilter.date
+        );
+
+    }
+
+
+    if (
+        dailyCashSalesFilter.period
+    ) {
+
+        params.set(
+            "dailyCashSalesPeriod",
+            dailyCashSalesFilter.period
+        );
+
+    }
 
 
     // ======================================================
-    // RETURN DATA
+    // PRESERVE EFFECTIVE SUBSTATION
+    // ======================================================
+
+    if (
+        effectiveSubstationId
+    ) {
+
+        params.set(
+            "substation",
+            effectiveSubstationId
+        );
+
+    }
+
+
+    // ======================================================
+    // IMPORTANT:
+    //
+    // sales.ejs already uses:
+    //
+    //     ?tab=products<%= salesQuerySuffix %>
+    //
+    // Therefore the suffix MUST begin with "&".
+    // ======================================================
+
+    const queryString =
+        params.toString();
+
+
+    const salesQuerySuffix =
+        queryString
+            ? `&${queryString}`
+            : "";
+
+
+    // ======================================================
+    // RETURN
     // ======================================================
 
     return {
@@ -568,6 +775,9 @@ async function getSalesPageData(
 
         categoryId,
 
+        activeSubstationId:
+            effectiveSubstationId,
+
         activeFilter,
 
         activeFilterDate:
@@ -576,14 +786,13 @@ async function getSalesPageData(
         activeFilterPeriod:
             activeFilter.period,
 
-        activeSubstationId:
-            activeFilter.substation,
-
         isSubstationRestricted:
-            activeFilter.isSubstationRestricted,
+            Boolean(
+                effectiveSubstationId
+            ),
 
         isAdmin:
-            activeFilter.isAdmin,
+            getRole(user) === "admin",
 
         filterLabel:
             filterService.getFilterLabel(
@@ -611,14 +820,8 @@ async function getSalesPageData(
         profit:
             summary.profit,
 
-
-        // EXPENSES
-
         expenses:
             summary.expenses,
-
-
-        // NET PROFIT
 
         netProfit:
             summary.netProfit,
@@ -664,7 +867,7 @@ async function getSalesPageData(
         dailyCashSales,
 
 
-        // FILTER STATES
+        // FILTERS
 
         summaryFilter,
 
@@ -705,7 +908,7 @@ async function getSalesPageData(
             ),
 
 
-        // NAVIGATION QUERY STRING
+        // NAVIGATION
 
         salesQuerySuffix
 
@@ -719,5 +922,7 @@ async function getSalesPageData(
 // ==========================================================
 
 module.exports = {
+
     getSalesPageData
+
 };
