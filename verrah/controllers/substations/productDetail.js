@@ -4,12 +4,11 @@
 // ==========================================================
 
 const service =
-    require("../../services/substationService");
+require("../../services/substationService");
 
 const {
-    getRole
+getRole
 } = require("./helpers");
-
 
 // ==========================================================
 // PRODUCT DETAIL
@@ -22,142 +21,153 @@ const {
 
 exports.productDetail =
 async (
-    req,
-    res
+req,
+res
 ) => {
 
-    try {
+try {
 
-        // ----------------------------------------------------
-        // PRODUCT ID
-        // ----------------------------------------------------
+    // ----------------------------------------------------
+    // PRODUCT ID
+    // ----------------------------------------------------
 
-        const productId =
-            req.params.id;
-
-
-        // ----------------------------------------------------
-        // GET PRODUCT
-        // ----------------------------------------------------
-
-        const product =
-            await service.getProduct(
-                productId
-            );
+    const productId =
+        req.params.id;
 
 
-        // ----------------------------------------------------
-        // PRODUCT NOT FOUND
-        // ----------------------------------------------------
+    // ----------------------------------------------------
+    // GET PRODUCT
+    // ----------------------------------------------------
 
-        if (!product) {
-
-            return res.redirect(
-                "/substations?error=Product+not+found"
-            );
-        }
-
-
-        // ----------------------------------------------------
-        // GET ALL SUBSTATIONS
-        // ----------------------------------------------------
-
-        const allSubstations =
-            await service.list();
-
-
-        // ----------------------------------------------------
-        // PRODUCT CATEGORY BUSINESS TYPE
-        // ----------------------------------------------------
-
-        const businessTypeId =
-            product.category &&
-            product.category.businessType &&
-            product.category.businessType.id
-                ? String(
-                    product.category.businessType.id
-                )
-                : null;
-
-
-        // ----------------------------------------------------
-        // FILTER SUBSTATIONS BY PRODUCT BUSINESS TYPE
-        // ----------------------------------------------------
-
-        const substations =
-            businessTypeId
-                ? allSubstations.filter(
-                    substation =>
-                        substation.businessType &&
-                        substation.businessType.id &&
-                        String(
-                            substation.businessType.id
-                        ) === businessTypeId
-                )
-                : [];
-
-
-        // ----------------------------------------------------
-        // RENDER PRODUCT DETAIL
-        // ----------------------------------------------------
-
-        return res.render(
-            "substations/product-detail",
-            {
-                title:
-                    product.name,
-
-                // ------------------------------------------------
-                // PRODUCT
-                // ------------------------------------------------
-
-                product,
-
-                // ------------------------------------------------
-                // SUBSTATIONS
-                // ------------------------------------------------
-
-                substations,
-
-                // ------------------------------------------------
-                // ROLE
-                // ------------------------------------------------
-
-                role:
-                    getRole(req),
-
-                // ------------------------------------------------
-                // MESSAGES
-                // ------------------------------------------------
-
-                error:
-                    req.query.error || null,
-
-                success:
-                    req.query.success || null,
-
-                // ------------------------------------------------
-                // USER
-                // ------------------------------------------------
-
-                user:
-                    req.user
-            }
+    const product =
+        await service.getProduct(
+            productId
         );
 
 
-    } catch (e) {
+    // ----------------------------------------------------
+    // PRODUCT NOT FOUND
+    // ----------------------------------------------------
 
-        console.error(
-            "PRODUCT DETAIL ERROR:",
-            e
-        );
-
+    if (!product) {
 
         return res.redirect(
-            `/substations?error=${encodeURIComponent(
-                e.message
-            )}`
+            "/substations?error=Product+not+found"
         );
     }
+
+
+    // ----------------------------------------------------
+    // GET ALL SUBSTATIONS
+    // ----------------------------------------------------
+
+    const allSubstations =
+        await service.list();
+
+
+    // ----------------------------------------------------
+    // PRODUCT CATEGORY BUSINESS TYPE
+    // ----------------------------------------------------
+
+    const businessTypeId =
+        product.categoryDocument &&
+        product.categoryDocument.businessType &&
+        product.categoryDocument.businessType.id
+            ? String(
+                product.categoryDocument
+                    .businessType
+                    .id
+            )
+            : null;
+
+
+    // ----------------------------------------------------
+    // FILTER SUBSTATIONS BY BUSINESS TYPE
+    // ----------------------------------------------------
+
+    const substations =
+        businessTypeId
+            ? allSubstations.filter(
+                substation =>
+                    substation.businessType &&
+                    substation.businessType.id &&
+                    String(
+                        substation.businessType.id
+                    ) ===
+                    businessTypeId
+            )
+            : [];
+
+
+    // ----------------------------------------------------
+    // RENDER PRODUCT DETAIL
+    // ----------------------------------------------------
+
+    return res.render(
+        "substations/product-detail",
+        {
+            title:
+                product.name,
+
+            // ------------------------------------------------
+            // PRODUCT
+            // ------------------------------------------------
+
+            product,
+
+            // ------------------------------------------------
+            // SUBSTATIONS
+            // ------------------------------------------------
+
+            substations,
+
+            // ------------------------------------------------
+            // PRODUCT SUBSTATION STOCK
+            // ------------------------------------------------
+
+            substationStocks:
+                product.substationStocks || [],
+
+            // ------------------------------------------------
+            // ROLE
+            // ------------------------------------------------
+
+            role:
+                getRole(req),
+
+            // ------------------------------------------------
+            // MESSAGES
+            // ------------------------------------------------
+
+            error:
+                req.query.error || null,
+
+            success:
+                req.query.success || null,
+
+            // ------------------------------------------------
+            // USER
+            // ------------------------------------------------
+
+            user:
+                req.user
+        }
+    );
+
+
+} catch (e) {
+
+    console.error(
+        "PRODUCT DETAIL ERROR:",
+        e
+    );
+
+
+    return res.redirect(
+        `/substations?error=${encodeURIComponent(
+            e.message
+        )}`
+    );
+}
+
 };
