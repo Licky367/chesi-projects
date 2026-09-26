@@ -354,19 +354,10 @@ exports.products = async (
 
     try {
 
-        // ======================================================
-        // GET CATEGORY
-        // ======================================================
-
         const category =
             await categoryService.getCategoryById(
                 req.params.id
             );
-
-
-        // ======================================================
-        // CATEGORY NOT FOUND
-        // ======================================================
 
         if (!category) {
 
@@ -380,28 +371,13 @@ exports.products = async (
 
         }
 
-
-        // ======================================================
-        // GET PRODUCTS
-        // ======================================================
-
         const products =
             await categoryService.getCategoryProducts(
                 req.params.id
             );
 
-
-        // ======================================================
-        // ADMIN STATUS
-        // ======================================================
-
         const isAdmin =
             getIsAdmin(req);
-
-
-        // ======================================================
-        // RENDER CATEGORY PRODUCTS
-        // ======================================================
 
         return res.render(
             "products/category",
@@ -425,7 +401,6 @@ exports.products = async (
             "Category products error:",
             error
         );
-
 
         return res.status(500).render(
             "products/category",
@@ -461,48 +436,24 @@ exports.addSubcategory = async (
 
     try {
 
-        // ------------------------------------------------------
-        // ADMIN ONLY
-        // ------------------------------------------------------
-
         if (!getIsAdmin(req)) {
             return res.redirect("/");
         }
-
-
-        // ------------------------------------------------------
-        // CATEGORY ID
-        // ------------------------------------------------------
 
         const categoryId =
             String(
                 req.params.id || ""
             ).trim();
 
-
-        // ------------------------------------------------------
-        // SUBCATEGORY
-        // ------------------------------------------------------
-
         const subcategory =
             String(
                 req.body?.subcategory || ""
             ).trim();
 
-
-        // ------------------------------------------------------
-        // ADD SUBCATEGORY
-        // ------------------------------------------------------
-
         await stockService.addSubcategory(
             categoryId,
             subcategory
         );
-
-
-        // ------------------------------------------------------
-        // RETURN TO CATEGORY SUBCATEGORIES
-        // ------------------------------------------------------
 
         return res.redirect(
             `/products/category/${categoryId}/categories`
@@ -514,11 +465,6 @@ exports.addSubcategory = async (
             "Add subcategory error:",
             error
         );
-
-
-        // ------------------------------------------------------
-        // RELOAD CATEGORY
-        // ------------------------------------------------------
 
         let category = null;
 
@@ -537,7 +483,6 @@ exports.addSubcategory = async (
             );
 
         }
-
 
         return res.status(400).render(
             "products/category-subcategories",
@@ -578,9 +523,6 @@ exports.addSubcategory = async (
 // CATEGORY SUBCATEGORIES
 //
 // GET /products/category/:id/categories
-//
-// Displays the selected category and ALL of its
-// subcategories.
 // ==========================================================
 
 exports.subcategories = async (
@@ -590,28 +532,14 @@ exports.subcategories = async (
 
     try {
 
-        // ------------------------------------------------------
-        // ADMIN ONLY
-        // ------------------------------------------------------
-
         if (!getIsAdmin(req)) {
             return res.redirect("/");
         }
-
-
-        // ------------------------------------------------------
-        // GET CATEGORY
-        // ------------------------------------------------------
 
         const category =
             await stockService.getCategory(
                 req.params.id
             );
-
-
-        // ------------------------------------------------------
-        // GET SUBCATEGORIES
-        // ------------------------------------------------------
 
         const subcategories =
             Array.isArray(
@@ -619,11 +547,6 @@ exports.subcategories = async (
             )
                 ? category.subcategory
                 : [];
-
-
-        // ------------------------------------------------------
-        // RENDER
-        // ------------------------------------------------------
 
         return res.render(
             "products/category-subcategories",
@@ -649,7 +572,6 @@ exports.subcategories = async (
             "Category subcategories error:",
             error
         );
-
 
         return res.status(
             error.message ===
@@ -677,28 +599,5 @@ exports.subcategories = async (
         );
 
     }
-
-};
-
-
-// ==========================================================
-// EXPORTS
-// ==========================================================
-
-module.exports = {
-
-    addForm,
-
-    create,
-
-    editForm,
-
-    update,
-
-    products,
-
-    addSubcategory,
-
-    subcategories
 
 };
