@@ -14,6 +14,7 @@ const isStaff =
 const isAdmin =
     userRole === "admin";
 
+
 const staffBranchUrl =
     isStaff && user?.assignedSubstation
         ? `/branch/${user.assignedSubstation}`
@@ -45,17 +46,24 @@ const isMobile =
 
 
 /*
- * ADMIN:
- * cartSubstation is used as salesSubstation.
+ * ADMIN
  *
- * STAFF:
- * salesSubstation MUST always be the
- * logged-in user's assignedSubstation.
+ * Use ONLY the cart's current cartSubstation.
+ *
+ * This value belongs to the current cart/sale.
+ * It is not taken from the admin user.
+ *
+ * STAFF
+ *
+ * salesSubstation continues to come from
+ * the logged-in staff member's assignedSubstation.
  */
 const cartSubstation =
-    String(
-        cart?.cartSubstation || ""
-    ).trim();
+    hasItems
+        ? String(
+            cart?.cartSubstation || ""
+        ).trim()
+        : "";
 
 
 const staffSalesSubstation =
@@ -507,7 +515,11 @@ const checkoutProductId =
                         <a
                             class="primary-btn cart-checkout-btn"
                             id="staffMpesaCheckout"
-                            href="/carts/<%= checkoutProductId %>?salesSubstation=<%= encodeURIComponent(staffSalesSubstation) %>"
+                            href="/carts/<%= checkoutProductId %>?salesSubstation=<%= encodeURIComponent(
+                                isAdmin
+                                    ? cartSubstation
+                                    : staffSalesSubstation
+                            ) %>"
                         >
 
                             <i class="fas fa-credit-card"></i>
@@ -680,25 +692,35 @@ const checkoutProductId =
                          SALES SUBSTATION
                     ================================================== -->
 
-                    <% if (isStaff) { %>
+                    <% if (isAdmin) { %>
 
-                        <% if (isAdmin) { %>
+                        <!--
+                            ADMIN:
+                            Use the cart's current sales substation.
 
-                            <input
-                                type="hidden"
-                                name="salesSubstation"
-                                value="<%= cartSubstation %>"
-                            >
+                            This is deliberately NOT taken from
+                            the admin user's assignedSubstation.
+                        -->
 
-                        <% } else { %>
+                        <input
+                            type="hidden"
+                            name="salesSubstation"
+                            value="<%= cartSubstation %>"
+                        >
 
-                            <input
-                                type="hidden"
-                                name="salesSubstation"
-                                value="<%= staffSalesSubstation %>"
-                            >
 
-                        <% } %>
+                    <% } else { %>
+
+                        <!--
+                            STAFF:
+                            Existing staff behavior remains unchanged.
+                        -->
+
+                        <input
+                            type="hidden"
+                            name="salesSubstation"
+                            value="<%= staffSalesSubstation %>"
+                        >
 
                     <% } %>
 
