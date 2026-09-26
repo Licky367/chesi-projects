@@ -16,17 +16,30 @@ const categorySchema = new mongoose.Schema(
       index: true
     },
 
+    businessType: {
+      id: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null
+      },
+
+      name: {
+        type: String,
+        trim: true,
+        default: ""
+      }
+    },
+
     categoryIcon: {
       type: String,
       trim: true,
       default: ""
     },
+
     description: {
       type: String,
       trim: true,
       default: ""
     },
-
 
     isActive: {
       type: Boolean,
