@@ -4,7 +4,9 @@
 // ==========================================================
 
 const mongoose = require("mongoose");
-const Substation = require("../../models/substations");
+
+const Substation =
+    require("../../models/substations");
 
 const {
     text,
@@ -18,24 +20,49 @@ const {
     resolveBusinessType
 } = require("./create");
 
-exports.update = async (id, body) => {
 
-    if (!mongoose.isValidObjectId(id)) {
+// ==========================================================
+// UPDATE SUBSTATION
+// ==========================================================
+
+exports.update = async (
+    id,
+    body
+) => {
+
+    // ======================================================
+    // VALIDATE ID
+    // ======================================================
+
+    if (
+        !mongoose.isValidObjectId(id)
+    ) {
+
         throw new Error(
             "Invalid substation ID."
         );
     }
 
-    body = body || {};
+
+    body =
+        body || {};
+
+
+    // ======================================================
+    // FIND EXISTING SUBSTATION
+    // ======================================================
 
     const existing =
         await Substation.findById(id);
 
+
     if (!existing) {
+
         throw new Error(
             "Substation not found."
         );
     }
+
 
     // ======================================================
     // BASIC INFORMATION
@@ -44,25 +71,34 @@ exports.update = async (id, body) => {
     const name =
         text(body.name);
 
+
     if (!name) {
+
         throw new Error(
             "Substation name is required."
         );
     }
 
+
     const duplicate =
         await Substation.findOne({
+
             name,
+
             _id: {
                 $ne: id
             }
+
         });
 
+
     if (duplicate) {
+
         throw new Error(
             "A substation with that name already exists."
         );
     }
+
 
     // ======================================================
     // GPS
@@ -70,6 +106,7 @@ exports.update = async (id, body) => {
 
     const gps =
         buildGPS(body);
+
 
     // ======================================================
     // PHONE
@@ -80,6 +117,7 @@ exports.update = async (id, body) => {
             body.phoneNumber
         );
 
+
     // ======================================================
     // DIRECTIONS
     // ======================================================
@@ -89,19 +127,27 @@ exports.update = async (id, body) => {
             body.directions
         );
 
+
     // ======================================================
     // BUSINESS TYPE
     // ======================================================
     //
-    // Only change the business type when the edit request
-    // actually provides one.
+    // body.businessType contains the selected or newly
+    // entered business type name.
     //
-    // This prevents an edit that does not contain the field
-    // from accidentally removing the existing business type.
+    // Existing name:
+    //   resolveBusinessType() reuses its shared ID.
+    //
+    // New name:
+    //   resolveBusinessType() generates a new shared ID.
+    //
+    // If the field is not supplied at all, preserve the
+    // existing business type.
     //
     // ======================================================
 
     let businessType;
+
 
     if (
         body.businessType !== undefined
@@ -112,6 +158,7 @@ exports.update = async (id, body) => {
                 body.businessType
             );
     }
+
 
     // ======================================================
     // UPDATE DATA
@@ -141,7 +188,9 @@ exports.update = async (id, body) => {
                     body.isActive === "true" ||
                     body.isActive === "on"
                 )
+
     };
+
 
     // ======================================================
     // BUSINESS TYPE
@@ -155,6 +204,7 @@ exports.update = async (id, body) => {
             businessType;
     }
 
+
     // ======================================================
     // SUBSTATION ICON
     // ======================================================
@@ -165,6 +215,7 @@ exports.update = async (id, body) => {
 
         const icon =
             text(body.substationIcon);
+
 
         if (icon) {
 
@@ -178,6 +229,7 @@ exports.update = async (id, body) => {
         }
     }
 
+
     // ======================================================
     // UPDATE
     // ======================================================
@@ -186,13 +238,22 @@ exports.update = async (id, body) => {
         await Substation.findByIdAndUpdate(
             id,
             {
-                $set: updateData
+                $set:
+                    updateData
             },
             {
-                new: true,
-                runValidators: true
+                new:
+                    true,
+
+                runValidators:
+                    true
             }
         ).lean();
+
+
+    // ======================================================
+    // RETURN
+    // ======================================================
 
     return prepareSubstation(
         updated
