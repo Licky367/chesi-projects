@@ -183,7 +183,9 @@ async function createStaffSale(req, saleData = {}) {
             });
 
             await sale.save({ session });
+            
             cart.items = [];
+            cart.cartSubstation = "";
             await cart.save({ session });
         });
 
