@@ -59,9 +59,7 @@ exports.addManyToCart = async (req, res) => {
                 req,
                 item.productId,
                 item.qty,
-                {
-                    cartSubstation
-                }
+                cartSubstation
             );
 
         }
