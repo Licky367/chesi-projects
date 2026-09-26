@@ -13,8 +13,7 @@ const {
 async function addToCart(
     req,
     productId,
-    quantity,
-    cartSubstation = ""
+    quantity
 ) {
 
     const qty =
@@ -67,24 +66,44 @@ async function addToCart(
 
 
     // ======================================================
-    // ALWAYS USE THE LATEST CART SUBSTATION
+    // ADMIN / BRANCH CART SUBSTATION
+    //
+    // The branch form submits:
+    //
+    //     cartSubstation
+    //
+    // The value belongs to the CURRENT branch being used.
+    //
+    // Every time a product is added from a branch, replace
+    // the previous cartSubstation with the latest one.
+    //
+    // Staff-sale processing itself still decides the sales
+    // substation based on the user's role.
     // ======================================================
 
-    const latestSubstation =
+    const cartSubstation =
         String(
-            cartSubstation || ""
+            req.body?.cartSubstation ||
+            ""
         ).trim();
 
-    if (latestSubstation) {
+    if (
+        cartSubstation &&
+        mongoose.Types.ObjectId.isValid(
+            cartSubstation
+        )
+    ) {
 
         cart.cartSubstation =
-            latestSubstation;
+            new mongoose.Types.ObjectId(
+                cartSubstation
+            );
 
     }
 
 
     // ======================================================
-    // EXISTING ITEM
+    // FIND EXISTING ITEM
     // ======================================================
 
     const existingItem =
@@ -95,11 +114,16 @@ async function addToCart(
         );
 
 
+    // ======================================================
+    // EXISTING ITEM
+    // ======================================================
+
     if (existingItem) {
 
         const newQty =
             Number(existingItem.qty || 0) +
             qty;
+
 
         if (
             product.units !== undefined &&
@@ -110,8 +134,10 @@ async function addToCart(
             );
         }
 
+
         existingItem.qty =
             newQty;
+
 
         if (
             existingItem.price === undefined ||
@@ -125,11 +151,14 @@ async function addToCart(
 
         }
 
-    } else {
+    }
 
-        // ==================================================
-        // NEW ITEM
-        // ==================================================
+
+    // ======================================================
+    // NEW ITEM
+    // ======================================================
+
+    else {
 
         cart.items.push({
 
@@ -172,9 +201,11 @@ async function removeItem(
         getLoggedInUserId(req);
 
     if (!userId) {
+
         throw new Error(
             "User is not authenticated."
         );
+
     }
 
 
@@ -183,10 +214,13 @@ async function removeItem(
             user: userId
         });
 
+
     if (!cart) {
+
         throw new Error(
             "Cart not found."
         );
+
     }
 
 
@@ -199,13 +233,21 @@ async function removeItem(
 
 
     // ======================================================
-    // CLEAR SUBSTATION WHEN CART BECOMES EMPTY
+    // CART IS NOW EMPTY
+    //
+    // cartSubstation is an ObjectId field.
+    // Do NOT assign "" to it.
+    //
+    // Remove the field instead so an old branch cannot
+    // remain attached to the empty cart.
     // ======================================================
 
     if (!cart.items.length) {
 
-        cart.cartSubstation =
-            "";
+        cart.set(
+            "cartSubstation",
+            undefined
+        );
 
     }
 
