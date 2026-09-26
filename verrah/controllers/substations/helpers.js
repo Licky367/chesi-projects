@@ -122,6 +122,29 @@ function buildSubstationData(
     };
 
 
+    // ======================================================
+    // BUSINESS TYPE
+    // ======================================================
+    //
+    // The selected business type is passed to the service.
+    //
+    // The service is responsible for:
+    //
+    // 1. Finding an existing shared business type.
+    // 2. Reusing its ID when it exists.
+    // 3. Creating a new business-type ID when necessary.
+    // 4. Assigning { id, name } to the substation.
+    //
+    // ======================================================
+
+    if (
+        body.businessType !== undefined
+    ) {
+        data.businessType =
+            body.businessType;
+    }
+
+
     // --------------------------------------------------------
     // ICON
     // --------------------------------------------------------
