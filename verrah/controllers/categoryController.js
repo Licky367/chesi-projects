@@ -374,7 +374,7 @@ exports.products = async (
             );
 
         return res.render(
-            "products/category/products",
+            "products/category",
             {
                 category,
                 products,
