@@ -1,94 +1,187 @@
-// ==========================================================
-// verrah/utils/security.js
-// VERRAH COSMETICS
-// SECURITY KEY SETUP UTILITY
-//
-// Run:
-// node utils/security.js
-// ==========================================================
-
 const mongoose = require("mongoose");
-const SecurityKey = require("../models/securityKey");
+
+const Category = require("../models/category");
+const Substation = require("../models/substations");
 
 // ==========================================================
-// DATABASE CONNECTION
+// BUSINESS TYPE
+// ==========================================================
+//
+// Creates/reuses one shared business type:
+//
+// {
+//     id: ObjectId("..."),
+//     name: "Cosmetics"
+// }
+//
+// Then assigns it to ALL existing categories and
+// ALL existing substations.
+//
 // ==========================================================
 
-const MONGO_URI = process.env.MONGO_URI;
-
-if (!MONGO_URI) {
-    console.error("MONGO_URI is not defined.");
-    process.exit(1);
-}
-
-// ==========================================================
-// SECURITY KEY
-// ==========================================================
-
-const SECURITY_KEY = "Verrah@123";
-
-// ==========================================================
-// MAIN
-// ==========================================================
-
-async function setSecurityKey() {
-
+async function assignCosmeticsBusinessType() {
     try {
+        // --------------------------------------------------
+        // FIND EXISTING COSMETICS BUSINESS TYPE
+        // --------------------------------------------------
 
-        await mongoose.connect(MONGO_URI);
+        const existingCategory = await Category.findOne({
+            "businessType.name": "Cosmetics"
+        }).lean();
 
-        console.log("Connected to MongoDB.");
+        let businessTypeId;
 
-        const existingKey =
-            await SecurityKey.findOne({});
-
-        if (existingKey) {
-
-            existingKey.securityKey = SECURITY_KEY;
-
-            await existingKey.save();
-
-            console.log(
-                "Security key updated successfully."
-            );
-
+        if (
+            existingCategory &&
+            existingCategory.businessType &&
+            existingCategory.businessType.id
+        ) {
+            businessTypeId = existingCategory.businessType.id;
         } else {
-
-            await SecurityKey.create({
-                securityKey: SECURITY_KEY
-            });
-
-            console.log(
-                "Security key created successfully."
-            );
+            businessTypeId = new mongoose.Types.ObjectId();
         }
 
-        console.log(
-            "Security key is set to: Verrah@123"
+        // --------------------------------------------------
+        // BUSINESS TYPE OBJECT
+        // --------------------------------------------------
+
+        const businessType = {
+            id: businessTypeId,
+            name: "Cosmetics"
+        };
+
+        // --------------------------------------------------
+        // ASSIGN TO ALL CATEGORIES
+        // --------------------------------------------------
+
+        const categoryResult = await Category.updateMany(
+            {},
+            {
+                $set: {
+                    businessType
+                }
+            }
         );
 
+        // --------------------------------------------------
+        // ASSIGN TO ALL SUBSTATIONS
+        // --------------------------------------------------
+
+        const substationResult = await Substation.updateMany(
+            {},
+            {
+                $set: {
+                    businessType
+                }
+            }
+        );
+
+        // --------------------------------------------------
+        // RESULT
+        // --------------------------------------------------
+
+        console.log("==========================================");
+        console.log("BUSINESS TYPE ASSIGNMENT COMPLETE");
+        console.log("==========================================");
+
+        console.log(
+            "Business Type ID:",
+            businessTypeId.toString()
+        );
+
+        console.log(
+            "Business Type Name:",
+            businessType.name
+        );
+
+        console.log(
+            "Categories matched:",
+            categoryResult.matchedCount
+        );
+
+        console.log(
+            "Categories modified:",
+            categoryResult.modifiedCount
+        );
+
+        console.log(
+            "Substations matched:",
+            substationResult.matchedCount
+        );
+
+        console.log(
+            "Substations modified:",
+            substationResult.modifiedCount
+        );
+
+        console.log("==========================================");
+
+        return {
+            businessType,
+            categories: {
+                matched: categoryResult.matchedCount,
+                modified: categoryResult.modifiedCount
+            },
+            substations: {
+                matched: substationResult.matchedCount,
+                modified: substationResult.modifiedCount
+            }
+        };
     } catch (error) {
-
         console.error(
-            "Failed to set security key:"
+            "Failed to assign Cosmetics business type:",
+            error
         );
 
-        console.error(error);
-
-        process.exitCode = 1;
-
-    } finally {
-
-        await mongoose.disconnect();
-
-        console.log(
-            "Disconnected from MongoDB."
-        );
+        throw error;
     }
 }
 
 // ==========================================================
-// RUN
+// RUN DIRECTLY
 // ==========================================================
 
-setSecurityKey();
+if (require.main === module) {
+    require("dotenv").config();
+
+    const mongoUri = process.env.MONGO_URI;
+
+    if (!mongoUri) {
+        console.error(
+            "MONGO_URI is not defined in environment variables."
+        );
+
+        process.exit(1);
+    }
+
+    mongoose
+        .connect(mongoUri)
+        .then(async () => {
+            console.log("MongoDB connected.");
+
+            await assignCosmeticsBusinessType();
+
+            await mongoose.disconnect();
+
+            console.log("MongoDB disconnected.");
+            process.exit(0);
+        })
+        .catch(async (error) => {
+            console.error(
+                "MongoDB connection failed:",
+                error
+            );
+
+            try {
+                await mongoose.disconnect();
+            } catch (_) {}
+
+            process.exit(1);
+        });
+}
+
+// ==========================================================
+// EXPORT
+// ==========================================================
+
+module.exports = assignCosmeticsBusinessType;
