@@ -129,7 +129,11 @@ async function getCategory(
     // ALWAYS RETURN SUBCATEGORY AS AN ARRAY
     // ------------------------------------------------------
 
-    if (!Array.isArray(category.subcategory)) {
+    if (
+        !Array.isArray(
+            category.subcategory
+        )
+    ) {
 
         category.subcategory = [];
 
@@ -204,7 +208,9 @@ async function getCategoryByName(
 
     if (
         category &&
-        !Array.isArray(category.subcategory)
+        !Array.isArray(
+            category.subcategory
+        )
     ) {
 
         category.subcategory = [];
@@ -274,6 +280,140 @@ async function getCategories() {
 
 
 // ==========================================================
+// ADD SUBCATEGORY TO CATEGORY
+// ==========================================================
+
+async function addSubcategory(
+    categoryValue,
+    subcategoryValue,
+    session = null
+) {
+
+    // ------------------------------------------------------
+    // VALIDATE CATEGORY
+    // ------------------------------------------------------
+
+    const category =
+        await getCategory(
+            categoryValue,
+            session
+        );
+
+
+    // ------------------------------------------------------
+    // VALIDATE SUBCATEGORY
+    // ------------------------------------------------------
+
+    const subcategory =
+        text(
+            subcategoryValue
+        );
+
+
+    if (!subcategory) {
+
+        throw new Error(
+            "Enter a valid subcategory."
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // PREVENT DUPLICATES
+    //
+    // Comparison is case-insensitive.
+    // ------------------------------------------------------
+
+    const exists =
+        category.subcategory.some(
+            item =>
+                text(item)
+                    .toLowerCase() ===
+                subcategory.toLowerCase()
+        );
+
+
+    if (exists) {
+
+        throw new Error(
+            "This subcategory already exists in the selected category."
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // ADD SUBCATEGORY
+    // ------------------------------------------------------
+
+    const query =
+        Category.findOneAndUpdate(
+            {
+                _id: category._id,
+                isActive: true
+            },
+            {
+                $push: {
+                    subcategory
+                }
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        )
+        .select(
+            "_id name subcategory categoryIcon isActive"
+        );
+
+
+    if (session) {
+
+        query.session(session);
+
+    }
+
+
+    const updatedCategory =
+        await query.lean();
+
+
+    // ------------------------------------------------------
+    // VERIFY UPDATE
+    // ------------------------------------------------------
+
+    if (!updatedCategory) {
+
+        throw new Error(
+            "The category could not be updated."
+        );
+
+    }
+
+
+    if (
+        !Array.isArray(
+            updatedCategory.subcategory
+        )
+    ) {
+
+        updatedCategory.subcategory = [];
+
+    }
+
+
+    updatedCategory.subcategory =
+        updatedCategory.subcategory
+            .map(item => text(item))
+            .filter(Boolean);
+
+
+    return updatedCategory;
+}
+
+
+// ==========================================================
 // EXPORTS
 // ==========================================================
 
@@ -285,6 +425,8 @@ module.exports = {
 
     getCategoryByName,
 
-    getCategories
+    getCategories,
+
+    addSubcategory
 
 };
