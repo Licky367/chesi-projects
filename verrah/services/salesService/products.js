@@ -95,14 +95,6 @@ const Category =
 // ==========================================================
 // GET ID VALUE
 // ==========================================================
-//
-// Handles:
-//
-//     ObjectId
-//     String
-//     populated object
-//
-// ==========================================================
 
 function getIdValue(
     value
@@ -163,20 +155,6 @@ function getUserRole(
 // ==========================================================
 // GET EFFECTIVE SUBSTATION ID
 // ==========================================================
-//
-// STAFF:
-//
-//     user.assignedSubstation
-//
-// ADMIN:
-//
-//     filter.substation
-//
-// ADMIN WITHOUT SELECTED SUBSTATION:
-//
-//     null
-//
-// ==========================================================
 
 function getEffectiveSubstationId(
     filter,
@@ -233,17 +211,6 @@ function getEffectiveSubstationId(
 // ==========================================================
 // GET EFFECTIVE BUSINESS TYPE
 // ==========================================================
-//
-// Returns:
-//
-//     {
-//         id,
-//         name
-//     }
-//
-// or null.
-//
-// ==========================================================
 
 async function getEffectiveBusinessType(
     filter,
@@ -259,9 +226,6 @@ async function getEffectiveBusinessType(
 
     // ======================================================
     // NO SUBSTATION
-    //
-    // This preserves the existing admin behaviour when
-    // admin has not selected a substation.
     // ======================================================
 
     if (
@@ -277,11 +241,9 @@ async function getEffectiveBusinessType(
         await Substation.findById(
             substationId
         )
-
             .select(
                 "businessType"
             )
-
             .lean();
 
 
@@ -340,17 +302,6 @@ function getSubstationQuery(
 // ==========================================================
 // GET SUBSTATION PRODUCT INVENTORY
 // ==========================================================
-//
-// Returns:
-//
-//     Map {
-//         productId -> units
-//     }
-//
-// The inventory belongs to the selected/effective
-// substation.
-//
-// ==========================================================
 
 async function getSubstationProductInventory(
     substationId
@@ -375,11 +326,9 @@ async function getSubstationProductInventory(
                 true
 
         })
-
             .select(
                 "productInventory"
             )
-
             .lean();
 
 
@@ -445,17 +394,6 @@ async function getProductAnalytics(
     // ======================================================
     // EFFECTIVE SUBSTATION
     // ======================================================
-    //
-    // STAFF:
-    //     user.assignedSubstation
-    //
-    // ADMIN + SELECTED:
-    //     filter.substation
-    //
-    // ADMIN + NO SELECTED:
-    //     null
-    //
-    // ======================================================
 
     const effectiveSubstationId =
         getEffectiveSubstationId(
@@ -478,18 +416,6 @@ async function getProductAnalytics(
     // ======================================================
     // LOAD ALL ACTIVE CATEGORIES
     // ======================================================
-    //
-    // Do NOT query MongoDB using:
-    //
-    //     "businessType.id"
-    //
-    // here.
-    //
-    // We compare businessType.id in JavaScript so that
-    // ObjectId/string representation cannot cause the
-    // entire category list to disappear.
-    //
-    // ======================================================
 
     const categories =
         await Category.find({
@@ -498,11 +424,9 @@ async function getProductAnalytics(
                 true
 
         })
-
             .select(
                 "_id name categoryIcon isActive businessType"
             )
-
             .lean();
 
 
@@ -511,18 +435,15 @@ async function getProductAnalytics(
     // ======================================================
     //
     // ADMIN WITHOUT SUBSTATION:
-    //
-    //     All active categories.
+    //     ALL active categories.
     //
     // STAFF:
-    //
-    //     Only categories matching the business type
-    //     of the assigned substation.
+    //     Only categories belonging to the assigned
+    //     substation business type.
     //
     // ADMIN + SELECTED SUBSTATION:
-    //
-    //     Only categories matching the business type
-    //     of the selected substation.
+    //     Only categories belonging to the selected
+    //     substation business type.
     //
     // ======================================================
 
@@ -563,15 +484,6 @@ async function getProductAnalytics(
     // ======================================================
     // CATEGORY BY ID
     // ======================================================
-    //
-    // Keep all active categories available here so that
-    // returned Product.category can still resolve to its
-    // Category document.
-    //
-    // The actual business-type restriction is applied
-    // through filteredCategories below.
-    //
-    // ======================================================
 
     const categoryById =
         new Map();
@@ -608,39 +520,14 @@ async function getProductAnalytics(
 
 
     // ======================================================
-    // CATEGORY FILTER
-    // ======================================================
-    //
-    // filter.category remains supported.
-    //
-    // ======================================================
-
-    if (
-        filter &&
-        filter.category
-    ) {
-
-        productQuery.category =
-            filter.category;
-
-    }
-
-
-    // ======================================================
     // BUSINESS TYPE PRODUCT FILTER
     // ======================================================
     //
-    // Products do not contain businessType directly.
+    // Product does not contain businessType directly.
     //
-    // Product.category points to Category.
-    //
-    // Therefore:
-    //
-    //     businessType
-    //          ↓
-    //     matching Category IDs
-    //          ↓
-    //     Product.category
+    // Product.category
+    //       ↓
+    // Category.businessType.id
     //
     // ======================================================
 
@@ -664,22 +551,47 @@ async function getProductAnalytics(
 
         };
 
+    }
 
-        // --------------------------------------------------
-        // If a specific category was selected, retain it
-        // only if it belongs to the active business type.
-        // --------------------------------------------------
+
+    // ======================================================
+    // CATEGORY FILTER
+    // ======================================================
+    //
+    // If a category is selected:
+    //
+    //     ADMIN WITHOUT SUBSTATION
+    //         -> use selected category.
+    //
+    //     STAFF / ADMIN + SUBSTATION
+    //         -> use selected category only when it
+    //            belongs to the active business type.
+    //
+    // A stale category from another business type is
+    // ignored rather than turning the entire query into
+    // category: { $in: [] }.
+    //
+    // ======================================================
+
+    if (
+        filter &&
+        filter.category
+    ) {
+
+        const selectedCategoryId =
+            String(
+                filter.category
+            );
+
 
         if (
-            filter &&
-            filter.category
+            !businessType
         ) {
 
-            const selectedCategoryId =
-                String(
-                    filter.category
-                );
+            productQuery.category =
+                filter.category;
 
+        } else {
 
             const categoryBelongsToBusinessType =
                 filteredCategories.some(
@@ -701,20 +613,6 @@ async function getProductAnalytics(
                 productQuery.category =
                     filter.category;
 
-            } else {
-
-                // ------------------------------------------
-                // No products can match a category that
-                // does not belong to the active business
-                // type.
-                // ------------------------------------------
-
-                productQuery.category = {
-
-                    $in: []
-
-                };
-
             }
 
         }
@@ -725,27 +623,14 @@ async function getProductAnalytics(
     // ======================================================
     // LOAD ACTIVE PRODUCTS
     // ======================================================
-    //
-    // Products remain global records.
-    //
-    // stock:
-    //     Contains the ID of the Stock record related
-    //     to this Product.
-    //
-    // category:
-    //     Contains the ID of the Category document.
-    //
-    // ======================================================
 
     const products =
         await Product.find(
             productQuery
         )
-
             .select(
                 "_id name category subcategory units stock"
             )
-
             .lean();
 
 
@@ -753,8 +638,6 @@ async function getProductAnalytics(
     // LOAD ALL ACTIVE STOCK
     //
     // STOCK REMAINS GLOBAL.
-    //
-    // DO NOT filter stock by substation.
     // ======================================================
 
     const stockRecords =
@@ -764,11 +647,9 @@ async function getProductAnalytics(
                 true
 
         })
-
             .select(
                 "subcategory units substation"
             )
-
             .lean();
 
 
@@ -825,22 +706,6 @@ async function getProductAnalytics(
     // ======================================================
     // MARKET INVENTORY
     // ======================================================
-    //
-    // STAFF:
-    //
-    //     user.assignedSubstation
-    //
-    // ADMIN + SELECTED SUBSTATION:
-    //
-    //     selected substation
-    //
-    // ADMIN + NO SUBSTATION:
-    //
-    //     Product.units
-    //
-    // Missing substation inventory means 0.
-    //
-    // ======================================================
 
     let marketInventoryByProduct =
         new Map();
@@ -860,20 +725,6 @@ async function getProductAnalytics(
 
     // ======================================================
     // DELIVERED PACKAGES
-    // ======================================================
-    //
-    // When a substation is active:
-    //
-    //     STAFF
-    //         -> assigned substation
-    //
-    //     ADMIN
-    //         -> selected substation
-    //
-    // When there is no effective substation:
-    //
-    //     global delivered packages.
-    //
     // ======================================================
 
     const deliveredPackageQuery = {
@@ -906,11 +757,9 @@ async function getProductAnalytics(
         await Package.find(
             deliveredPackageQuery
         )
-
             .select(
                 "items packageSubstation"
             )
-
             .lean();
 
 
@@ -972,7 +821,7 @@ async function getProductAnalytics(
 
     // ======================================================
     // RETURN PRODUCT ANALYTICS
-    // ======================================================
+    // ==========================================================
 
     return products
 
@@ -994,10 +843,6 @@ async function getProductAnalytics(
                     );
 
 
-                // ==================================================
-                // CATEGORY DOCUMENT
-                // ==================================================
-
                 const category =
                     product.category
 
@@ -1012,18 +857,6 @@ async function getProductAnalytics(
 
                 // ==================================================
                 // MARKET AVAILABLE
-                // ==================================================
-                //
-                // With an effective substation:
-                //
-                //     Substation.productInventory.units
-                //
-                // Without an effective substation:
-                //
-                //     Product.units
-                //
-                // Missing substation inventory means 0.
-                //
                 // ==================================================
 
                 let marketAvailable;
@@ -1047,17 +880,6 @@ async function getProductAnalytics(
 
                 }
 
-
-                // ==================================================
-                // PRODUCT ANALYTICS RESULT
-                // ==================================================
-                //
-                // stockProductId:
-                //
-                //     The ID of the Stock document associated
-                //     with this Product.
-                //
-                // ==================================================
 
                 return {
 
