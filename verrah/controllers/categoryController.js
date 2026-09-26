@@ -351,10 +351,19 @@ exports.products = async (
 
     try {
 
+        // ======================================================
+        // CATEGORY
+        // ======================================================
+
         const category =
             await categoryService.getCategoryById(
                 req.params.id
             );
+
+
+        // ======================================================
+        // CATEGORY NOT FOUND
+        // ======================================================
 
         if (!category) {
 
@@ -368,18 +377,42 @@ exports.products = async (
 
         }
 
+
+        // ======================================================
+        // PRODUCTS
+        // ======================================================
+
         const products =
             await categoryService.getCategoryProducts(
                 req.params.id
             );
 
+
+        // ======================================================
+        // ADMIN STATUS
+        // ======================================================
+
+        const isAdmin =
+            getIsAdmin(req);
+
+
+        // ======================================================
+        // RENDER CATEGORY PRODUCTS PAGE
+        // ======================================================
+
         return res.render(
             "products/category",
             {
                 category,
-                products,
-                user:
-                    req.user
+
+                products:
+                    Array.isArray(products)
+                        ? products
+                        : [],
+
+                isAdmin,
+
+                error: null
             }
         );
 
@@ -390,10 +423,24 @@ exports.products = async (
             error
         );
 
+
+        // ======================================================
+        // RENDER THE CATEGORY PAGE WITH ERROR
+        //
+        // This keeps the expected view contract intact.
+        // ======================================================
+
         return res.status(500).render(
-            "error",
+            "products/category",
             {
-                message:
+                category: null,
+
+                products: [],
+
+                isAdmin:
+                    getIsAdmin(req),
+
+                error:
                     error.message ||
                     "Unable to load category products."
             }
@@ -402,8 +449,3 @@ exports.products = async (
     }
 
 };
-
-
-// ==========================================================
-// EXPORTS
-// ==========================================================
