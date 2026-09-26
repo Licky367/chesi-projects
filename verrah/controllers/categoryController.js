@@ -200,7 +200,9 @@ exports.editForm = async (req, res) => {
 
                     businessTypeId:
                         category.businessType?.id
-                            ? String(category.businessType.id)
+                            ? String(
+                                category.businessType.id
+                            )
                             : ""
                 },
 
@@ -328,6 +330,71 @@ exports.update = async (req, res) => {
                 error:
                     error.message ||
                     "Unable to update category."
+            }
+        );
+
+    }
+
+};
+
+
+// ==========================================================
+// CATEGORY PRODUCTS
+// GET /products/category/:id
+// ==========================================================
+
+exports.products = async (
+    req,
+    res
+) => {
+
+    try {
+
+        const category =
+            await categoryService.getCategoryById(
+                req.params.id
+            );
+
+        if (!category) {
+
+            return res.status(404).render(
+                "error",
+                {
+                    message:
+                        "Category not found."
+                }
+            );
+
+        }
+
+        const products =
+            await categoryService.getCategoryProducts(
+                req.params.id
+            );
+
+        return res.render(
+            "products/category/products",
+            {
+                category,
+                products,
+                user:
+                    req.user
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Category products error:",
+            error
+        );
+
+        return res.status(500).render(
+            "error",
+            {
+                message:
+                    error.message ||
+                    "Unable to load category products."
             }
         );
 
