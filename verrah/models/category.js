@@ -16,6 +16,12 @@ const categorySchema = new mongoose.Schema(
       index: true
     },
 
+    subcategory: {
+      type: [String],
+      required: true,
+      default: []
+    },
+
     businessType: {
       id: {
         type: mongoose.Schema.Types.ObjectId,
