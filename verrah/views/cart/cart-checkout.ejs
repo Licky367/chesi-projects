@@ -16,13 +16,17 @@
 
   </div>  <!-- =========================================================
        CART TOTAL
-       Cart total is the Cart document totalPrice.
+       The Cart document stores the total in cart.totalPrice.
   ========================================================== -->  <div class="cart-total-line"><span>
   Cart total
 </span>
 
 <strong>
-  KSh <%= Number(totalPrice || 0).toLocaleString("en-KE", {
+  KSh <%= Number(
+    cart && cart.totalPrice
+      ? cart.totalPrice
+      : 0
+  ).toLocaleString("en-KE", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }) %>
@@ -46,11 +50,9 @@
     checkoutRole === "admin";
 
 
-  /*
-   * -------------------------------------------------------
-   * STAFF ASSIGNED SUBSTATION
-   * -------------------------------------------------------
-   */
+  /* =======================================================
+     STAFF ASSIGNED SUBSTATION
+  ======================================================== */
 
   const assignedSubstation =
     checkoutRole === "staff" && user
@@ -126,23 +128,16 @@
         );
 
 
-  /*
-   * -------------------------------------------------------
-   * ADMIN SUBSTATION
-   *
-   * IMPORTANT:
-   * Admin packageSubstation comes from:
-   *
-   *     cart.cartSubstation
-   *
-   * It does NOT come from pickupStation.
-   * -------------------------------------------------------
-   */
+  /* =======================================================
+     ADMIN CART SUBSTATION
+
+     IMPORTANT:
+     Admin MUST use cart.cartSubstation.
+     ======================================================= */
 
   const adminCartSubstation =
-    typeof cart !== "undefined" &&
-    cart
-      ? cart.cartSubstation || ""
+    cart && cart.cartSubstation
+      ? cart.cartSubstation
       : "";
 
 
@@ -264,10 +259,6 @@
 
       <% if (assignedSubstationId) { %>
 
-        <!--
-          Hidden input carries the actual submitted value.
-        -->
-
         <input
           type="hidden"
           name="packageSubstation"
@@ -322,20 +313,12 @@
     <!-- =====================================================
          ADMIN
 
-         packageSubstation MUST BE cart.cartSubstation
+         packageSubstation = cart.cartSubstation
     ====================================================== -->
 
     <% } else if (checkoutRole === "admin") { %>
 
       <% if (adminCartSubstationId) { %>
-
-        <!--
-          IMPORTANT:
-          This is the actual submitted packageSubstation.
-
-          Source:
-              cart.cartSubstation
-        -->
 
         <input
           type="hidden"
@@ -554,7 +537,7 @@
   </label>
 
 
-  <!-- M-PESA PHONE NUMBER -->
+  <!-- M-PESA PHONE -->
 
   <div
     id="phoneField"
@@ -717,7 +700,7 @@
 
 
   /* =========================================================
-     EJS VALUES
+     SERVER VALUES
   ========================================================== */
 
   const checkoutRole =
@@ -733,7 +716,7 @@
 
 
   /* =========================================================
-     POPUP ELEMENTS
+     MODAL
   ========================================================== */
 
   const modal =
@@ -779,7 +762,7 @@
 
 
   /* =========================================================
-     SHOW POPUP
+     SHOW MESSAGE
   ========================================================== */
 
   function showCheckoutMessage(
@@ -873,7 +856,7 @@
 
 
   /* =========================================================
-     CLOSE POPUP
+     CLOSE MESSAGE
   ========================================================== */
 
   function closeCheckoutMessage() {
@@ -902,7 +885,7 @@
 
 
   /* =========================================================
-     POPUP EVENTS
+     MODAL EVENTS
   ========================================================== */
 
   if (modalClose) {
@@ -954,7 +937,7 @@
 
 
   /* =========================================================
-     STOP IF CHECKOUT ELEMENTS ARE MISSING
+     CHECKOUT ELEMENTS
   ========================================================== */
 
   if (
@@ -1010,7 +993,7 @@
 
 
   /* =========================================================
-     PAYMENT METHOD CHANGES
+     PAYMENT CHANGES
   ========================================================== */
 
   paymentRadios.forEach(
@@ -1026,16 +1009,12 @@
 
 
   /* =========================================================
-     FORM VALIDATION
+     FORM SUBMISSION
   ========================================================== */
 
   form.addEventListener(
     "submit",
     function (event) {
-
-      /* -----------------------------------------------------
-         PICKUP SUBSTATION
-      ------------------------------------------------------ */
 
       const substation =
         document.getElementById(
@@ -1060,9 +1039,9 @@
       }
 
 
-      /* -----------------------------------------------------
-         STAFF SUBSTATION
-      ------------------------------------------------------ */
+      /* =====================================================
+         STAFF
+      ====================================================== */
 
       if (checkoutRole === "staff") {
 
@@ -1094,10 +1073,11 @@
       }
 
 
-      /* -----------------------------------------------------
-         ADMIN SUBSTATION
-         MUST COME FROM cart.cartSubstation
-      ------------------------------------------------------ */
+      /* =====================================================
+         ADMIN
+
+         packageSubstation MUST equal cart.cartSubstation.
+      ====================================================== */
 
       if (checkoutRole === "admin") {
 
@@ -1147,9 +1127,9 @@
       }
 
 
-      /* -----------------------------------------------------
-         CLIENT SUBSTATION
-      ------------------------------------------------------ */
+      /* =====================================================
+         CLIENT
+      ====================================================== */
 
       if (
         checkoutRole !== "staff" &&
@@ -1172,10 +1152,9 @@
       }
 
 
-      /* -----------------------------------------------------
+      /* =====================================================
          CUSTOMER NAME
-         STAFF + ADMIN ONLY
-      ------------------------------------------------------ */
+      ====================================================== */
 
       if (isInternalSale) {
 
@@ -1214,9 +1193,9 @@
       }
 
 
-      /* -----------------------------------------------------
+      /* =====================================================
          PAYMENT METHOD
-      ------------------------------------------------------ */
+      ====================================================== */
 
       const selected =
         document.querySelector(
@@ -1241,9 +1220,9 @@
       }
 
 
-      /* -----------------------------------------------------
+      /* =====================================================
          M-PESA PHONE
-      ------------------------------------------------------ */
+      ====================================================== */
 
       if (
         selected.value === "mpesa"
@@ -1286,7 +1265,7 @@
 
 
   /* =========================================================
-     SERVER-SIDE ERROR
+     SERVER ERROR
   ========================================================== */
 
   <% if (
@@ -1304,7 +1283,7 @@
 
 
   /* =========================================================
-     SERVER-SIDE SUCCESS
+     SERVER SUCCESS
   ========================================================== */
 
   <% if (
