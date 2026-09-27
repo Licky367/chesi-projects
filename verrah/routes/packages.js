@@ -2,32 +2,12 @@ const express = require("express");
 
 const router = express.Router();
 
-const controller =
-    require("../controllers/packages");
+const controller = require("../controllers/packages");
 
-const requireLogin =
-    require("../middleware/requireLogin");
+const requireLogin = require("../middleware/requireLogin");
+const requireStaffOrAdmin = require("../middleware/requireStaffOrAdmin");
+const packageSubstationAccess = require("../middleware/packageSubstationAccess");
 
-const requireStaffOrAdmin =
-    require("../middleware/requireStaffOrAdmin");
-
-const requireStaff =
-    require("../middleware/requireStaff");
-
-const packageSubstationAccess =
-    require("../middleware/packageSubstationAccess");
-
-
-// =========================================================
-// STAFF PACKAGE LIST
-// GET /packages/staff
-//
-// Displays normal packages where the package owner is NOT
-// a staff user.
-//
-// For staff, pending packages are filtered by the staff
-// member's assignedSubstation against packageSubstation.
-// =========================================================
 
 router.get(
     "/staff",
@@ -37,19 +17,6 @@ router.get(
 );
 
 
-// =========================================================
-// STAFF DIRECT SELL PACKAGE LIST
-// GET /packages/staffDirect
-//
-// Displays packages where the package owner is a staff user.
-//
-// This renders:
-// packages/staffDirectSells.ejs
-//
-// The controller is responsible for determining:
-// isDirectSell === true
-// =========================================================
-
 router.get(
     "/staffDirect",
     requireStaffOrAdmin,
@@ -58,31 +25,12 @@ router.get(
 );
 
 
-// =========================================================
-// CHANGE PACKAGE TO CASH
-// POST /packages/staff/cash
-//
-// Changes a package with arrears to:
-//     isCash = true
-//
-// This route MUST be declared before /staff/:id.
-// Otherwise "cash" could be interpreted as a package ID.
-// =========================================================
-
 router.post(
     "/staff/cash",
     requireStaffOrAdmin,
     controller.markCash
 );
 
-
-// =========================================================
-// STAFF PACKAGE DETAILS
-// GET /packages/staff/:id
-//
-// Staff cannot open a pending package belonging to another
-// pickup substation.
-// =========================================================
 
 router.get(
     "/staff/:id",
@@ -94,7 +42,7 @@ router.get(
 
 router.post(
     "/staff/:id/confirm",
-    requireStaff,
+    requireStaffOrAdmin,
     controller.confirm
 );
 
@@ -119,10 +67,6 @@ router.post(
     controller.clear
 );
 
-
-// =========================================================
-// CLIENT PACKAGE HISTORY
-// =========================================================
 
 router.get(
     "/",
