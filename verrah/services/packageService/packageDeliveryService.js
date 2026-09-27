@@ -1,19 +1,25 @@
 // =========================================================
 // verrah/services/packageDeliveryService.js
-// VERRAH COSMETICS - DELIVER PACKAGE
+//
+// VERRAH COSMETICS
+// DELIVER PACKAGE SERVICE
 // =========================================================
 //
-// DELIVERY RULE
+// DELIVERY SUBSTATION RULE
 // ---------------------------------------------------------
-// The package's packageSubstation is ALWAYS the operational
-// substation for delivery.
+// The ONLY substation used for delivery is:
 //
-// Inventory reduction MUST happen against:
-//     pkg.packageSubstation
+//     Package.packageSubstation
 //
-// It must NEVER use:
-//     req.user.assignedSubstation
-//     pkg.confirmedSubstationId
+// Never use:
+//
+//     User.assignedSubstation
+//     Package.confirmedSubstationId
+//
+// packageSubstation controls:
+//     - inventory reduction
+//     - deliveredSubstationId
+//     - delivered package ledger
 // =========================================================
 
 const mongoose =
@@ -49,10 +55,6 @@ async function deliverPackage(
   id
 ) {
 
-  // -------------------------------------------------------
-  // ROLE
-  // -------------------------------------------------------
-
   const role =
     roleOf(req);
 
@@ -66,14 +68,10 @@ async function deliverPackage(
   }
 
 
-  // -------------------------------------------------------
-  // DELIVERY USER
-  // -------------------------------------------------------
-
-  const staffId =
+  const actorId =
     staffIdOf(req);
 
-  const staffName =
+  const actorName =
     String(
       req.user?.name ||
       req.user?.email ||
@@ -84,10 +82,6 @@ async function deliverPackage(
       )
     ).trim();
 
-
-  // -------------------------------------------------------
-  // DATABASE SESSION
-  // -------------------------------------------------------
 
   const dbSession =
     await mongoose.startSession();
@@ -100,15 +94,19 @@ async function deliverPackage(
     await dbSession.withTransaction(
       async () => {
 
-        // =================================================
-        // PACKAGE
-        // =================================================
+
+// =========================================================
+// PACKAGE
+// =========================================================
 
         const pkg =
           await Package.findOne({
             _id: id,
             status: "confirmed"
-          }).session(dbSession);
+          })
+            .session(
+              dbSession
+            );
 
 
         if (!pkg) {
@@ -118,9 +116,9 @@ async function deliverPackage(
         }
 
 
-        // =================================================
-        // PREVENT DOUBLE REDUCTION
-        // =================================================
+// =========================================================
+// PREVENT DOUBLE REDUCTION
+// =========================================================
 
         if (
           pkg.substationReductionRecorded
@@ -131,21 +129,13 @@ async function deliverPackage(
         }
 
 
-        // =================================================
-        // PACKAGE SUBSTATION
-        // =================================================
-        //
-        // IMPORTANT:
-        //
-        // Delivery ALWAYS uses packageSubstation.
-        //
-        // Never use:
-        //     req.user.assignedSubstation
-        //
-        // Never fall back to:
-        //     confirmedSubstationId
-        //
-        // =================================================
+// =========================================================
+// PACKAGE SUBSTATION
+// =========================================================
+//
+// This is the ONLY source of the operational
+// delivery substation.
+// =========================================================
 
         const operationalSubstationId =
           pkg.packageSubstation;
@@ -160,14 +150,17 @@ async function deliverPackage(
         }
 
 
-        // =================================================
-        // GET PACKAGE SUBSTATION
-        // =================================================
+// =========================================================
+// LOAD PACKAGE SUBSTATION
+// =========================================================
 
         const substation =
           await Substation.findById(
             operationalSubstationId
-          ).session(dbSession);
+          )
+            .session(
+              dbSession
+            );
 
 
         if (!substation) {
@@ -177,9 +170,9 @@ async function deliverPackage(
         }
 
 
-        // =================================================
-        // PROCESS PACKAGE ITEMS
-        // =================================================
+// =========================================================
+// PROCESS PACKAGE ITEMS
+// =========================================================
 
         for (
           const item of pkg.items
@@ -201,14 +194,17 @@ async function deliverPackage(
           }
 
 
-          // -----------------------------------------------
-          // PRODUCT
-          // -----------------------------------------------
+// =========================================================
+// PRODUCT
+// =========================================================
 
           const product =
             await Product.findById(
               item.productId
-            ).session(dbSession);
+            )
+              .session(
+                dbSession
+              );
 
 
           if (!product) {
@@ -218,9 +214,9 @@ async function deliverPackage(
           }
 
 
-          // -----------------------------------------------
-          // PRODUCT TOTAL UNITS
-          // -----------------------------------------------
+// =========================================================
+// PRODUCT TOTAL STOCK
+// =========================================================
 
           const productUnits =
             Number(
@@ -237,9 +233,13 @@ async function deliverPackage(
           }
 
 
-          // -----------------------------------------------
-          // PRODUCT SUBSTATION UNITS
-          // -----------------------------------------------
+// =========================================================
+// PRODUCT SUBSTATION UNITS
+// =========================================================
+//
+// Preserve the existing Product.substationUnits
+// behavior when that field exists.
+// =========================================================
 
           const hasSubstationUnits =
             product.substationUnits !== undefined &&
@@ -270,22 +270,28 @@ async function deliverPackage(
           }
 
 
-          // =================================================
-          // PACKAGE SUBSTATION INVENTORY
-          // =================================================
-          //
-          // This lookup is performed ONLY against the
-          // package's packageSubstation.
-          //
-          // The logged-in staff member's assignedSubstation
-          // is completely irrelevant here.
-          // =================================================
+// =========================================================
+// PACKAGE SUBSTATION INVENTORY
+// =========================================================
+//
+// IMPORTANT:
+//
+// This searches the product inventory inside the
+// packageSubstation loaded above.
+//
+// It does NOT search the staff member's assigned
+// substation.
+// =========================================================
 
           const inventory =
             substation.productInventory.find(
               (entry) =>
-                String(entry.productId) ===
-                String(item.productId)
+                String(
+                  entry.productId
+                ) ===
+                String(
+                  item.productId
+                )
             );
 
 
@@ -311,9 +317,9 @@ async function deliverPackage(
           }
 
 
-          // =================================================
-          // REDUCE PRODUCT
-          // =================================================
+// =========================================================
+// REDUCE PRODUCT
+// =========================================================
 
           product.units =
             productUnits - qty;
@@ -322,19 +328,21 @@ async function deliverPackage(
           if (
             hasSubstationUnits
           ) {
+
             product.substationUnits =
               substationUnits - qty;
           }
 
 
           await product.save({
-            session: dbSession
+            session:
+              dbSession
           });
 
 
-          // =================================================
-          // REDUCE PACKAGE SUBSTATION INVENTORY
-          // =================================================
+// =========================================================
+// REDUCE PACKAGE SUBSTATION INVENTORY
+// =========================================================
 
           inventory.units =
             inventoryUnits - qty;
@@ -343,15 +351,19 @@ async function deliverPackage(
             new Date();
 
 
-          // =================================================
-          // SUBSTATION REDUCTION LEDGER
-          // =================================================
+// =========================================================
+// UPDATE SUBSTATION REDUCTION LEDGER
+// =========================================================
 
           const reduction =
             substation.productReductions.find(
               (entry) =>
-                String(entry.productId) ===
-                String(item.productId)
+                String(
+                  entry.productId
+                ) ===
+                String(
+                  item.productId
+                )
             );
 
 
@@ -395,33 +407,38 @@ async function deliverPackage(
         }
 
 
-        // =================================================
-        // SAVE PACKAGE SUBSTATION
-        // =================================================
+// =========================================================
+// SAVE PACKAGE SUBSTATION
+// =========================================================
 
         await substation.save({
-          session: dbSession
+          session:
+            dbSession
         });
 
 
-        // =================================================
-        // MARK PACKAGE AS DELIVERED
-        // =================================================
+// =========================================================
+// MARK PACKAGE DELIVERED
+// =========================================================
 
         pkg.status =
           "delivered";
 
         pkg.deliveredByStaffId =
-          staffId;
+          actorId;
 
         pkg.deliveredByStaffName =
-          staffName;
+          actorName;
 
         pkg.deliveredAt =
           new Date();
 
-        // IMPORTANT:
-        // This is the packageSubstation used above.
+
+// =========================================================
+// IMPORTANT:
+// deliveredSubstationId ALWAYS equals packageSubstation
+// =========================================================
+
         pkg.deliveredSubstationId =
           operationalSubstationId;
 
@@ -430,13 +447,14 @@ async function deliverPackage(
 
 
         await pkg.save({
-          session: dbSession
+          session:
+            dbSession
         });
 
 
-        // =================================================
-        // CLIENT
-        // =================================================
+// =========================================================
+// CLIENT
+// =========================================================
 
         const client =
           await User.findById(
@@ -451,9 +469,13 @@ async function deliverPackage(
             .lean();
 
 
-        // =================================================
-        // DELIVERED PACKAGE LEDGER
-        // =================================================
+// =========================================================
+// DELIVERED PACKAGE LEDGER
+// =========================================================
+//
+// Item prices/names/categories/images come directly
+// from the package snapshots.
+// =========================================================
 
         delivered =
           await DeliveredPackage.findOneAndUpdate(
@@ -486,8 +508,6 @@ async function deliverPackage(
                     image:
                       item.image || "",
 
-                    // IMPORTANT:
-                    // Always the packageSubstation.
                     substationId:
                       operationalSubstationId
                   })
@@ -495,12 +515,13 @@ async function deliverPackage(
 
               clientName:
                 client?.name ||
-                String(pkg.clientId),
+                String(
+                  pkg.clientId
+                ),
 
-              staffName,
+              staffName:
+                actorName,
 
-              // IMPORTANT:
-              // Always the packageSubstation.
               substationId:
                 operationalSubstationId,
 
@@ -523,17 +544,15 @@ async function deliverPackage(
             {
               new: true,
               upsert: true,
-              setDefaultsOnInsert: true,
-              session: dbSession
+              setDefaultsOnInsert:
+                true,
+              session:
+                dbSession
             }
           );
       }
     );
 
-
-    // =====================================================
-    // RETURN DELIVERED RECORD
-    // =====================================================
 
     return delivered;
 
