@@ -5,7 +5,8 @@
 // STAFF / ADMIN PACKAGE SERVICE
 // =========================================================
 
-const mongoose = require("mongoose");
+const mongoose =
+  require("mongoose");
 
 const Package =
   require("../../models/package");
@@ -38,7 +39,6 @@ async function getStaffPackages(
   const role =
     roleOf(req);
 
-
   if (
     role !== "staff" &&
     role !== "admin"
@@ -50,15 +50,12 @@ async function getStaffPackages(
 
   }
 
-
   status =
     normalizeStatus(
       status
     );
 
-
   let visibleQuery = {};
-
 
   // =======================================================
   // STAFF VISIBILITY
@@ -69,7 +66,6 @@ async function getStaffPackages(
     const id =
       staffIdOf(req);
 
-
     if (!id) {
 
       throw new Error(
@@ -77,7 +73,6 @@ async function getStaffPackages(
       );
 
     }
-
 
     visibleQuery = {
 
@@ -99,18 +94,10 @@ async function getStaffPackages(
 
   }
 
-
   // =======================================================
-  // ADMIN VISIBILITY
+  // ADMIN
   //
-  // Admin can see all packages.
-  // =======================================================
-
-  // No filter is required for admin.
-
-
-  // =======================================================
-  // LOAD PACKAGES
+  // Admin sees all packages.
   // =======================================================
 
   const allVisible =
@@ -134,7 +121,6 @@ async function getStaffPackages(
       )
       .lean();
 
-
   // =======================================================
   // PREPARE SUBSTATIONS
   // =======================================================
@@ -142,7 +128,6 @@ async function getStaffPackages(
   allVisible.forEach(
     preparePackageSubstations
   );
-
 
   // =======================================================
   // COUNTS
@@ -173,7 +158,6 @@ async function getStaffPackages(
 
   };
 
-
   // =======================================================
   // STATUS FILTER
   // =======================================================
@@ -185,7 +169,6 @@ async function getStaffPackages(
           (p) =>
             p.status === status
         );
-
 
   // =======================================================
   // CLIENT IDS
@@ -206,7 +189,6 @@ async function getStaffPackages(
     )
   ];
 
-
   // =======================================================
   // CLIENTS
   // =======================================================
@@ -224,7 +206,6 @@ async function getStaffPackages(
         "_id name email phone"
       )
       .lean();
-
 
   const clientMap =
     new Map(
@@ -251,7 +232,6 @@ async function getStaffPackages(
 
     );
 
-
   // =======================================================
   // RETURN
   // =======================================================
@@ -270,7 +250,6 @@ async function getStaffPackages(
               )
             ) || null;
 
-
           if (client) {
 
             client.phone =
@@ -282,7 +261,6 @@ async function getStaffPackages(
               );
 
           }
-
 
           return addPackageFinancials({
 
@@ -314,7 +292,6 @@ async function getStaffPackage(
   const role =
     roleOf(req);
 
-
   if (
     role !== "staff" &&
     role !== "admin"
@@ -326,7 +303,6 @@ async function getStaffPackage(
 
   }
 
-
   if (
     !mongoose.isValidObjectId(
       id
@@ -336,7 +312,6 @@ async function getStaffPackage(
     return null;
 
   }
-
 
   const pkg =
     await Package.findById(
@@ -356,13 +331,11 @@ async function getStaffPackage(
       )
       .lean();
 
-
   if (!pkg) {
 
     return null;
 
   }
-
 
   // =======================================================
   // STAFF VISIBILITY
@@ -372,7 +345,6 @@ async function getStaffPackage(
 
     const staffId =
       staffIdOf(req);
-
 
     if (
       pkg.status !== "pending" &&
@@ -390,7 +362,6 @@ async function getStaffPackage(
 
   }
 
-
   // =======================================================
   // DESTINATION
   // =======================================================
@@ -398,7 +369,6 @@ async function getStaffPackage(
   await preparePackageDestination(
     pkg
   );
-
 
   // =======================================================
   // CONFIRMED SUBSTATION
@@ -415,7 +385,6 @@ async function getStaffPackage(
 
   }
 
-
   // =======================================================
   // DELIVERED SUBSTATION
   // =======================================================
@@ -431,7 +400,6 @@ async function getStaffPackage(
 
   }
 
-
   // =======================================================
   // CLIENT
   // =======================================================
@@ -445,7 +413,6 @@ async function getStaffPackage(
       )
       .lean();
 
-
   if (client) {
 
     client.phone =
@@ -457,7 +424,6 @@ async function getStaffPackage(
       );
 
   }
-
 
   // =======================================================
   // RETURN
@@ -480,23 +446,15 @@ async function getStaffPackage(
 //
 // BOTH ADMIN AND STAFF CAN CONFIRM.
 //
-// IMPORTANT BUSINESS RULE:
+// IMPORTANT:
 //
-// The confirmation substation is ALWAYS:
+// Confirmation location is ALWAYS:
 //
-//     package.packageSubstation
+//     packageSubstation
 //
-// It is NEVER:
+// NEVER:
 //
 //     staff.assignedSubstation
-//
-// Therefore:
-//
-//     Admin confirmation
-//         -> confirmedSubstationId = packageSubstation
-//
-//     Staff confirmation
-//         -> confirmedSubstationId = packageSubstation
 //
 // =========================================================
 
@@ -508,9 +466,8 @@ async function confirmPackage(
   const role =
     roleOf(req);
 
-
   // =======================================================
-  // ONLY ADMIN OR STAFF
+  // ADMIN OR STAFF
   // =======================================================
 
   if (
@@ -524,9 +481,8 @@ async function confirmPackage(
 
   }
 
-
   // =======================================================
-  // VALIDATE PACKAGE ID
+  // VALIDATE ID
   // =======================================================
 
   if (
@@ -541,12 +497,8 @@ async function confirmPackage(
 
   }
 
-
   // =======================================================
   // LOAD PENDING PACKAGE
-  //
-  // We load the package first because the confirmation
-  // substation MUST come from packageSubstation.
   // =======================================================
 
   const packageDoc =
@@ -564,7 +516,6 @@ async function confirmPackage(
       )
       .lean();
 
-
   if (!packageDoc) {
 
     throw new Error(
@@ -573,9 +524,8 @@ async function confirmPackage(
 
   }
 
-
   // =======================================================
-  // PACKAGE SUBSTATION IS REQUIRED
+  // PACKAGE SUBSTATION REQUIRED
   // =======================================================
 
   if (
@@ -588,14 +538,12 @@ async function confirmPackage(
 
   }
 
-
   // =======================================================
   // CONFIRMING USER
   // =======================================================
 
   const userId =
     staffIdOf(req);
-
 
   if (!userId) {
 
@@ -604,7 +552,6 @@ async function confirmPackage(
     );
 
   }
-
 
   const user =
     await User.findById(
@@ -615,7 +562,6 @@ async function confirmPackage(
       )
       .lean();
 
-
   if (!user) {
 
     throw new Error(
@@ -624,9 +570,8 @@ async function confirmPackage(
 
   }
 
-
   // =======================================================
-  // CONFIRMING USER NAME
+  // CONFIRMER NAME
   // =======================================================
 
   const confirmerName =
@@ -640,29 +585,22 @@ async function confirmPackage(
       )
     ).trim();
 
-
   // =======================================================
   // CONFIRMATION SUBSTATION
   // =======================================================
   //
-  // THIS IS THE IMPORTANT CHANGE.
+  // BOTH ADMIN AND STAFF:
   //
-  // Always use:
-  //
-  //     packageDoc.packageSubstation
-  //
-  // Never:
-  //
-  //     user.assignedSubstation
+  // confirmedSubstationId =
+  // packageSubstation
   //
   // =======================================================
 
   const confirmationSubstationId =
     packageDoc.packageSubstation;
 
-
   // =======================================================
-  // BUILD UPDATE
+  // UPDATE
   // =======================================================
 
   const update = {
@@ -682,15 +620,13 @@ async function confirmPackage(
 
   };
 
-
   // =======================================================
   // STAFF CONFIRMATION
   // =======================================================
   //
-  // Keep the existing staff confirmation information.
-  //
-  // This is still useful for determining which staff member
-  // is responsible for delivery.
+  // Keep these because the existing delivery logic uses
+  // confirmedByStaffId to determine which staff member can
+  // deliver the package.
   //
   // =======================================================
 
@@ -704,38 +640,8 @@ async function confirmPackage(
 
   }
 
-
   // =======================================================
-  // ADMIN CONFIRMATION
-  // =======================================================
-  //
-  // Admin does not need a staff ID.
-  //
-  // Store admin identity separately when the corresponding
-  // fields exist in the package schema.
-  //
-  // We only set these fields if the application already
-  // supports them through Mongoose's strict schema handling.
-  //
-  // The essential confirmation field remains:
-  //
-  //     confirmedSubstationId
-  //
-  // =======================================================
-
-  if (role === "admin") {
-
-    update.$set.confirmedByAdminId =
-      userId;
-
-    update.$set.confirmedByAdminName =
-      confirmerName;
-
-  }
-
-
-  // =======================================================
-  // UPDATE PACKAGE
+  // CONFIRM
   // =======================================================
 
   const updated =
@@ -772,7 +678,6 @@ async function confirmPackage(
       )
       .lean();
 
-
   if (!updated) {
 
     throw new Error(
@@ -781,18 +686,16 @@ async function confirmPackage(
 
   }
 
-
   // =======================================================
-  // PREPARE DESTINATION
+  // DESTINATION
   // =======================================================
 
   await preparePackageDestination(
     updated
   );
 
-
   // =======================================================
-  // PREPARE CONFIRMED SUBSTATION
+  // CONFIRMED SUBSTATION
   // =======================================================
 
   if (
@@ -806,9 +709,8 @@ async function confirmPackage(
 
   }
 
-
   // =======================================================
-  // PREPARE DELIVERED SUBSTATION
+  // DELIVERED SUBSTATION
   // =======================================================
 
   if (
@@ -821,7 +723,6 @@ async function confirmPackage(
       );
 
   }
-
 
   // =======================================================
   // CLIENT
@@ -836,7 +737,6 @@ async function confirmPackage(
       )
       .lean();
 
-
   if (client) {
 
     client.phone =
@@ -848,7 +748,6 @@ async function confirmPackage(
       );
 
   }
-
 
   // =======================================================
   // RETURN
