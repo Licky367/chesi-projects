@@ -19,6 +19,7 @@
        • Product name
        • Price
        • Stock availability
+   - Admin product cards link to related Stock document
    - Subcategory is NOT displayed
    - Delivery days are NOT displayed
    ========================================================== */
@@ -101,7 +102,7 @@
             <%
             /* ==================================================
                CATEGORY DISPLAY NAME
-            =================================================== */
+            ================================================== */
 
             var categoryName = "Other";
 
@@ -125,7 +126,7 @@
 
             /* ==================================================
                COLLECT PRODUCTS
-            ===================================================
+            ==================================================
 
                Primary structure:
 
@@ -243,6 +244,42 @@
                             var productName =
                                 product.name ||
                                 "Unnamed product";
+
+
+                            /* ==================================================
+                               ADMIN STOCK LINK
+                            ==================================================
+
+                               productStock is populated by the product
+                               list service from Product.stock -> Stock._id.
+
+                               Admin:
+                                   /stock/productStock._id
+
+                               Non-admin:
+                                   /products/product._id
+                            ================================================== */
+
+                            var productLink =
+                                "/products/" +
+                                product._id;
+
+
+                            if (
+                                user &&
+                                user.role === "admin" &&
+                                Array.isArray(product.productStock) &&
+                                product.productStock.length > 0 &&
+                                product.productStock[0] &&
+                                product.productStock[0]._id
+                            ) {
+
+                                productLink =
+                                    "/stock/" +
+                                    product.productStock[0]._id;
+
+                            }
+
                             %>
 
 
@@ -251,7 +288,7 @@
                             =================================== -->
 
                             <a
-                                href="/products/<%= product._id %>"
+                                href="<%= productLink %>"
                                 class="product-card"
                             >
 
