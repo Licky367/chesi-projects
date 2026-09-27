@@ -46,23 +46,6 @@ const {
 // ==========================================================
 // GET FIFO BUY PRICE
 // ==========================================================
-//
-// Returns the buy price from the oldest FIFO purchase batch
-// that still contains stock.
-//
-// FIFO order:
-//
-//     purchasedAt ASC
-//
-// Only batches with:
-//
-//     units > 0
-//
-// are considered.
-//
-// If no remaining FIFO batch exists, the legacy Stock.buyPrice
-// is returned as a fallback.
-// ==========================================================
 
 function getFifoBuyPrice(stock) {
 
@@ -106,23 +89,14 @@ function getFifoBuyPrice(stock) {
     }
 
 
-    // ------------------------------------------------------
-    // Legacy fallback
-    // ------------------------------------------------------
-
     return Number(
         stock?.buyPrice || 0
     );
-
 }
 
 
 // ==========================================================
 // APPLY FIFO BUY PRICE
-// ==========================================================
-//
-// Keeps the complete stock object while replacing the
-// exposed buyPrice with the current oldest FIFO batch price.
 // ==========================================================
 
 function withFifoBuyPrice(stock) {
@@ -132,10 +106,11 @@ function withFifoBuyPrice(stock) {
         ...stock,
 
         buyPrice:
-            getFifoBuyPrice(stock)
+            getFifoBuyPrice(
+                stock
+            )
 
     };
-
 }
 
 
@@ -169,7 +144,7 @@ async function listStock() {
             })
 
                 .select(
-                    "_id name categoryIcon isActive"
+                    "_id name categoryIcon isActive businessType"
                 )
 
                 .sort({
@@ -268,10 +243,12 @@ async function listStock() {
                 categoryName,
                 {
                     category,
+
                     label:
                         displayLabel(
                             category.name
                         ),
+
                     stocks: []
                 }
             );
@@ -349,7 +326,6 @@ async function getStock(
     ) {
 
         return null;
-
     }
 
 
@@ -383,7 +359,7 @@ async function getStock(
 
 
     // ======================================================
-    // CATEGORY
+    // GET CATEGORY
     // ======================================================
 
     const category =
@@ -393,7 +369,7 @@ async function getStock(
 
 
     // ======================================================
-    // RETURN
+    // RETURN STOCK + CATEGORY DOCUMENT
     // ======================================================
 
     return {
@@ -443,10 +419,6 @@ async function getStockCategories() {
             .lean();
 
 
-    // ======================================================
-    // APPLY FIFO BUY PRICE
-    // ======================================================
-
     return stocks.map(
         withFifoBuyPrice
     );
@@ -457,15 +429,40 @@ async function getStockCategories() {
 // ==========================================================
 // GET SUBSTATIONS
 // ==========================================================
+//
+// businessType is an EMBEDDED DOCUMENT:
+//
+// businessType: {
+//     id: ObjectId,
+//     name: String
+// }
+//
+// It must therefore be selected here so the controller can
+// compare:
+//
+// stock.categoryDocument.businessType.id
+//
+// with:
+//
+// substation.businessType.id
+// ==========================================================
 
 function getSubstations() {
 
     return Substation.find({
+
         isActive: true
+
     })
 
         .select(
-            "name location description productInventory"
+            [
+                "name",
+                "location",
+                "description",
+                "businessType",
+                "productInventory"
+            ].join(" ")
         )
 
         .sort({
