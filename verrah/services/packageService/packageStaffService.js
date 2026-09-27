@@ -1,29 +1,29 @@
 // =========================================================
-// verrah/services/packageStaffService.js
+// verrah/services/packageService/packageStaffService.js
 //
 // VERRAH COSMETICS
 // STAFF PACKAGE SERVICE
 // =========================================================
 
 const mongoose =
-  require("mongoose");
+    require("mongoose");
 
 const Package =
-  require("../../models/package");
+    require("../../models/package");
 
 const User =
-  require("../../models/user");
+    require("../../models/user");
 
 const {
-  SUBSTATION_VIEW_FIELDS,
-  preparePackageDestination,
-  preparePackageSubstations,
-  prepareSubstationForView,
-  normalizeStatus,
-  normalizePhone,
-  roleOf,
-  staffIdOf,
-  addPackageFinancials
+    SUBSTATION_VIEW_FIELDS,
+    preparePackageDestination,
+    preparePackageSubstations,
+    prepareSubstationForView,
+    normalizeStatus,
+    normalizePhone,
+    roleOf,
+    staffIdOf,
+    addPackageFinancials
 } = require("./packageHelpers");
 
 
@@ -32,225 +32,214 @@ const {
 // =========================================================
 
 async function getStaffPackages(
-  req,
-  status = "all"
+    req,
+    status = "all"
 ) {
 
-  const role =
-    roleOf(req);
+    const role =
+        roleOf(req);
 
-  if (
-    role !== "staff" &&
-    role !== "admin"
-  ) {
-    throw new Error(
-      "Staff or admin access required."
-    );
-  }
-
-  status =
-    normalizeStatus(status);
-
-  let visibleQuery = {};
-
-
-// =========================================================
-// STAFF VISIBILITY
-// =========================================================
-
-  if (role === "staff") {
-
-    const id =
-      staffIdOf(req);
-
-    if (!id) {
-      throw new Error(
-        "Staff identity is missing."
-      );
+    if (
+        role !== "staff" &&
+        role !== "admin"
+    ) {
+        throw new Error(
+            "Staff or admin access required."
+        );
     }
 
-    visibleQuery = {
-      $or: [
-        {
-          status: "pending"
-        },
-        {
-          confirmedByStaffId: id
-        }
-      ]
+
+    status =
+        normalizeStatus(status);
+
+
+    // ---------------------------------------------------------
+    // Do not restrict confirmed/delivered packages here.
+    //
+    // packageSubstationAccess.filterStaffList handles:
+    //
+    // pending:
+    //     assignedSubstation restriction
+    //
+    // confirmed/delivered:
+    //     visible to authorized staff
+    // ---------------------------------------------------------
+
+    const visibleQuery = {};
+
+
+    // =========================================================
+    // LOAD PACKAGES
+    // =========================================================
+
+    const allVisible =
+        await Package.find(
+            visibleQuery
+        )
+            .sort({
+                createdAt: -1
+            })
+            .populate(
+                "packageSubstation",
+                SUBSTATION_VIEW_FIELDS
+            )
+            .populate(
+                "confirmedSubstationId",
+                SUBSTATION_VIEW_FIELDS
+            )
+            .populate(
+                "deliveredSubstationId",
+                SUBSTATION_VIEW_FIELDS
+            )
+            .lean();
+
+
+    // =========================================================
+    // PREPARE SUBSTATIONS
+    // =========================================================
+
+    allVisible.forEach(
+        preparePackageSubstations
+    );
+
+
+    // =========================================================
+    // COUNTS
+    // =========================================================
+
+    const counts = {
+
+        all:
+            allVisible.length,
+
+        pending:
+            allVisible.filter(
+                p =>
+                    p.status ===
+                    "pending"
+            ).length,
+
+        confirmed:
+            allVisible.filter(
+                p =>
+                    p.status ===
+                    "confirmed"
+            ).length,
+
+        delivered:
+            allVisible.filter(
+                p =>
+                    p.status ===
+                    "delivered"
+            ).length
     };
-  }
 
 
-// =========================================================
-// LOAD PACKAGES
-// =========================================================
+    // =========================================================
+    // STATUS FILTER
+    // =========================================================
 
-  const allVisible =
-    await Package.find(
-      visibleQuery
-    )
-      .sort({
-        createdAt: -1
-      })
-      .populate(
-        "packageSubstation",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .populate(
-        "confirmedSubstationId",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .populate(
-        "deliveredSubstationId",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .lean();
+    const packages =
+        status === "all"
+            ? allVisible
+            : allVisible.filter(
+                p =>
+                    p.status === status
+            );
 
 
-// =========================================================
-// PREPARE SUBSTATIONS
-// =========================================================
+    // =========================================================
+    // CLIENT IDS
+    // =========================================================
 
-  allVisible.forEach(
-    preparePackageSubstations
-  );
-
-
-// =========================================================
-// COUNTS
-// =========================================================
-
-  const counts = {
-
-    all:
-      allVisible.length,
-
-    pending:
-      allVisible.filter(
-        (p) =>
-          p.status === "pending"
-      ).length,
-
-    confirmed:
-      allVisible.filter(
-        (p) =>
-          p.status === "confirmed"
-      ).length,
-
-    delivered:
-      allVisible.filter(
-        (p) =>
-          p.status === "delivered"
-      ).length
-  };
+    const clientIds = [
+        ...new Set(
+            packages
+                .map(
+                    p =>
+                        String(
+                            p.clientId
+                        )
+                )
+                .filter(Boolean)
+        )
+    ];
 
 
-// =========================================================
-// STATUS FILTER
-// =========================================================
+    // =========================================================
+    // CLIENTS
+    // =========================================================
 
-  const packages =
-    status === "all"
-      ? allVisible
-      : allVisible.filter(
-          (p) =>
-            p.status === status
+    const clients =
+        await User.find({
+            _id: {
+                $in: clientIds
+            }
+        })
+            .select(
+                "_id name email phone"
+            )
+            .lean();
+
+
+    const clientMap =
+        new Map(
+            clients.map(
+                client => [
+                    String(
+                        client._id
+                    ),
+                    {
+                        ...client,
+                        phone:
+                            normalizePhone(
+                                client.phone
+                            )
+                    }
+                ]
+            )
         );
 
 
-// =========================================================
-// CLIENT IDS
-// =========================================================
+    // =========================================================
+    // RETURN
+    // =========================================================
 
-  const clientIds = [
-    ...new Set(
-      packages
-        .map(
-          (p) =>
-            String(
-              p.clientId
-            )
-        )
-        .filter(Boolean)
-    )
-  ];
+    return {
 
+        packages:
+            packages.map(
+                pkg => {
 
-// =========================================================
-// CLIENTS
-// =========================================================
-
-  const clients =
-    await User.find({
-      _id: {
-        $in: clientIds
-      }
-    })
-      .select(
-        "_id name email phone"
-      )
-      .lean();
+                    const client =
+                        clientMap.get(
+                            String(
+                                pkg.clientId
+                            )
+                        ) || null;
 
 
-  const clientMap =
-    new Map(
-      clients.map(
-        (client) => [
-          String(
-            client._id
-          ),
-          {
-            ...client,
-            phone:
-              normalizePhone(
-                client.phone
-              )
-          }
-        ]
-      )
-    );
+                    if (client) {
+
+                        client.phone =
+                            normalizePhone(
+                                client.phone
+                            ) ||
+                            normalizePhone(
+                                pkg.phoneNumber
+                            );
+                    }
 
 
-// =========================================================
-// RETURN
-// =========================================================
+                    return addPackageFinancials({
+                        ...pkg,
+                        client
+                    });
+                }
+            ),
 
-  return {
-
-    packages:
-      packages.map(
-        (pkg) => {
-
-          const client =
-            clientMap.get(
-              String(
-                pkg.clientId
-              )
-            ) || null;
-
-
-          if (client) {
-
-            client.phone =
-              normalizePhone(
-                client.phone
-              ) ||
-              normalizePhone(
-                pkg.phoneNumber
-              );
-          }
-
-
-          return addPackageFinancials({
-            ...pkg,
-            client
-          });
-        }
-      ),
-
-    counts
-  };
+        counts
+    };
 }
 
 
@@ -259,146 +248,134 @@ async function getStaffPackages(
 // =========================================================
 
 async function getStaffPackage(
-  req,
-  id
+    req,
+    id
 ) {
 
-  const role =
-    roleOf(req);
-
-  if (
-    role !== "staff" &&
-    role !== "admin"
-  ) {
-    throw new Error(
-      "Staff or admin access required."
-    );
-  }
-
-  if (
-    !mongoose.isValidObjectId(id)
-  ) {
-    return null;
-  }
-
-
-  const pkg =
-    await Package.findById(id)
-      .populate(
-        "packageSubstation",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .populate(
-        "confirmedSubstationId",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .populate(
-        "deliveredSubstationId",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .lean();
-
-
-  if (!pkg) {
-    return null;
-  }
-
-
-// =========================================================
-// STAFF VISIBILITY
-// =========================================================
-
-  if (role === "staff") {
-
-    const staffId =
-      staffIdOf(req);
+    const role =
+        roleOf(req);
 
     if (
-      pkg.status !== "pending" &&
-      String(
-        pkg.confirmedByStaffId || ""
-      ) !== String(
-        staffId || ""
-      )
+        role !== "staff" &&
+        role !== "admin"
     ) {
-      return null;
+        throw new Error(
+            "Staff or admin access required."
+        );
     }
-  }
 
 
-// =========================================================
-// DESTINATION
-// =========================================================
-
-  await preparePackageDestination(
-    pkg
-  );
+    if (
+        !mongoose.isValidObjectId(id)
+    ) {
+        return null;
+    }
 
 
-// =========================================================
-// CONFIRMED SUBSTATION
-// =========================================================
+    const pkg =
+        await Package.findById(id)
+            .populate(
+                "packageSubstation",
+                SUBSTATION_VIEW_FIELDS
+            )
+            .populate(
+                "confirmedSubstationId",
+                SUBSTATION_VIEW_FIELDS
+            )
+            .populate(
+                "deliveredSubstationId",
+                SUBSTATION_VIEW_FIELDS
+            )
+            .lean();
 
-  if (
-    pkg.confirmedSubstationId
-  ) {
 
-    pkg.confirmedSubstationId =
-      prepareSubstationForView(
+    if (!pkg) {
+        return null;
+    }
+
+
+    // ---------------------------------------------------------
+    // Pending package access is handled by the package
+    // substation middleware.
+    //
+    // Confirmed and delivered packages are available to
+    // authorized staff.
+    // ---------------------------------------------------------
+
+
+    // =========================================================
+    // DESTINATION
+    // =========================================================
+
+    await preparePackageDestination(
+        pkg
+    );
+
+
+    // =========================================================
+    // CONFIRMED SUBSTATION
+    // =========================================================
+
+    if (
         pkg.confirmedSubstationId
-      );
-  }
+    ) {
+
+        pkg.confirmedSubstationId =
+            prepareSubstationForView(
+                pkg.confirmedSubstationId
+            );
+    }
 
 
-// =========================================================
-// DELIVERED SUBSTATION
-// =========================================================
+    // =========================================================
+    // DELIVERED SUBSTATION
+    // =========================================================
 
-  if (
-    pkg.deliveredSubstationId
-  ) {
-
-    pkg.deliveredSubstationId =
-      prepareSubstationForView(
+    if (
         pkg.deliveredSubstationId
-      );
-  }
+    ) {
+
+        pkg.deliveredSubstationId =
+            prepareSubstationForView(
+                pkg.deliveredSubstationId
+            );
+    }
 
 
-// =========================================================
-// CLIENT
-// =========================================================
+    // =========================================================
+    // CLIENT
+    // =========================================================
 
-  const client =
-    await User.findById(
-      pkg.clientId
-    )
-      .select(
-        "_id name email phone"
-      )
-      .lean();
-
-
-  if (client) {
-
-    client.phone =
-      normalizePhone(
-        client.phone
-      ) ||
-      normalizePhone(
-        pkg.phoneNumber
-      );
-  }
+    const client =
+        await User.findById(
+            pkg.clientId
+        )
+            .select(
+                "_id name email phone"
+            )
+            .lean();
 
 
-// =========================================================
-// RETURN
-// =========================================================
+    if (client) {
 
-  return addPackageFinancials({
-    ...pkg,
-    client
-  });
+        client.phone =
+            normalizePhone(
+                client.phone
+            ) ||
+            normalizePhone(
+                pkg.phoneNumber
+            );
+    }
+
+
+    // =========================================================
+    // RETURN
+    // =========================================================
+
+    return addPackageFinancials({
+        ...pkg,
+        client
+    });
 }
 
 
@@ -406,169 +383,163 @@ async function getStaffPackage(
 // CONFIRM PACKAGE
 // =========================================================
 //
-// The package's own packageSubstation is authoritative.
+// BOTH STAFF AND ADMIN.
 //
-// confirmedSubstationId is copied from packageSubstation.
+// confirmedSubstationId ALWAYS:
+//     packageSubstation
 //
-// assignedSubstation is NOT used.
-//
-// Both staff and admin can confirm.
+// NEVER:
+//     assignedSubstation
 // =========================================================
 
 async function confirmPackage(
-  req,
-  id
+    req,
+    id
 ) {
 
-  const role =
-    roleOf(req);
+    const role =
+        roleOf(req);
 
-  if (
-    role !== "staff" &&
-    role !== "admin"
-  ) {
-    throw new Error(
-      "Staff or admin access required."
+    if (
+        role !== "staff" &&
+        role !== "admin"
+    ) {
+        throw new Error(
+            "Staff or admin access required."
+        );
+    }
+
+
+    const actorId =
+        staffIdOf(req);
+
+
+    const actorName =
+        String(
+            req.user?.name ||
+            req.user?.email ||
+            (
+                role === "admin"
+                    ? "Admin"
+                    : "Staff"
+            )
+        ).trim();
+
+
+    // =========================================================
+    // LOAD PENDING PACKAGE
+    // =========================================================
+
+    const existing =
+        await Package.findOne({
+            _id: id,
+            status: "pending"
+        })
+            .select(
+                "_id status packageSubstation"
+            )
+            .lean();
+
+
+    if (!existing) {
+
+        throw new Error(
+            "Package is no longer pending or does not exist."
+        );
+    }
+
+
+    // =========================================================
+    // PACKAGE SUBSTATION REQUIRED
+    // =========================================================
+
+    if (
+        !existing.packageSubstation
+    ) {
+
+        throw new Error(
+            "This package has no package substation."
+        );
+    }
+
+
+    // =========================================================
+    // CONFIRM
+    // =========================================================
+
+    const updated =
+        await Package.findOneAndUpdate(
+            {
+                _id: id,
+                status: "pending"
+            },
+            {
+                $set: {
+
+                    status:
+                        "confirmed",
+
+                    confirmedByStaffId:
+                        actorId,
+
+                    confirmedByStaffName:
+                        actorName,
+
+                    confirmedAt:
+                        new Date(),
+
+                    confirmedSubstationId:
+                        existing.packageSubstation
+                }
+            },
+            {
+                new: true
+            }
+        )
+            .populate(
+                "packageSubstation",
+                SUBSTATION_VIEW_FIELDS
+            )
+            .populate(
+                "confirmedSubstationId",
+                SUBSTATION_VIEW_FIELDS
+            )
+            .lean();
+
+
+    if (!updated) {
+
+        throw new Error(
+            "Package is no longer pending or does not exist."
+        );
+    }
+
+
+    // =========================================================
+    // DESTINATION
+    // =========================================================
+
+    await preparePackageDestination(
+        updated
     );
-  }
 
 
-  const actorId =
-    staffIdOf(req);
+    // =========================================================
+    // CONFIRMED SUBSTATION
+    // =========================================================
 
-
-  const actorName =
-    String(
-      req.user?.name ||
-      req.user?.email ||
-      (
-        role === "admin"
-          ? "Admin"
-          : "Staff"
-      )
-    ).trim();
-
-
-// =========================================================
-// LOAD PENDING PACKAGE
-// =========================================================
-
-  const existing =
-    await Package.findOne({
-      _id: id,
-      status: "pending"
-    })
-      .select(
-        "_id status packageSubstation"
-      )
-      .lean();
-
-
-  if (!existing) {
-    throw new Error(
-      "Package is no longer pending or does not exist."
-    );
-  }
-
-
-// =========================================================
-// PACKAGE SUBSTATION REQUIRED
-// =========================================================
-
-  if (
-    !existing.packageSubstation
-  ) {
-    throw new Error(
-      "This package has no package substation."
-    );
-  }
-
-
-// =========================================================
-// CONFIRM
-// =========================================================
-//
-// IMPORTANT:
-//
-// confirmedSubstationId ALWAYS comes from:
-//     existing.packageSubstation
-//
-// It does NOT come from:
-//     req.user.assignedSubstation
-// =========================================================
-
-  const updated =
-    await Package.findOneAndUpdate(
-      {
-        _id: id,
-        status: "pending"
-      },
-      {
-        $set: {
-
-          status:
-            "confirmed",
-
-          confirmedByStaffId:
-            actorId,
-
-          confirmedByStaffName:
-            actorName,
-
-          confirmedAt:
-            new Date(),
-
-          confirmedSubstationId:
-            existing.packageSubstation
-        }
-      },
-      {
-        new: true
-      }
-    )
-      .populate(
-        "packageSubstation",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .populate(
-        "confirmedSubstationId",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .lean();
-
-
-  if (!updated) {
-    throw new Error(
-      "Package is no longer pending or does not exist."
-    );
-  }
-
-
-// =========================================================
-// PREPARE DESTINATION
-// =========================================================
-
-  await preparePackageDestination(
-    updated
-  );
-
-
-// =========================================================
-// PREPARE CONFIRMED SUBSTATION
-// =========================================================
-
-  if (
-    updated.confirmedSubstationId
-  ) {
-
-    updated.confirmedSubstationId =
-      prepareSubstationForView(
+    if (
         updated.confirmedSubstationId
-      );
-  }
+    ) {
+
+        updated.confirmedSubstationId =
+            prepareSubstationForView(
+                updated.confirmedSubstationId
+            );
+    }
 
 
-  return updated;
+    return updated;
 }
 
 
@@ -577,7 +548,7 @@ async function confirmPackage(
 // =========================================================
 
 module.exports = {
-  getStaffPackages,
-  getStaffPackage,
-  confirmPackage
+    getStaffPackages,
+    getStaffPackage,
+    confirmPackage
 };
