@@ -24,11 +24,7 @@ const Substation =
 
 
 // ==========================================================
-// AUTH HELPERS
-// ==========================================================
-//
-// Keep using the application's existing authentication helpers.
-// No new middleware is introduced here.
+// PACKAGE HELPERS
 // ==========================================================
 
 const {
@@ -107,7 +103,7 @@ async function deliverPackage(
 
 
     // ======================================================
-    // AUTHORIZATION
+    // ACCESS
     // ======================================================
 
     const role =
@@ -146,10 +142,10 @@ async function deliverPackage(
     const session =
         await mongoose.startSession();
 
-    let delivered;
-
-
     try {
+
+        let resultPackage = null;
+
 
         await session.withTransaction(
             async () => {
@@ -168,17 +164,17 @@ async function deliverPackage(
 
                 if (!pkg) {
                     throw new Error(
-                        "Confirmed package not found."
+                        "Package was not found or is not confirmed."
                     );
                 }
 
 
                 // ==================================================
-                // PREVENT DUPLICATE REDUCTION
+                // PREVENT DOUBLE DELIVERY
                 // ==================================================
 
                 if (
-                    pkg.substationReductionRecorded === true
+                    pkg.substationReductionRecorded
                 ) {
                     throw new Error(
                         "This package has already been delivered."
@@ -190,19 +186,17 @@ async function deliverPackage(
                 // PACKAGE SUBSTATION
                 // ==================================================
                 //
-                // packageSubstation is the ONLY substation used
-                // for package delivery.
+                // This is the ONLY substation used for delivery.
                 //
-                // Do not use staff.assignedSubstation.
+                // assignedSubstation is deliberately not used.
                 //
                 // ==================================================
 
-                const packageSubstation =
-                    pkg.packageSubstation;
-
-                if (!packageSubstation) {
+                if (
+                    !pkg.packageSubstation
+                ) {
                     throw new Error(
-                        "This package does not have a package substation."
+                        "Package substation is missing."
                     );
                 }
 
@@ -210,8 +204,10 @@ async function deliverPackage(
                 const substation =
                     await Substation
                         .findOne({
-                            _id: packageSubstation,
-                            isActive: true
+                            _id:
+                                pkg.packageSubstation,
+                            isActive:
+                                true
                         })
                         .session(session);
 
@@ -223,7 +219,7 @@ async function deliverPackage(
 
 
                 // ==================================================
-                // ITEMS
+                // PACKAGE ITEMS
                 // ==================================================
 
                 const items =
@@ -233,13 +229,13 @@ async function deliverPackage(
 
                 if (!items.length) {
                     throw new Error(
-                        "This package has no products to deliver."
+                        "This package contains no products."
                     );
                 }
 
 
                 // ==================================================
-                // DELIVER EACH PRODUCT
+                // PROCESS ITEMS
                 // ==================================================
 
                 for (
@@ -258,7 +254,7 @@ async function deliverPackage(
                         )
                     ) {
                         throw new Error(
-                            "A package item contains an invalid Product."
+                            "Package contains an invalid product."
                         );
                     }
 
@@ -266,13 +262,13 @@ async function deliverPackage(
                     const qty =
                         wholeNumber(
                             item.qty,
-                            `Quantity for ${item.name || "package product"}`
+                            `Quantity for ${item.name || productId}`
                         );
 
 
                     if (qty <= 0) {
                         throw new Error(
-                            `Invalid delivery quantity for ${item.name || "package product"}.`
+                            `Invalid quantity for ${item.name || productId}.`
                         );
                     }
 
@@ -283,34 +279,14 @@ async function deliverPackage(
 
                     const product =
                         await Product
-                            .findOne({
-                                _id: productId,
-                                isActive: true
-                            })
+                            .findById(
+                                productId
+                            )
                             .session(session);
 
                     if (!product) {
                         throw new Error(
-                            `Product ${item.name || productId} was not found or is inactive.`
-                        );
-                    }
-
-
-                    // ==================================================
-                    // PRODUCT FIFO UNITS
-                    // ==================================================
-
-                    const fifoUnitsBefore =
-                        productFifoUnits(
-                            product
-                        );
-
-
-                    if (
-                        fifoUnitsBefore < qty
-                    ) {
-                        throw new Error(
-                            `Cannot deliver ${qty} units of ${product.name || item.name || "this product"} because Product FIFO contains only ${fifoUnitsBefore} units.`
+                            `Product ${item.name || productId} was not found.`
                         );
                     }
 
@@ -319,7 +295,7 @@ async function deliverPackage(
                     // PRODUCT UNITS
                     // ==================================================
 
-                    const productUnits =
+                    const currentProductUnits =
                         wholeNumber(
                             product.units || 0,
                             `Product units for ${product.name || item.name || productId}`
@@ -327,10 +303,29 @@ async function deliverPackage(
 
 
                     if (
-                        productUnits < qty
+                        currentProductUnits < qty
                     ) {
                         throw new Error(
-                            `Cannot deliver ${qty} units of ${product.name || item.name || "this product"} because only ${productUnits} Product units are available.`
+                            `Insufficient Product units for ${product.name || item.name || productId}. Available: ${currentProductUnits}, required: ${qty}.`
+                        );
+                    }
+
+
+                    // ==================================================
+                    // PRODUCT FIFO
+                    // ==================================================
+
+                    const currentFifoUnits =
+                        productFifoUnits(
+                            product
+                        );
+
+
+                    if (
+                        currentFifoUnits < qty
+                    ) {
+                        throw new Error(
+                            `Insufficient Product FIFO units for ${product.name || item.name || productId}. FIFO available: ${currentFifoUnits}, required: ${qty}.`
                         );
                     }
 
@@ -345,7 +340,7 @@ async function deliverPackage(
                         )
                     ) {
                         throw new Error(
-                            `No product inventory exists at ${substation.name || "the package substation"}.`
+                            `Product inventory is missing at ${substation.name || "the package substation"}.`
                         );
                     }
 
@@ -364,12 +359,12 @@ async function deliverPackage(
 
                     if (!inventory) {
                         throw new Error(
-                            `${product.name || item.name || "Product"} is not available at ${substation.name || "the package substation"}.`
+                            `${product.name || item.name || productId} is not available at ${substation.name || "the package substation"}.`
                         );
                     }
 
 
-                    const substationUnits =
+                    const currentSubstationUnits =
                         wholeNumber(
                             inventory.units || 0,
                             `Substation units for ${product.name || item.name || productId}`
@@ -377,27 +372,25 @@ async function deliverPackage(
 
 
                     if (
-                        substationUnits < qty
+                        currentSubstationUnits < qty
                     ) {
                         throw new Error(
-                            `Cannot deliver ${qty} units of ${product.name || item.name || "this product"} because the substation has only ${substationUnits} units.`
+                            `Insufficient substation units for ${product.name || item.name || productId}. Available: ${currentSubstationUnits}, required: ${qty}.`
                         );
                     }
 
 
                     // ==================================================
-                    // REDUCE PRODUCT FIFO
+                    // REMOVE FROM PRODUCT FIFO
                     // ==================================================
                     //
-                    // IMPORTANT:
+                    // Existing FIFO implementation:
                     //
-                    // This is NOT a return to Stock.
+                    // releaseProductFifo()
                     //
-                    // The Product FIFO represents units that were
-                    // already allocated out of warehouse Stock.
+                    // releases the newest Product FIFO layers first.
                     //
-                    // Delivery therefore removes the delivered
-                    // quantity from Product FIFO only.
+                    // NOTHING is returned to Stock.
                     //
                     // ==================================================
 
@@ -408,38 +401,38 @@ async function deliverPackage(
 
 
                     // ==================================================
-                    // SYNCHRONIZE PRODUCT UNITS
+                    // CALCULATE REMAINING PRODUCT UNITS
                     // ==================================================
 
-                    const remainingFifoUnits =
+                    const newProductUnits =
+                        currentProductUnits - qty;
+
+                    const newFifoUnits =
                         productFifoUnits(
                             product
                         );
 
-                    const expectedUnits =
-                        productUnits - qty;
-
 
                     if (
-                        remainingFifoUnits !==
-                        expectedUnits
+                        newFifoUnits !==
+                        newProductUnits
                     ) {
                         throw new Error(
-                            `Product FIFO became inconsistent for ${product.name || item.name || productId}. Product should contain ${expectedUnits} units, but Product FIFO contains ${remainingFifoUnits}.`
+                            `Product FIFO mismatch for ${product.name || item.name || productId}. Product units should be ${newProductUnits}, but FIFO contains ${newFifoUnits}.`
                         );
                     }
 
 
                     product.units =
-                        expectedUnits;
+                        newProductUnits;
 
 
                     // ==================================================
-                    // SYNCHRONIZE PRODUCT BUY PRICE
+                    // PRODUCT WEIGHTED BUY PRICE
                     // ==================================================
 
                     if (
-                        expectedUnits > 0
+                        newProductUnits > 0
                     ) {
 
                         const unitBuyPrice =
@@ -468,7 +461,8 @@ async function deliverPackage(
                     // ==================================================
 
                     inventory.units =
-                        substationUnits - qty;
+                        currentSubstationUnits -
+                        qty;
 
                     inventory.updatedAt =
                         new Date();
@@ -476,13 +470,6 @@ async function deliverPackage(
 
                     // ==================================================
                     // PRODUCT REDUCTION
-                    // ==================================================
-                    //
-                    // This records the physical reduction from the
-                    // substation.
-                    //
-                    // It does NOT return anything to Stock.
-                    //
                     // ==================================================
 
                     if (
@@ -543,42 +530,7 @@ async function deliverPackage(
 
 
                 // ==================================================
-                // MARK PACKAGE DELIVERED
-                // ==================================================
-
-                pkg.status =
-                    "delivered";
-
-                pkg.deliveredBy =
-                    actorId ||
-                    null;
-
-                pkg.deliveredByName =
-                    actorName;
-
-                pkg.deliveredAt =
-                    new Date();
-
-
-                // --------------------------------------------------
-                // ALWAYS packageSubstation
-                // --------------------------------------------------
-
-                pkg.deliveredSubstationId =
-                    pkg.packageSubstation;
-
-
-                pkg.substationReductionRecorded =
-                    true;
-
-
-                await pkg.save({
-                    session
-                });
-
-
-                // ==================================================
-                // CLIENT
+                // DELIVERED PACKAGE DATA
                 // ==================================================
 
                 const clientId =
@@ -586,8 +538,9 @@ async function deliverPackage(
                     pkg.client ||
                     pkg.userId;
 
-                let client =
-                    null;
+
+                let client = null;
+
 
                 if (
                     clientId &&
@@ -615,22 +568,18 @@ async function deliverPackage(
                     ).trim();
 
 
-                // ==================================================
-                // PAYMENT
-                // ==================================================
+                const totalAmount =
+                    number(
+                        pkg.totalAmount
+                    );
+
 
                 const amountPaid =
                     number(
                         pkg.totalPaid ??
-                        pkg.paidAmount ??
-                        0
+                        pkg.paidAmount
                     );
 
-                const totalAmount =
-                    number(
-                        pkg.totalAmount ||
-                        0
-                    );
 
                 const arrearsAmount =
                     Math.max(
@@ -641,7 +590,7 @@ async function deliverPackage(
 
 
                 // ==================================================
-                // DELIVERED PRODUCTS SNAPSHOT
+                // DELIVERED PRODUCTS
                 // ==================================================
 
                 const deliveredProducts =
@@ -681,77 +630,124 @@ async function deliverPackage(
 
 
                 // ==================================================
-                // DELIVERED PACKAGE
+                // DELIVERED PACKAGE RECORD
                 // ==================================================
 
-                delivered =
-                    await DeliveredPackage
-                        .findOneAndUpdate(
-                            {
-                                packageId:
-                                    pkg._id
-                            },
-                            {
-                                packageId:
-                                    pkg._id,
+                await DeliveredPackage
+                    .findOneAndUpdate(
+                        {
+                            packageId:
+                                pkg._id
+                        },
+                        {
+                            packageId:
+                                pkg._id,
 
-                                products:
-                                    deliveredProducts,
+                            products:
+                                deliveredProducts,
 
-                                clientName:
-                                    clientName,
+                            clientName:
+                                clientName,
 
-                                staffName:
-                                    actorName,
+                            staffName:
+                                actorName,
 
-                                substationId:
-                                    pkg.packageSubstation,
+                            substationId:
+                                pkg.packageSubstation,
 
-                                amountPaid:
-                                    amountPaid,
+                            amountPaid:
+                                amountPaid,
 
-                                arrearsAmount:
-                                    arrearsAmount,
+                            arrearsAmount:
+                                arrearsAmount,
 
-                                cleared:
-                                    arrearsAmount <= 0,
+                            cleared:
+                                arrearsAmount <= 0,
 
-                                clearedAt:
-                                    arrearsAmount <= 0
-                                        ? new Date()
-                                        : null,
+                            clearedAt:
+                                arrearsAmount <= 0
+                                    ? new Date()
+                                    : null,
 
-                                clearedByStaffId:
-                                    arrearsAmount <= 0
-                                        ? (
-                                            actorId ||
-                                            null
-                                        )
-                                        : null,
+                            clearedByStaffId:
+                                arrearsAmount <= 0
+                                    ? (
+                                        actorId ||
+                                        null
+                                    )
+                                    : null,
 
-                                clearedByStaffName:
-                                    arrearsAmount <= 0
-                                        ? actorName
-                                        : ""
-                            },
-                            {
-                                upsert: true,
-                                new: true,
-                                session,
-                                setDefaultsOnInsert:
-                                    true
-                            }
-                        );
+                            clearedByStaffName:
+                                arrearsAmount <= 0
+                                    ? actorName
+                                    : ""
+                        },
+                        {
+                            upsert:
+                                true,
+
+                            new:
+                                true,
+
+                            session,
+
+                            setDefaultsOnInsert:
+                                true
+                        }
+                    );
+
+
+                // ==================================================
+                // MARK PACKAGE DELIVERED
+                // ==================================================
+                //
+                // Do this AFTER all inventory and DeliveredPackage
+                // operations have succeeded.
+                //
+                // If anything above fails, the transaction rolls
+                // back and the package remains confirmed.
+                //
+                // ==================================================
+
+                pkg.status =
+                    "delivered";
+
+                pkg.deliveredBy =
+                    actorId ||
+                    null;
+
+                pkg.deliveredByName =
+                    actorName;
+
+                pkg.deliveredAt =
+                    new Date();
+
+                pkg.deliveredSubstationId =
+                    pkg.packageSubstation;
+
+                pkg.substationReductionRecorded =
+                    true;
+
+
+                await pkg.save({
+                    session
+                });
+
+
+                resultPackage =
+                    pkg;
             }
         );
 
 
         // ======================================================
-        // RETURN UPDATED PACKAGE
+        // RETURN
         // ======================================================
 
         return Package
-            .findById(id)
+            .findById(
+                resultPackage._id
+            )
             .lean();
 
     } finally {
