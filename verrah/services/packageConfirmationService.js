@@ -4,23 +4,15 @@
 // VERRAH COSMETICS
 // PACKAGE CONFIRMATION SERVICE
 //
-// BOTH ADMIN AND STAFF CAN CONFIRM PACKAGES.
+// BOTH ADMIN AND STAFF CAN CONFIRM.
 //
-// IMPORTANT BUSINESS RULE:
-//
-// Confirmation is ALWAYS performed at:
-//
+// CONFIRMATION SUBSTATION:
 //     package.packageSubstation
 //
-// It is NEVER based on:
-//
+// NEVER:
 //     staff.assignedSubstation
 //
-// Therefore:
-//
-//     ADMIN  -> packageSubstation
-//     STAFF  -> packageSubstation
-//
+// DELIVERY / PAYMENT / CLEARING ARE NOT HANDLED HERE.
 // =========================================================
 
 const mongoose =
@@ -35,61 +27,54 @@ const Product =
 const Substation =
   require("../models/substations");
 
+const User =
+  require("../models/user");
+
+
+// =========================================================
+// USER ID
+// =========================================================
+
+function userIdOf(req) {
+
+  return String(
+    req.user?._id ||
+    req.user?.id ||
+    ""
+  );
+
+}
+
 
 // =========================================================
 // CHECK PACKAGE AVAILABILITY
 // =========================================================
 //
-// Checks whether all products required by the package are
-// available at the PACKAGE SUBSTATION.
-//
-// The substationId passed to this function must therefore be:
+// Availability is checked at:
 //
 //     package.packageSubstation
+//
+// This applies to BOTH:
+//
+//     admin
+//     staff
 //
 // =========================================================
 
 async function checkPackageAvailability(
   packageId,
-  substationId,
   dbSession = null
 ) {
 
-  // -------------------------------------------------------
-  // PACKAGE
-  // -------------------------------------------------------
-
   const pkgQuery =
     Package.findOne({
-
       _id:
         packageId,
 
       status:
         "pending"
-
     });
 
-
-  // -------------------------------------------------------
-  // SUBSTATION
-  // -------------------------------------------------------
-
-  const substationQuery =
-    Substation.findOne({
-
-      _id:
-        substationId,
-
-      isActive:
-        true
-
-    });
-
-
-  // -------------------------------------------------------
-  // SESSION
-  // -------------------------------------------------------
 
   if (dbSession) {
 
@@ -97,33 +82,12 @@ async function checkPackageAvailability(
       dbSession
     );
 
-    substationQuery.session(
-      dbSession
-    );
-
   }
 
 
-  // -------------------------------------------------------
-  // LOAD BOTH
-  // -------------------------------------------------------
+  const pkg =
+    await pkgQuery;
 
-  const [
-    pkg,
-    substation
-  ] =
-    await Promise.all([
-
-      pkgQuery,
-
-      substationQuery
-
-    ]);
-
-
-  // -------------------------------------------------------
-  // PACKAGE NOT FOUND
-  // -------------------------------------------------------
 
   if (!pkg) {
 
@@ -141,8 +105,48 @@ async function checkPackageAvailability(
 
 
   // -------------------------------------------------------
-  // SUBSTATION NOT FOUND
+  // PACKAGE SUBSTATION
   // -------------------------------------------------------
+
+  if (!pkg.packageSubstation) {
+
+    return {
+
+      ok:
+        false,
+
+      message:
+        "This package has no package substation."
+
+    };
+
+  }
+
+
+  const substationQuery =
+    Substation.findOne({
+
+      _id:
+        pkg.packageSubstation,
+
+      isActive:
+        true
+
+    });
+
+
+  if (dbSession) {
+
+    substationQuery.session(
+      dbSession
+    );
+
+  }
+
+
+  const substation =
+    await substationQuery;
+
 
   if (!substation) {
 
@@ -159,9 +163,9 @@ async function checkPackageAvailability(
   }
 
 
-  // =======================================================
+  // -------------------------------------------------------
   // PRODUCTS
-  // =======================================================
+  // -------------------------------------------------------
 
   const productIds =
     pkg.items
@@ -217,12 +221,13 @@ async function checkPackageAvailability(
     );
 
 
-  // =======================================================
-  // CHECK EACH PACKAGE ITEM
-  // =======================================================
+  // -------------------------------------------------------
+  // CHECK EVERY PACKAGE ITEM
+  // -------------------------------------------------------
 
   for (
-    const item of pkg.items
+    const item
+    of pkg.items
   ) {
 
     const product =
@@ -232,10 +237,6 @@ async function checkPackageAvailability(
         )
       );
 
-
-    // -----------------------------------------------------
-    // PRODUCT NO LONGER ACTIVE
-    // -----------------------------------------------------
 
     if (!product) {
 
@@ -252,16 +253,11 @@ async function checkPackageAvailability(
     }
 
 
-    // -----------------------------------------------------
-    // FIND PRODUCT IN PACKAGE SUBSTATION INVENTORY
-    // -----------------------------------------------------
-
     const inventory =
       (
         substation.productInventory ||
         []
       ).find(
-
         (entry) =>
           String(
             entry.productId
@@ -269,7 +265,6 @@ async function checkPackageAvailability(
           String(
             item.productId
           )
-
       );
 
 
@@ -284,10 +279,6 @@ async function checkPackageAvailability(
         item.qty || 0
       );
 
-
-    // -----------------------------------------------------
-    // NOT ENOUGH STOCK
-    // -----------------------------------------------------
 
     if (
       required >
@@ -309,10 +300,6 @@ async function checkPackageAvailability(
   }
 
 
-  // =======================================================
-  // AVAILABLE
-  // =======================================================
-
   return {
 
     ok:
@@ -332,13 +319,7 @@ async function checkPackageAvailability(
 // GET CONFIRMATION STATE
 // =========================================================
 //
-// BOTH ADMIN AND STAFF CAN check confirmation availability.
-//
-// IMPORTANT:
-//
-// The package's own packageSubstation is used.
-//
-// No staff assignment is required.
+// BOTH ADMIN AND STAFF.
 //
 // =========================================================
 
@@ -354,13 +335,9 @@ exports.getConfirmationState =
       ).toLowerCase();
 
 
-    // -----------------------------------------------------
-    // ONLY ADMIN OR STAFF
-    // -----------------------------------------------------
-
     if (
-      role !== "admin" &&
-      role !== "staff"
+      role !== "staff" &&
+      role !== "admin"
     ) {
 
       return {
@@ -369,7 +346,7 @@ exports.getConfirmationState =
           false,
 
         message:
-          "Admin or staff access required."
+          "Staff or admin access required."
 
       };
 
@@ -378,79 +355,8 @@ exports.getConfirmationState =
 
     try {
 
-      // ===================================================
-      // LOAD PENDING PACKAGE
-      // ===================================================
-
-      const packageDoc =
-        await Package.findOne({
-
-          _id:
-            packageId,
-
-          status:
-            "pending"
-
-        })
-          .select(
-            "_id status packageSubstation"
-          )
-          .lean();
-
-
-      if (!packageDoc) {
-
-        return {
-
-          ok:
-            false,
-
-          message:
-            "Package is no longer pending or does not exist."
-
-        };
-
-      }
-
-
-      // ===================================================
-      // PACKAGE SUBSTATION REQUIRED
-      // ===================================================
-
-      if (
-        !packageDoc.packageSubstation
-      ) {
-
-        return {
-
-          ok:
-            false,
-
-          message:
-            "This package cannot be confirmed because no package substation has been assigned."
-
-        };
-
-      }
-
-
-      // ===================================================
-      // CHECK PACKAGE SUBSTATION
-      // ===================================================
-      //
-      // IMPORTANT:
-      //
-      // This is the same substation for BOTH admin and
-      // staff.
-      //
-      // ===================================================
-
-      return checkPackageAvailability(
-
-        packageId,
-
-        packageDoc.packageSubstation
-
+      return await checkPackageAvailability(
+        packageId
       );
 
     } catch (error) {
@@ -474,15 +380,19 @@ exports.getConfirmationState =
 // CONFIRM PACKAGE
 // =========================================================
 //
-// BOTH ADMIN AND STAFF CAN CONFIRM.
+// BOTH ADMIN AND STAFF.
 //
-// Confirmation location:
+// confirmedSubstationId ALWAYS:
 //
 //     package.packageSubstation
 //
-// NOT:
+// Staff additionally gets:
 //
-//     staff.assignedSubstation
+//     confirmedByStaffId
+//     confirmedByStaffName
+//
+// This preserves the existing delivery rule:
+// only the confirming staff member can deliver.
 //
 // =========================================================
 
@@ -498,25 +408,17 @@ exports.confirmPackage =
       ).toLowerCase();
 
 
-    // =======================================================
-    // ADMIN OR STAFF
-    // =======================================================
-
     if (
-      role !== "admin" &&
-      role !== "staff"
+      role !== "staff" &&
+      role !== "admin"
     ) {
 
       throw new Error(
-        "Admin or staff access required."
+        "Staff or admin access required."
       );
 
     }
 
-
-    // =======================================================
-    // VALIDATE PACKAGE ID
-    // =======================================================
 
     if (
       !mongoose.isValidObjectId(
@@ -531,9 +433,39 @@ exports.confirmPackage =
     }
 
 
-    // =======================================================
-    // START TRANSACTION
-    // =======================================================
+    const userId =
+      userIdOf(
+        req
+      );
+
+
+    if (!userId) {
+
+      throw new Error(
+        "User identity is missing."
+      );
+
+    }
+
+
+    const user =
+      await User.findById(
+        userId
+      )
+        .select(
+          "_id name email role"
+        )
+        .lean();
+
+
+    if (!user) {
+
+      throw new Error(
+        "User account not found."
+      );
+
+    }
+
 
     const session =
       await mongoose.startSession();
@@ -547,70 +479,14 @@ exports.confirmPackage =
       await session.withTransaction(
         async function () {
 
-          // ================================================
-          // LOAD PENDING PACKAGE
-          // ================================================
-
-          const packageDoc =
-            await Package.findOne({
-
-              _id:
-                packageId,
-
-              status:
-                "pending"
-
-            })
-              .select(
-                "_id status packageSubstation"
-              )
-              .session(
-                session
-              )
-              .lean();
-
-
-          if (!packageDoc) {
-
-            throw new Error(
-              "Package is no longer pending or does not exist."
-            );
-
-          }
-
-
-          // ================================================
-          // PACKAGE SUBSTATION REQUIRED
-          // ================================================
-
-          if (
-            !packageDoc.packageSubstation
-          ) {
-
-            throw new Error(
-              "This package cannot be confirmed because no package substation has been assigned."
-            );
-
-          }
-
-
-          // ================================================
-          // CHECK AVAILABILITY
-          //
-          // IMPORTANT:
-          //
-          // packageSubstation is used for BOTH roles.
-          // ================================================
+          // ------------------------------------------------
+          // CHECK PACKAGE + PACKAGE SUBSTATION INVENTORY
+          // ------------------------------------------------
 
           const state =
             await checkPackageAvailability(
-
               packageId,
-
-              packageDoc.packageSubstation,
-
               session
-
             );
 
 
@@ -623,114 +499,71 @@ exports.confirmPackage =
           }
 
 
-          // ================================================
+          // ------------------------------------------------
           // CONFIRMER NAME
-          // ================================================
+          // ------------------------------------------------
 
           const confirmerName =
             String(
-
-              req.user?.name ||
-
-              req.user?.email ||
-
+              user.name ||
+              user.email ||
               (
                 role === "admin"
                   ? "Admin"
                   : "Staff"
               )
-
             ).trim();
 
 
-          // ================================================
-          // UPDATE PACKAGE
-          // ================================================
+          // ------------------------------------------------
+          // IMPORTANT:
           //
-          // Confirmation location is ALWAYS:
+          // ALWAYS packageSubstation.
           //
-          //     packageDoc.packageSubstation
-          //
-          // ================================================
+          // NEVER staff.assignedSubstation.
+          // ------------------------------------------------
 
-          const update = {
+          const updateSet = {
 
-            $set: {
+            status:
+              "confirmed",
 
-              status:
-                "confirmed",
+            confirmedAt:
+              new Date(),
 
-              confirmedAt:
-                new Date(),
-
-              confirmedSubstationId:
-                packageDoc.packageSubstation
-
-            }
+            confirmedSubstationId:
+              state.package.packageSubstation
 
           };
 
 
-          // ================================================
-          // STAFF CONFIRMATION
-          // ================================================
+          // ------------------------------------------------
+          // STAFF
           //
-          // Keep these existing fields because the existing
-          // delivery logic uses confirmedByStaffId.
-          //
-          // ================================================
+          // Preserve the staff identity because this
+          // determines who may deliver the package.
+          // ------------------------------------------------
 
           if (
             role === "staff"
           ) {
 
-            const staffId =
-              String(
-                req.user?._id ||
-                req.user?.id ||
-                ""
-              );
+            updateSet.confirmedByStaffId =
+              userId;
 
-
-            if (!staffId) {
-
-              throw new Error(
-                "Staff identity is missing."
-              );
-
-            }
-
-
-            update.$set
-              .confirmedByStaffId =
-                staffId;
-
-
-            update.$set
-              .confirmedByStaffName =
-                confirmerName;
+            updateSet.confirmedByStaffName =
+              confirmerName;
 
           }
 
 
-          // ================================================
-          // ADMIN CONFIRMATION
-          // ================================================
+          // ------------------------------------------------
+          // ADMIN
           //
-          // Admin does NOT need an assigned substation.
-          //
-          // The confirmation location remains the package
-          // substation.
-          //
-          // No invented admin-specific Package fields are
-          // written here.
-          //
-          // ================================================
-
-
-          // ================================================
-          // ATOMIC CONFIRMATION
-          // ================================================
+          // Do NOT invent confirmedByAdmin fields.
+          // The package schema already has the essential
+          // confirmation fields above.
+          // ------------------------------------------------
 
           updated =
             await Package.findOneAndUpdate(
@@ -745,7 +578,12 @@ exports.confirmPackage =
 
               },
 
-              update,
+              {
+
+                $set:
+                  updateSet
+
+              },
 
               {
 
@@ -772,6 +610,7 @@ exports.confirmPackage =
 
 
       return updated;
+
 
     } finally {
 
