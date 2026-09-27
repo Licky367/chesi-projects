@@ -1,8 +1,3 @@
-// =========================================================
-// verrah/controllers/packages/index.js
-// VERRAH COSMETICS - PACKAGE CONTROLLER INDEX
-// =========================================================
-
 const list = require("./list");
 const details = require("./details");
 const pay = require("./pay");
@@ -17,18 +12,18 @@ const cash = require("./cash");
 
 
 module.exports = {
-  list: list.list,
-  details: details.details,
-  pay: pay.pay,
+    list: list.list,
+    details: details.details,
+    pay: pay.pay,
 
-  staffList: staffList.staffList,
-  staffDirectSells: staffDirectSells.staffDirectSells,
-  staffDetails: staffDetails.staffDetails,
+    staffList: staffList.staffList,
+    staffDirectSells: staffDirectSells.staffDirectSells,
+    staffDetails: staffDetails.staffDetails,
 
-  confirm: confirm.confirm,
-  deliver: deliver.deliver,
-  recordPayment: recordPayment.recordPayment,
-  clear: clear.clear,
+    confirm: confirm.confirm,
+    deliver: deliver.deliver,
+    recordPayment: recordPayment.recordPayment,
+    clear: clear.clear,
 
-  markCash: cash.markCash
+    markCash: cash.markCash
 };
