@@ -158,10 +158,9 @@ packageDoc.status === "pending"
 <% } %>
 
 <% if (
-role === "staff" &&
-packageDoc.status === "confirmed" &&
-String(packageDoc.confirmedByStaffId) ===
-String(user?._id || "")
+  (role === "staff" || role === "admin") &&
+  packageDoc.status === "confirmed" &&
+  String(packageDoc.confirmedByStaffId) === String(user?._id || "")
 ) { %>
 
 <div class="staff-action-card">    
