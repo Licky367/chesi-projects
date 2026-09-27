@@ -3,13 +3,122 @@
 // CATEGORY HELPERS
 // ==========================================================
 
-const mongoose = require("mongoose");
+const mongoose =
+    require("mongoose");
 
 const Category =
     require("../../models/category");
 
-const { text } =
+const {
+    text
+} =
     require("./helpers");
+
+
+// ==========================================================
+// CATEGORY SELECT FIELDS
+// ==========================================================
+//
+// businessType is an embedded document:
+//
+// businessType: {
+//     id: ObjectId,
+//     name: String
+// }
+//
+// It MUST be included whenever a category is retrieved for
+// stock/substation business-type matching.
+// ==========================================================
+
+const CATEGORY_FIELDS =
+    "_id name subcategory categoryIcon isActive businessType";
+
+
+// ==========================================================
+// NORMALIZE CATEGORY
+// ==========================================================
+
+function normalizeCategory(
+    category
+) {
+
+    if (!category) {
+        return null;
+    }
+
+
+    // ------------------------------------------------------
+    // SUBCATEGORY
+    // ------------------------------------------------------
+
+    if (
+        !Array.isArray(
+            category.subcategory
+        )
+    ) {
+
+        category.subcategory = [];
+
+    }
+
+
+    category.subcategory =
+        category.subcategory
+            .map(
+                item =>
+                    text(item)
+            )
+            .filter(Boolean);
+
+
+    // ------------------------------------------------------
+    // BUSINESS TYPE
+    // ------------------------------------------------------
+    //
+    // Keep the embedded businessType document intact.
+    //
+    // Expected:
+    //
+    // businessType: {
+    //     id: ObjectId,
+    //     name: "..."
+    // }
+    //
+    // ------------------------------------------------------
+
+    if (
+        !category.businessType ||
+        typeof category.businessType !== "object"
+    ) {
+
+        category.businessType = {
+
+            id: null,
+
+            name: ""
+
+        };
+
+    } else {
+
+        category.businessType = {
+
+            id:
+                category.businessType.id ||
+                null,
+
+            name:
+                text(
+                    category.businessType.name
+                )
+
+        };
+
+    }
+
+
+    return category;
+}
 
 
 // ==========================================================
@@ -23,6 +132,7 @@ async function getCategory(
 
     const raw =
         text(value);
+
 
     if (!raw) {
 
@@ -47,17 +157,24 @@ async function getCategory(
         const query =
             Category
                 .findOne({
-                    _id: raw,
-                    isActive: true
+
+                    _id:
+                        raw,
+
+                    isActive:
+                        true
+
                 })
                 .select(
-                    "_id name subcategory categoryIcon isActive"
+                    CATEGORY_FIELDS
                 );
 
 
         if (session) {
 
-            query.session(session);
+            query.session(
+                session
+            );
 
         }
 
@@ -77,17 +194,24 @@ async function getCategory(
         const query =
             Category
                 .findOne({
-                    name: raw.toLowerCase(),
-                    isActive: true
+
+                    name:
+                        raw.toLowerCase(),
+
+                    isActive:
+                        true
+
                 })
                 .select(
-                    "_id name subcategory categoryIcon isActive"
+                    CATEGORY_FIELDS
                 );
 
 
         if (session) {
 
-            query.session(session);
+            query.session(
+                session
+            );
 
         }
 
@@ -112,8 +236,10 @@ async function getCategory(
 
 
     const categoryName =
-        text(category.name)
-            .toLowerCase();
+        text(
+            category.name
+        )
+        .toLowerCase();
 
 
     if (!categoryName) {
@@ -125,28 +251,9 @@ async function getCategory(
     }
 
 
-    // ------------------------------------------------------
-    // ALWAYS RETURN SUBCATEGORY AS AN ARRAY
-    // ------------------------------------------------------
-
-    if (
-        !Array.isArray(
-            category.subcategory
-        )
-    ) {
-
-        category.subcategory = [];
-
-    }
-
-
-    category.subcategory =
-        category.subcategory
-            .map(item => text(item))
-            .filter(Boolean);
-
-
-    return category;
+    return normalizeCategory(
+        category
+    );
 }
 
 
@@ -175,6 +282,20 @@ async function validateCategory(
 // ==========================================================
 // GET CATEGORY BY NAME
 // ==========================================================
+//
+// IMPORTANT:
+//
+// This function is used by stockService.getStock().
+//
+// Therefore businessType MUST be returned here.
+//
+// Previously this query selected:
+//
+//     _id name subcategory categoryIcon isActive
+//
+// which removed businessType entirely.
+//
+// ==========================================================
 
 async function getCategoryByName(
     name,
@@ -184,20 +305,25 @@ async function getCategoryByName(
     const query =
         Category
             .findOne({
+
                 name:
                     text(name)
                         .toLowerCase(),
 
-                isActive: true
+                isActive:
+                    true
+
             })
             .select(
-                "_id name subcategory categoryIcon isActive"
+                CATEGORY_FIELDS
             );
 
 
     if (session) {
 
-        query.session(session);
+        query.session(
+            session
+        );
 
     }
 
@@ -206,29 +332,9 @@ async function getCategoryByName(
         await query.lean();
 
 
-    if (
-        category &&
-        !Array.isArray(
-            category.subcategory
-        )
-    ) {
-
-        category.subcategory = [];
-
-    }
-
-
-    if (category) {
-
-        category.subcategory =
-            category.subcategory
-                .map(item => text(item))
-                .filter(Boolean);
-
-    }
-
-
-    return category;
+    return normalizeCategory(
+        category
+    );
 }
 
 
@@ -244,7 +350,7 @@ async function getCategories() {
                 isActive: true
             })
             .select(
-                "_id name subcategory categoryIcon isActive"
+                CATEGORY_FIELDS
             )
             .sort({
                 name: 1
@@ -253,28 +359,10 @@ async function getCategories() {
 
 
     return categories.map(
-        category => {
-
-            if (
-                !Array.isArray(
-                    category.subcategory
-                )
-            ) {
-
-                category.subcategory = [];
-
-            }
-
-
-            category.subcategory =
-                category.subcategory
-                    .map(item => text(item))
-                    .filter(Boolean);
-
-
-            return category;
-
-        }
+        category =>
+            normalizeCategory(
+                category
+            )
     );
 }
 
@@ -321,8 +409,6 @@ async function addSubcategory(
 
     // ------------------------------------------------------
     // PREVENT DUPLICATES
-    //
-    // Comparison is case-insensitive.
     // ------------------------------------------------------
 
     const exists =
@@ -348,29 +434,41 @@ async function addSubcategory(
     // ------------------------------------------------------
 
     const query =
-        Category.findOneAndUpdate(
-            {
-                _id: category._id,
-                isActive: true
-            },
-            {
-                $push: {
-                    subcategory
+        Category
+            .findOneAndUpdate(
+
+                {
+                    _id:
+                        category._id,
+
+                    isActive:
+                        true
+                },
+
+                {
+                    $push: {
+                        subcategory
+                    }
+                },
+
+                {
+                    new: true,
+
+                    runValidators:
+                        true
                 }
-            },
-            {
-                new: true,
-                runValidators: true
-            }
-        )
-        .select(
-            "_id name subcategory categoryIcon isActive"
-        );
+
+            )
+            .select(
+                CATEGORY_FIELDS
+            );
 
 
     if (session) {
 
-        query.session(session);
+        query.session(
+            session
+        );
 
     }
 
@@ -392,24 +490,9 @@ async function addSubcategory(
     }
 
 
-    if (
-        !Array.isArray(
-            updatedCategory.subcategory
-        )
-    ) {
-
-        updatedCategory.subcategory = [];
-
-    }
-
-
-    updatedCategory.subcategory =
-        updatedCategory.subcategory
-            .map(item => text(item))
-            .filter(Boolean);
-
-
-    return updatedCategory;
+    return normalizeCategory(
+        updatedCategory
+    );
 }
 
 
