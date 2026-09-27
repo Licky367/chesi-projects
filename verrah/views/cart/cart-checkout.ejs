@@ -1,628 +1,694 @@
-<div class="cart-checkout-card">
-
-  <!-- =========================================================
+<div class="cart-checkout-card">  <!-- =========================================================
        CHECKOUT HEADER
-  ========================================================== -->
+  ========================================================== -->  <div class="cart-checkout-heading"><div>
 
-  <div class="cart-checkout-heading">
+  <span class="cart-section-kicker">
+    CHECKOUT
+  </span>
 
-    <div>
+  <h2>
+    Complete your order
+  </h2>
 
-      <span class="cart-section-kicker">
-        CHECKOUT
-      </span>
+</div>
 
-      <h2>
-        Complete your order
-      </h2>
+<i class="fas fa-bag-shopping"></i>
 
-    </div>
-
-    <i class="fas fa-bag-shopping"></i>
-
-  </div>
-
-
-  <!-- =========================================================
+  </div>  <!-- =========================================================
        CART TOTAL
-       totalPrice comes from the Cart document.
-  ========================================================== -->
+       Cart total is the Cart document totalPrice.
+  ========================================================== -->  <div class="cart-total-line"><span>
+  Cart total
+</span>
 
-  <div class="cart-total-line">
+<strong>
+  KSh <%= Number(totalPrice || 0).toLocaleString("en-KE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }) %>
+</strong>
 
-    <span>
-      Cart total
-    </span>
-
-    <strong>
-      KSh <%= Number(totalPrice || 0).toLocaleString("en-KE", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }) %>
-    </strong>
-
-  </div>
-
-
-  <!-- =========================================================
+  </div>  <!-- =========================================================
        CHECKOUT FORM
-  ========================================================== -->
-
-  <form
+  ========================================================== -->  <form
     action="/carts/checkout"
     method="POST"
     class="checkout-form"
     id="checkoutForm"
-  >
+  ><%
+  const checkoutRole =
+    typeof user !== "undefined" && user
+      ? String(user.role || "").toLowerCase()
+      : "";
 
-    <%
-      const checkoutRole =
-        typeof user !== "undefined" && user
-          ? String(user.role || "").toLowerCase()
-          : "";
-
-      const isInternalSale =
-        checkoutRole === "staff" ||
-        checkoutRole === "admin";
-
-      const assignedSubstation =
-        checkoutRole === "staff" &&
-        user
-          ? user.assignedSubstation || null
-          : null;
-
-      const assignedSubstationId =
-        assignedSubstation &&
-        typeof assignedSubstation === "object"
-          ? (
-              assignedSubstation._id ||
-              assignedSubstation.id ||
-              ""
-            )
-          : assignedSubstation || "";
-
-      let assignedSubstationRecord = null;
-
-      if (
-        checkoutRole === "staff" &&
-        assignedSubstationId &&
-        Array.isArray(substations)
-      ) {
-
-        assignedSubstationRecord =
-          substations.find(
-            function (substation) {
-
-              return String(
-                substation._id
-              ) === String(
-                assignedSubstationId
-              );
-
-            }
-          ) || null;
-
-      }
-
-      const assignedSubstationName =
-        assignedSubstation &&
-        typeof assignedSubstation === "object"
-          ? (
-              assignedSubstation.name ||
-              assignedSubstation.location ||
-              String(assignedSubstationId || "")
-            )
-          : (
-              assignedSubstationRecord
-                ? (
-                    assignedSubstationRecord.name ||
-                    assignedSubstationRecord.location ||
-                    String(assignedSubstationId || "")
-                  )
-                : String(assignedSubstationId || "")
-            );
-
-      const assignedSubstationLocation =
-        assignedSubstation &&
-        typeof assignedSubstation === "object"
-          ? (
-              assignedSubstation.location || ""
-            )
-          : (
-              assignedSubstationRecord
-                ? assignedSubstationRecord.location || ""
-                : ""
-            );
-    %>
+  const isInternalSale =
+    checkoutRole === "staff" ||
+    checkoutRole === "admin";
 
 
-    <!-- =======================================================
-         PICKUP SUBSTATION
-    ======================================================== -->
+  /*
+   * -------------------------------------------------------
+   * STAFF ASSIGNED SUBSTATION
+   * -------------------------------------------------------
+   */
 
-    <fieldset class="payment-methods checkout-substation-fieldset">
+  const assignedSubstation =
+    checkoutRole === "staff" && user
+      ? user.assignedSubstation || null
+      : null;
 
-      <legend>
-        Pickup substation
-      </legend>
 
+  const assignedSubstationId =
+    assignedSubstation &&
+    typeof assignedSubstation === "object"
+      ? (
+          assignedSubstation._id ||
+          assignedSubstation.id ||
+          ""
+        )
+      : assignedSubstation || "";
+
+
+  let assignedSubstationRecord = null;
+
+
+  if (
+    checkoutRole === "staff" &&
+    assignedSubstationId &&
+    Array.isArray(substations)
+  ) {
+
+    assignedSubstationRecord =
+      substations.find(
+        function (substation) {
+
+          return String(
+            substation._id
+          ) === String(
+            assignedSubstationId
+          );
+
+        }
+      ) || null;
+
+  }
+
+
+  const assignedSubstationName =
+    assignedSubstation &&
+    typeof assignedSubstation === "object"
+      ? (
+          assignedSubstation.name ||
+          assignedSubstation.location ||
+          String(assignedSubstationId || "")
+        )
+      : (
+          assignedSubstationRecord
+            ? (
+                assignedSubstationRecord.name ||
+                assignedSubstationRecord.location ||
+                String(assignedSubstationId || "")
+              )
+            : String(assignedSubstationId || "")
+        );
+
+
+  const assignedSubstationLocation =
+    assignedSubstation &&
+    typeof assignedSubstation === "object"
+      ? (
+          assignedSubstation.location || ""
+        )
+      : (
+          assignedSubstationRecord
+            ? assignedSubstationRecord.location || ""
+            : ""
+        );
+
+
+  /*
+   * -------------------------------------------------------
+   * ADMIN SUBSTATION
+   *
+   * IMPORTANT:
+   * Admin packageSubstation comes from:
+   *
+   *     cart.cartSubstation
+   *
+   * It does NOT come from pickupStation.
+   * -------------------------------------------------------
+   */
+
+  const adminCartSubstation =
+    typeof cart !== "undefined" &&
+    cart
+      ? cart.cartSubstation || ""
+      : "";
+
+
+  const adminCartSubstationId =
+    adminCartSubstation &&
+    typeof adminCartSubstation === "object"
+      ? (
+          adminCartSubstation._id ||
+          adminCartSubstation.id ||
+          ""
+        )
+      : adminCartSubstation || "";
+
+
+  let adminCartSubstationRecord = null;
+
+
+  if (
+    checkoutRole === "admin" &&
+    adminCartSubstationId &&
+    Array.isArray(substations)
+  ) {
+
+    adminCartSubstationRecord =
+      substations.find(
+        function (substation) {
+
+          return String(
+            substation._id
+          ) === String(
+            adminCartSubstationId
+          );
+
+        }
+      ) || null;
+
+  }
+
+
+  const adminCartSubstationName =
+    adminCartSubstation &&
+    typeof adminCartSubstation === "object"
+      ? (
+          adminCartSubstation.name ||
+          adminCartSubstation.location ||
+          String(adminCartSubstationId || "")
+        )
+      : (
+          adminCartSubstationRecord
+            ? (
+                adminCartSubstationRecord.name ||
+                adminCartSubstationRecord.location ||
+                String(adminCartSubstationId || "")
+              )
+            : String(adminCartSubstationId || "")
+        );
+
+
+  const adminCartSubstationLocation =
+    adminCartSubstation &&
+    typeof adminCartSubstation === "object"
+      ? (
+          adminCartSubstation.location || ""
+        )
+      : (
+          adminCartSubstationRecord
+            ? adminCartSubstationRecord.location || ""
+            : ""
+        );
+
+%>
+
+
+<!-- =======================================================
+     PICKUP SUBSTATION
+======================================================== -->
+
+<fieldset
+  class="payment-methods checkout-substation-fieldset"
+>
+
+  <legend>
+    Pickup substation
+  </legend>
+
+
+  <div class="checkout-substation-wrap">
+
+    <label
+      for="packageSubstation"
+      class="checkout-substation-label"
+    >
+
+      <i class="fas fa-location-dot"></i>
+
+
+      <% if (checkoutRole === "staff") { %>
+
+        Assigned pickup substation
+
+      <% } else if (checkoutRole === "admin") { %>
+
+        Cart pickup substation
+
+      <% } else { %>
+
+        Select where you want to collect your package
+
+      <% } %>
+
+    </label>
+
+
+    <!-- =====================================================
+         STAFF
+    ====================================================== -->
+
+    <% if (checkoutRole === "staff") { %>
+
+      <% if (assignedSubstationId) { %>
+
+        <!--
+          Hidden input carries the actual submitted value.
+        -->
+
+        <input
+          type="hidden"
+          name="packageSubstation"
+          value="<%= assignedSubstationId %>"
+        >
+
+
+        <select
+          id="packageSubstation"
+          class="checkout-substation-select"
+          disabled
+        >
+
+          <option
+            value="<%= assignedSubstationId %>"
+            selected
+          >
+
+            <%= assignedSubstationName %>
+
+            <% if (assignedSubstationLocation) { %>
+              — <%= assignedSubstationLocation %>
+            <% } %>
+
+          </option>
+
+        </select>
+
+
+        <small class="checkout-substation-default">
+
+          <i class="fas fa-lock"></i>
+
+          Pickup is restricted to your assigned substation.
+
+        </small>
+
+
+      <% } else { %>
+
+        <div class="checkout-substation-empty">
+
+          <i class="fas fa-circle-exclamation"></i>
+
+          You have not been assigned a pickup substation.
+
+        </div>
+
+      <% } %>
+
+
+    <!-- =====================================================
+         ADMIN
+
+         packageSubstation MUST BE cart.cartSubstation
+    ====================================================== -->
+
+    <% } else if (checkoutRole === "admin") { %>
+
+      <% if (adminCartSubstationId) { %>
+
+        <!--
+          IMPORTANT:
+          This is the actual submitted packageSubstation.
+
+          Source:
+              cart.cartSubstation
+        -->
+
+        <input
+          type="hidden"
+          name="packageSubstation"
+          value="<%= adminCartSubstationId %>"
+        >
+
+
+        <select
+          id="packageSubstation"
+          class="checkout-substation-select"
+          disabled
+        >
+
+          <option
+            value="<%= adminCartSubstationId %>"
+            selected
+          >
+
+            <%= adminCartSubstationName %>
+
+            <% if (adminCartSubstationLocation) { %>
+              — <%= adminCartSubstationLocation %>
+            <% } %>
+
+          </option>
+
+        </select>
+
+
+        <small class="checkout-substation-default">
+
+          <i class="fas fa-lock"></i>
+
+          This package will use the pickup substation saved in the cart.
+
+        </small>
+
+
+      <% } else { %>
+
+        <div class="checkout-substation-empty">
+
+          <i class="fas fa-circle-exclamation"></i>
+
+          This cart does not have a pickup substation.
+
+        </div>
+
+      <% } %>
+
+
+    <!-- =====================================================
+         CLIENT
+    ====================================================== -->
+
+    <% } else { %>
+
+      <select
+        id="packageSubstation"
+        name="packageSubstation"
+        class="checkout-substation-select"
+        required
+      >
+
+        <option value="">
+          Select a substation
+        </option>
+
+
+        <% if (
+          Array.isArray(substations) &&
+          substations.length > 0
+        ) { %>
+
+          <% substations.forEach(function (substation) { %>
+
+            <option
+              value="<%= substation._id %>"
+              <%= String(pickupStation || "") === String(substation._id)
+                ? "selected"
+                : "" %>
+            >
+
+              <%= substation.name %>
+
+              <% if (substation.location) { %>
+                — <%= substation.location %>
+              <% } %>
+
+            </option>
+
+          <% }); %>
+
+        <% } %>
+
+      </select>
+
+
+      <% if (
+        !Array.isArray(substations) ||
+        substations.length === 0
+      ) { %>
+
+        <small class="checkout-substation-empty">
+
+          <i class="fas fa-circle-exclamation"></i>
+
+          No pickup substations are currently available.
+
+        </small>
+
+      <% } %>
+
+
+      <% if (pickupStation) { %>
+
+        <small class="checkout-substation-default">
+
+          <i class="fas fa-circle-check"></i>
+
+          Your previous pickup station is selected by default.
+
+        </small>
+
+      <% } %>
+
+    <% } %>
+
+
+    <!-- =====================================================
+         CUSTOMER NAME
+         STAFF + ADMIN ONLY
+    ====================================================== -->
+
+    <% if (isInternalSale) { %>
 
       <div class="checkout-substation-wrap">
 
         <label
-          for="packageSubstation"
+          for="salesName"
           class="checkout-substation-label"
         >
 
-          <i class="fas fa-location-dot"></i>
+          <i class="fas fa-user"></i>
 
-          <% if (checkoutRole === "staff") { %>
-
-            Assigned pickup substation
-
-          <% } else if (checkoutRole === "admin") { %>
-
-            Select pickup substation
-
-          <% } else { %>
-
-            Select where you want to collect your package
-
-          <% } %>
+          Customer Name
 
         </label>
 
 
-        <!-- =====================================================
-             STAFF
-        ====================================================== -->
-
-        <% if (checkoutRole === "staff") { %>
-
-          <% if (assignedSubstationId) { %>
-
-            <!--
-              This hidden field is the actual submitted value.
-              The visible select is disabled intentionally.
-            -->
-
-            <input
-              type="hidden"
-              name="packageSubstation"
-              value="<%= assignedSubstationId %>"
-            >
-
-
-            <select
-              id="packageSubstation"
-              class="checkout-substation-select"
-              disabled
-            >
-
-              <option
-                value="<%= assignedSubstationId %>"
-                selected
-              >
-
-                <%= assignedSubstationName %>
-
-                <% if (assignedSubstationLocation) { %>
-                  — <%= assignedSubstationLocation %>
-                <% } %>
-
-              </option>
-
-            </select>
-
-
-            <small class="checkout-substation-default">
-
-              <i class="fas fa-lock"></i>
-
-              Pickup is restricted to your assigned substation.
-
-            </small>
-
-
-          <% } else { %>
-
-            <div class="checkout-substation-empty">
-
-              <i class="fas fa-circle-exclamation"></i>
-
-              You have not been assigned a pickup substation.
-
-            </div>
-
-          <% } %>
-
-
-        <!-- =====================================================
-             ADMIN
-        ====================================================== -->
-
-        <% } else if (checkoutRole === "admin") { %>
-
-          <select
-            id="packageSubstation"
-            name="packageSubstation"
-            class="checkout-substation-select"
-            required
-          >
-
-            <option value="">
-              Select a substation
-            </option>
-
-
-            <% if (
-              Array.isArray(substations) &&
-              substations.length > 0
-            ) { %>
-
-              <% substations.forEach(function (substation) { %>
-
-                <option
-                  value="<%= substation._id %>"
-                  <%= String(pickupStation || "") === String(substation._id)
-                    ? "selected"
-                    : "" %>
-                >
-
-                  <%= substation.name %>
-
-                  <% if (substation.location) { %>
-                    — <%= substation.location %>
-                  <% } %>
-
-                </option>
-
-              <% }); %>
-
-            <% } %>
-
-          </select>
-
-
-          <% if (
-            !Array.isArray(substations) ||
-            substations.length === 0
-          ) { %>
-
-            <small class="checkout-substation-empty">
-
-              <i class="fas fa-circle-exclamation"></i>
-
-              No pickup substations are currently available.
-
-            </small>
-
-          <% } %>
-
-
-        <!-- =====================================================
-             CLIENT
-        ====================================================== -->
-
-        <% } else { %>
-
-          <select
-            id="packageSubstation"
-            name="packageSubstation"
-            class="checkout-substation-select"
-            required
-          >
-
-            <option value="">
-              Select a substation
-            </option>
-
-
-            <% if (
-              Array.isArray(substations) &&
-              substations.length > 0
-            ) { %>
-
-              <% substations.forEach(function (substation) { %>
-
-                <option
-                  value="<%= substation._id %>"
-                  <%= String(pickupStation || "") === String(substation._id)
-                    ? "selected"
-                    : "" %>
-                >
-
-                  <%= substation.name %>
-
-                  <% if (substation.location) { %>
-                    — <%= substation.location %>
-                  <% } %>
-
-                </option>
-
-              <% }); %>
-
-            <% } %>
-
-          </select>
-
-
-          <% if (
-            !Array.isArray(substations) ||
-            substations.length === 0
-          ) { %>
-
-            <small class="checkout-substation-empty">
-
-              <i class="fas fa-circle-exclamation"></i>
-
-              No pickup substations are currently available.
-
-            </small>
-
-          <% } %>
-
-
-          <% if (pickupStation) { %>
-
-            <small class="checkout-substation-default">
-
-              <i class="fas fa-circle-check"></i>
-
-              Your previous pickup station is selected by default.
-
-            </small>
-
-          <% } %>
-
-        <% } %>
-
-
-        <!-- =====================================================
-             CUSTOMER NAME
-             STAFF + ADMIN ONLY
-        ====================================================== -->
-
-        <% if (isInternalSale) { %>
-
-          <div class="checkout-substation-wrap">
-
-            <label
-              for="salesName"
-              class="checkout-substation-label"
-            >
-
-              <i class="fas fa-user"></i>
-
-              Customer Name
-
-            </label>
-
-
-            <input
-              type="text"
-              id="salesName"
-              name="salesName"
-              class="checkout-substation-select"
-              placeholder="Enter customer name"
-              autocomplete="name"
-              maxlength="150"
-              required
-            >
-
-          </div>
-
-        <% } %>
-
-      </div>
-
-    </fieldset>
-
-
-    <!-- =======================================================
-         PAYMENT METHOD
-    ======================================================== -->
-
-    <fieldset class="payment-methods">
-
-      <legend>
-        Payment method
-      </legend>
-
-
-      <!-- =====================================================
-           M-PESA
-      ====================================================== -->
-
-      <label
-        class="payment-choice"
-        for="paymentMpesa"
-      >
-
         <input
-          type="radio"
-          name="paymentMethod"
-          id="paymentMpesa"
-          value="mpesa"
+          type="text"
+          id="salesName"
+          name="salesName"
+          class="checkout-substation-select"
+          placeholder="Enter customer name"
+          autocomplete="name"
+          maxlength="150"
           required
         >
 
-        <span class="payment-choice-icon">
-          <i class="fas fa-mobile-screen-button"></i>
-        </span>
-
-        <span class="payment-choice-copy">
-
-          <strong>
-            Pay now with M-Pesa
-          </strong>
-
-          <small>
-            An STK Push will be sent to your phone.
-          </small>
-
-        </span>
-
-      </label>
-
-
-      <!-- =====================================================
-           M-PESA PHONE
-      ====================================================== -->
-
-      <div
-        id="phoneField"
-        class="phone-field"
-      >
-
-        <label for="phoneNumber">
-          M-Pesa phone number
-        </label>
-
-        <input
-          type="tel"
-          name="phoneNumber"
-          id="phoneNumber"
-          placeholder="0712345678"
-          inputmode="numeric"
-          autocomplete="tel"
-        >
-
       </div>
 
+    <% } %>
 
-      <!-- =====================================================
-           PAY ON DELIVERY
-      ====================================================== -->
+  </div>
 
-      <label
-        class="payment-choice"
-        for="paymentDelivery"
-      >
-
-        <input
-          type="radio"
-          name="paymentMethod"
-          id="paymentDelivery"
-          value="pay_on_delivery"
-        >
-
-        <span class="payment-choice-icon">
-          <i class="fas fa-truck"></i>
-        </span>
-
-        <span class="payment-choice-copy">
-
-          <strong>
-            Pay upon delivery
-          </strong>
-
-          <small>
-            Your package will be created immediately.
-          </small>
-
-        </span>
-
-      </label>
-
-    </fieldset>
+</fieldset>
 
 
-    <!-- =======================================================
-         CONTINUE CHECKOUT
-    ======================================================== -->
+<!-- =======================================================
+     PAYMENT METHOD
+======================================================== -->
 
-    <button
-      class="primary-btn cart-continue-btn"
-      type="submit"
+<fieldset class="payment-methods">
+
+  <legend>
+    Payment method
+  </legend>
+
+
+  <!-- M-PESA -->
+
+  <label
+    class="payment-choice"
+    for="paymentMpesa"
+  >
+
+    <input
+      type="radio"
+      name="paymentMethod"
+      id="paymentMpesa"
+      value="mpesa"
+      required
     >
 
-      <i class="fas fa-check-circle"></i>
 
-      Continue Checkout
-
-    </button>
-
-  </form>
-
-</div>
+    <span class="payment-choice-icon">
+      <i class="fas fa-mobile-screen-button"></i>
+    </span>
 
 
-<!-- ===========================================================
+    <span class="payment-choice-copy">
+
+      <strong>
+        Pay now with M-Pesa
+      </strong>
+
+      <small>
+        An STK Push will be sent to your phone.
+      </small>
+
+    </span>
+
+  </label>
+
+
+  <!-- M-PESA PHONE NUMBER -->
+
+  <div
+    id="phoneField"
+    class="phone-field"
+  >
+
+    <label for="phoneNumber">
+      M-Pesa phone number
+    </label>
+
+
+    <input
+      type="tel"
+      name="phoneNumber"
+      id="phoneNumber"
+      placeholder="0712345678"
+      inputmode="numeric"
+      autocomplete="tel"
+    >
+
+  </div>
+
+
+  <!-- PAY ON DELIVERY -->
+
+  <label
+    class="payment-choice"
+    for="paymentDelivery"
+  >
+
+    <input
+      type="radio"
+      name="paymentMethod"
+      id="paymentDelivery"
+      value="pay_on_delivery"
+    >
+
+
+    <span class="payment-choice-icon">
+      <i class="fas fa-truck"></i>
+    </span>
+
+
+    <span class="payment-choice-copy">
+
+      <strong>
+        Pay upon delivery
+      </strong>
+
+      <small>
+        Your package will be created immediately.
+      </small>
+
+    </span>
+
+  </label>
+
+</fieldset>
+
+
+<!-- =======================================================
+     CONTINUE CHECKOUT
+======================================================== -->
+
+<button
+  class="primary-btn cart-continue-btn"
+  type="submit"
+>
+
+  <i class="fas fa-check-circle"></i>
+
+  Continue Checkout
+
+</button>
+
+  </form></div><!-- ===========================================================
      CHECKOUT MESSAGE POPUP MODAL
-============================================================ -->
-
-<div
+============================================================ --><div
   id="checkoutMessageModal"
   class="checkout-message-modal"
   aria-hidden="true"
->
-
-  <div
+>  <div
     class="checkout-message-overlay"
     id="checkoutMessageOverlay"
-  ></div>
-
-
-  <div
+  ></div>  <div
     class="checkout-message-box"
     role="dialog"
     aria-modal="true"
     aria-labelledby="checkoutMessageTitle"
-  >
+  ><button
+  type="button"
+  class="checkout-message-close"
+  id="checkoutMessageClose"
+  aria-label="Close"
+>
 
-    <button
-      type="button"
-      class="checkout-message-close"
-      id="checkoutMessageClose"
-      aria-label="Close"
-    >
+  <i class="fas fa-xmark"></i>
 
-      <i class="fas fa-xmark"></i>
-
-    </button>
+</button>
 
 
-    <div
-      class="checkout-message-icon"
-      id="checkoutMessageIcon"
-    >
+<div
+  class="checkout-message-icon"
+  id="checkoutMessageIcon"
+>
 
-      <i class="fas fa-circle-exclamation"></i>
-
-    </div>
-
-
-    <h3 id="checkoutMessageTitle">
-      Checkout Error
-    </h3>
-
-
-    <p id="checkoutMessageText">
-      Something went wrong.
-    </p>
-
-
-    <button
-      type="button"
-      class="checkout-message-button"
-      id="checkoutMessageButton"
-    >
-
-      OK
-
-    </button>
-
-  </div>
+  <i class="fas fa-circle-exclamation"></i>
 
 </div>
 
 
-<!-- ===========================================================
-     CHECKOUT JAVASCRIPT
-============================================================ -->
+<h3 id="checkoutMessageTitle">
+  Checkout Error
+</h3>
 
-<script>
+
+<p id="checkoutMessageText">
+  Something went wrong.
+</p>
+
+
+<button
+  type="button"
+  class="checkout-message-button"
+  id="checkoutMessageButton"
+>
+
+  OK
+
+</button>
+
+  </div></div><!-- ===========================================================
+     CHECKOUT JAVASCRIPT
+============================================================ --><script>
 
 (function () {
 
@@ -631,15 +697,18 @@
       "checkoutForm"
     );
 
+
   const phoneField =
     document.getElementById(
       "phoneField"
     );
 
+
   const phoneInput =
     document.getElementById(
       "phoneNumber"
     );
+
 
   const paymentRadios =
     document.querySelectorAll(
@@ -648,18 +717,23 @@
 
 
   /* =========================================================
-     EJS VALUES FOR JAVASCRIPT
+     EJS VALUES
   ========================================================== */
 
   const checkoutRole =
     <%- JSON.stringify(checkoutRole || "") %>;
 
+
   const isInternalSale =
     <%- JSON.stringify(Boolean(isInternalSale)) %>;
 
 
+  const adminCartSubstationId =
+    <%- JSON.stringify(adminCartSubstationId || "") %>;
+
+
   /* =========================================================
-     POPUP MODAL ELEMENTS
+     POPUP ELEMENTS
   ========================================================== */
 
   const modal =
@@ -667,30 +741,36 @@
       "checkoutMessageModal"
     );
 
+
   const modalOverlay =
     document.getElementById(
       "checkoutMessageOverlay"
     );
+
 
   const modalClose =
     document.getElementById(
       "checkoutMessageClose"
     );
 
+
   const modalButton =
     document.getElementById(
       "checkoutMessageButton"
     );
+
 
   const modalTitle =
     document.getElementById(
       "checkoutMessageTitle"
     );
 
+
   const modalText =
     document.getElementById(
       "checkoutMessageText"
     );
+
 
   const modalIcon =
     document.getElementById(
@@ -725,12 +805,14 @@
         "checkout-message-success"
       );
 
+
       if (modalTitle) {
 
         modalTitle.textContent =
           title || "Success";
 
       }
+
 
       if (modalIcon) {
 
@@ -745,12 +827,14 @@
         "checkout-message-error"
       );
 
+
       if (modalTitle) {
 
         modalTitle.textContent =
           title || "Checkout Error";
 
       }
+
 
       if (modalIcon) {
 
@@ -773,6 +857,7 @@
     modal.classList.add(
       "show"
     );
+
 
     modal.setAttribute(
       "aria-hidden",
@@ -801,6 +886,7 @@
     modal.classList.remove(
       "show"
     );
+
 
     modal.setAttribute(
       "aria-hidden",
@@ -947,7 +1033,6 @@
     "submit",
     function (event) {
 
-
       /* -----------------------------------------------------
          PICKUP SUBSTATION
       ------------------------------------------------------ */
@@ -962,23 +1047,22 @@
 
         event.preventDefault();
 
+
         showCheckoutMessage(
           "A pickup substation could not be determined.",
           "error",
           "Pickup Substation Required"
         );
 
+
         return;
 
       }
 
 
-      /*
-       * STAFF
-       *
-       * The visible select is disabled.
-       * The hidden packageSubstation input is submitted.
-       */
+      /* -----------------------------------------------------
+         STAFF SUBSTATION
+      ------------------------------------------------------ */
 
       if (checkoutRole === "staff") {
 
@@ -995,11 +1079,13 @@
 
           event.preventDefault();
 
+
           showCheckoutMessage(
             "You do not have an assigned pickup substation.",
             "error",
             "Pickup Substation Required"
           );
+
 
           return;
 
@@ -1008,24 +1094,78 @@
       }
 
 
-      /*
-       * ADMIN + CLIENT
-       *
-       * Their select itself carries the submitted value.
-       */
+      /* -----------------------------------------------------
+         ADMIN SUBSTATION
+         MUST COME FROM cart.cartSubstation
+      ------------------------------------------------------ */
+
+      if (checkoutRole === "admin") {
+
+        if (!adminCartSubstationId) {
+
+          event.preventDefault();
+
+
+          showCheckoutMessage(
+            "This cart does not have a pickup substation.",
+            "error",
+            "Pickup Substation Required"
+          );
+
+
+          return;
+
+        }
+
+
+        const hiddenSubstation =
+          document.querySelector(
+            'input[name="packageSubstation"]'
+          );
+
+
+        if (
+          !hiddenSubstation ||
+          String(hiddenSubstation.value) !==
+          String(adminCartSubstationId)
+        ) {
+
+          event.preventDefault();
+
+
+          showCheckoutMessage(
+            "The cart pickup substation could not be determined.",
+            "error",
+            "Pickup Substation Error"
+          );
+
+
+          return;
+
+        }
+
+      }
+
+
+      /* -----------------------------------------------------
+         CLIENT SUBSTATION
+      ------------------------------------------------------ */
 
       if (
         checkoutRole !== "staff" &&
+        checkoutRole !== "admin" &&
         !substation.value
       ) {
 
         event.preventDefault();
+
 
         showCheckoutMessage(
           "Please select the substation where you want to collect your package.",
           "error",
           "Pickup Substation Required"
         );
+
 
         return;
 
@@ -1051,6 +1191,7 @@
         ) {
 
           event.preventDefault();
+
 
           showCheckoutMessage(
             "Please enter the customer's name.",
@@ -1087,11 +1228,13 @@
 
         event.preventDefault();
 
+
         showCheckoutMessage(
           "Please select a payment method before continuing.",
           "error",
           "Payment Method Required"
         );
+
 
         return;
 
@@ -1114,6 +1257,7 @@
 
           event.preventDefault();
 
+
           showCheckoutMessage(
             "Please enter the M-Pesa phone number that should receive the STK Push.",
             "error",
@@ -1122,6 +1266,7 @@
 
 
           phoneInput.focus();
+
 
           return;
 
