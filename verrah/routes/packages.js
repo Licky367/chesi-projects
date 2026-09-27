@@ -101,7 +101,7 @@ router.post(
 
 router.post(
     "/staff/:id/deliver",
-    requireStaff,
+    requireStaffOrAdmin,
     controller.deliver
 );
 
