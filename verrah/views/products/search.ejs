@@ -170,12 +170,50 @@
                 <% products.forEach(function(product) { %>
 
 
+                    <%
+                    /* ==================================================
+                       PRODUCT CARD LINK
+                    ==================================================
+
+                       Normal users:
+                           /products/:productId
+
+                       Admin:
+                           /stock/:stockId
+
+                       productStock is supplied by the search service
+                       from Product.stock -> Stock._id.
+                    ================================================== */
+
+                    var productLink =
+                        "/products/" +
+                        product._id;
+
+
+                    if (
+                        user &&
+                        user.role === "admin" &&
+                        Array.isArray(product.productStock) &&
+                        product.productStock.length > 0 &&
+                        product.productStock[0] &&
+                        product.productStock[0]._id
+                    ) {
+
+                        productLink =
+                            "/stock/" +
+                            product.productStock[0]._id;
+
+                    }
+
+                    %>
+
+
                     <!-- ======================================
                          PRODUCT CARD
                     ======================================= -->
 
                     <a
-                        href="/products/<%= product._id %>"
+                        href="<%= productLink %>"
                         class="product-card"
                     >
 
@@ -321,7 +359,7 @@
 
                             <!-- ==================================
                                  STOCK
-                            =================================== -->
+                            ================================== -->
 
                             <% if (Number(product.units || 0) > 0) { %>
 
