@@ -3,7 +3,7 @@
    * ==========================================================
    * VERRAH COSMETICS
    * CATEGORY PRODUCTS PAGE
-   * =========================================================
+   * ==========================================================
    *
    * EXPECTED CONTROLLER DATA
    *
@@ -19,15 +19,6 @@
    * The products array is treated as ONE continuous list.
    *
    * MAXIMUM 3 PRODUCTS PER ROW.
-   *
-   * Example:
-   *
-   *   Products 1 - 3   → Row 1
-   *   Products 4 - 6   → Row 2
-   *   Products 7 - 9   → Row 3
-   *   Products 10 - 12 → Row 4
-   *
-   * Each row is independently horizontally scrollable.
    *
    * product.subcategory is displayed only as information.
    * It does NOT create separate groups.
@@ -75,11 +66,6 @@
 
   /* ==========================================================
      ROW SIZE
-     
-     IMPORTANT:
-     
-     This is the maximum number of cards allowed in
-     each row.
   ========================================================== */
 
   const productsPerRow = 3;
@@ -116,6 +102,7 @@
       </a>
 
     </div>
+
 <% } %>
 
 
@@ -278,20 +265,6 @@
 
       <!-- ====================================================
            PRODUCT ROWS
-           
-           MAXIMUM 3 PRODUCTS PER ROW.
-           
-           The products array is NOT grouped by subcategory.
-           
-           Example:
-           
-             1 - 3
-             4 - 6
-             7 - 9
-             10 - 12
-             etc.
-           
-           Every row is independently scrollable.
       ===================================================== -->
 
       <%
@@ -301,15 +274,6 @@
           rowStart < categoryProducts.length;
           rowStart += productsPerRow
         ) {
-
-
-          /*
-           * Take exactly three products at most.
-           *
-           * If fewer than three products remain,
-           * the final row simply contains the remaining
-           * products.
-           */
 
           const rowProducts =
             categoryProducts.slice(
@@ -329,10 +293,6 @@
 
           <!-- ================================================
                HORIZONTAL PRODUCT ROW
-               
-               CSS controls horizontal scrolling.
-               
-               EJS controls the maximum of 3 cards.
           ================================================= -->
 
           <div class="product-row">
@@ -341,12 +301,52 @@
             <% rowProducts.forEach((product) => { %>
 
 
+              <%
+
+                /*
+                 * ------------------------------------------------
+                 * PRODUCT LINK
+                 * ------------------------------------------------
+                 *
+                 * Admin:
+                 *     /stock/<productStock._id>
+                 *
+                 * Normal user:
+                 *     /products/<product._id>
+                 *
+                 * getCategoryProducts() supplies productStock
+                 * as an array containing the related Stock
+                 * document.
+                 */
+
+                let productLink =
+                  "/products/" +
+                  product._id;
+
+
+                if (
+                  isAdmin &&
+                  Array.isArray(product.productStock) &&
+                  product.productStock.length > 0 &&
+                  product.productStock[0] &&
+                  product.productStock[0]._id
+                ) {
+
+                  productLink =
+                    "/stock/" +
+                    product.productStock[0]._id;
+
+                }
+
+              %>
+
+
               <!-- ==========================================
                    PRODUCT CARD
               =========================================== -->
 
               <a
-                href="/products/<%= product._id %>"
+                href="<%= productLink %>"
                 class="product-card"
                 aria-label="View <%= product.name %>"
               >
@@ -412,10 +412,6 @@
 
                   <!-- ======================================
                        CATEGORY / SUBCATEGORY
-                       
-                       Display information only.
-                       
-                       This does NOT affect row grouping.
                   ======================================= -->
 
                   <div class="stock-meta-line">
