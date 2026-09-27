@@ -6,7 +6,8 @@
 // CUSTOMER PICKUP SUBSTATION ACCESS
 // ==========================================================
 
-const mongoose = require("mongoose");
+const mongoose =
+    require("mongoose");
 
 const Substation =
     require("../models/substations");
@@ -33,7 +34,8 @@ function sameId(a, b) {
         b?._id ||
         b;
 
-    return String(left) === String(right);
+    return String(left) ===
+        String(right);
 }
 
 
@@ -51,19 +53,22 @@ function recomputeCounts(packages) {
         pending:
             packages.filter(
                 pkg =>
-                    pkg.status === "pending"
+                    pkg.status ===
+                    "pending"
             ).length,
 
         confirmed:
             packages.filter(
                 pkg =>
-                    pkg.status === "confirmed"
+                    pkg.status ===
+                    "confirmed"
             ).length,
 
         delivered:
             packages.filter(
                 pkg =>
-                    pkg.status === "delivered"
+                    pkg.status ===
+                    "delivered"
             ).length
     };
 }
@@ -71,6 +76,26 @@ function recomputeCounts(packages) {
 
 // ==========================================================
 // STAFF PACKAGE LIST
+// ==========================================================
+//
+// STAFF:
+//
+//   pending
+//       -> only packages whose packageSubstation
+//          matches the staff assignedSubstation.
+//
+//   confirmed
+//   delivered
+//       -> remain visible.
+//
+// IMPORTANT:
+//
+// assignedSubstation is used ONLY to determine which
+// pending pickup packages a staff member can see.
+//
+// It is NEVER used as the confirmation or delivery
+// substation.
+//
 // ==========================================================
 
 exports.filterStaffList =
@@ -84,8 +109,16 @@ exports.filterStaffList =
                 .toLowerCase();
 
 
+        // ------------------------------------------------------
+        // ADMIN
+        //
+        // Admin package visibility is unchanged.
+        // ------------------------------------------------------
+
         if (role !== "staff") {
+
             return next();
+
         }
 
 
@@ -114,6 +147,7 @@ exports.filterStaffList =
                         data,
                         callback
                     );
+
                 }
 
 
@@ -147,6 +181,7 @@ exports.filterStaffList =
 
                         callback
                     );
+
                 }
 
 
@@ -154,11 +189,13 @@ exports.filterStaffList =
                     originalPackages.filter(
                         pkg => {
 
-                            /*
-                             * Pending packages belong
-                             * to the customer's selected
-                             * pickup station.
-                             */
+                            // ----------------------------------
+                            // PENDING
+                            //
+                            // Pending package belongs to the
+                            // customer's selected pickup
+                            // substation.
+                            // ----------------------------------
 
                             if (
                                 pkg.status ===
@@ -169,16 +206,25 @@ exports.filterStaffList =
                                     pkg.packageSubstation,
                                     assignedSubstation
                                 );
+
                             }
 
 
-                            /*
-                             * Once confirmed, the
-                             * existing staff ownership
-                             * rules apply.
-                             */
+                            // ----------------------------------
+                            // CONFIRMED / DELIVERED
+                            //
+                            // Do NOT restrict these by:
+                            //
+                            //     confirmedByStaffId
+                            //     deliveredByStaffId
+                            //     assignedSubstation
+                            //
+                            // Any authorized staff member can
+                            // handle a confirmed package.
+                            // ----------------------------------
 
                             return true;
+
                         }
                     );
 
@@ -188,7 +234,8 @@ exports.filterStaffList =
                     {
                         ...(data || {}),
 
-                        packages: filtered,
+                        packages:
+                            filtered,
 
                         counts:
                             recomputeCounts(
@@ -198,15 +245,40 @@ exports.filterStaffList =
 
                     callback
                 );
+
             };
 
 
         next();
+
     };
 
 
 // ==========================================================
 // STAFF PACKAGE DETAILS
+// ==========================================================
+//
+// Pending package:
+//
+//     Staff must belong to packageSubstation.
+//
+// Confirmed package:
+//
+//     No confirmer ownership restriction.
+//
+// Delivered package:
+//
+//     No confirmer/deliverer ownership restriction.
+//
+// IMPORTANT:
+//
+// This middleware does NOT decide which substation is used
+// for inventory reduction.
+//
+// Delivery service uses:
+//
+//     package.packageSubstation
+//
 // ==========================================================
 
 exports.guardStaffDetails =
@@ -220,8 +292,16 @@ exports.guardStaffDetails =
                 .toLowerCase();
 
 
+        // ------------------------------------------------------
+        // ADMIN
+        //
+        // Admin has normal access.
+        // ------------------------------------------------------
+
         if (role !== "staff") {
+
             return next();
+
         }
 
 
@@ -250,6 +330,7 @@ exports.guardStaffDetails =
                         data,
                         callback
                     );
+
                 }
 
 
@@ -260,6 +341,7 @@ exports.guardStaffDetails =
                         data,
                         callback
                     );
+
                 }
 
 
@@ -268,7 +350,12 @@ exports.guardStaffDetails =
 
 
                 // =================================================
-                // ACCESS CHECK
+                // PENDING PACKAGE ACCESS
+                // =================================================
+                //
+                // Pending packages are restricted to the staff
+                // member's assigned pickup substation.
+                //
                 // =================================================
 
                 if (
@@ -300,6 +387,7 @@ exports.guardStaffDetails =
 
                         callback
                     );
+
                 }
 
 
@@ -335,14 +423,22 @@ exports.guardStaffDetails =
                         );
 
                     }
+
                 }
 
 
                 // =================================================
                 // RESOLVE CUSTOMER PICKUP SUBSTATION
+                // =================================================
                 //
-                // This is packageSubstation.
-                // NOT confirmedSubstationId.
+                // ALWAYS:
+                //
+                //     packageSubstation
+                //
+                // NEVER:
+                //
+                //     confirmedSubstationId
+                //
                 // =================================================
 
                 let packageSubstation =
@@ -354,10 +450,9 @@ exports.guardStaffDetails =
                     null;
 
 
-                /*
-                 * If it is already populated,
-                 * use it directly.
-                 */
+                // -------------------------------------------------
+                // Already populated
+                // -------------------------------------------------
 
                 if (
                     packageSubstation &&
@@ -369,7 +464,13 @@ exports.guardStaffDetails =
                     packageSubstationInfo =
                         packageSubstation;
 
-                } else if (
+                }
+
+                // -------------------------------------------------
+                // ObjectId
+                // -------------------------------------------------
+
+                else if (
                     packageSubstation &&
                     mongoose.Types.ObjectId.isValid(
                         String(
@@ -397,6 +498,7 @@ exports.guardStaffDetails =
                         );
 
                     }
+
                 }
 
 
@@ -415,6 +517,7 @@ exports.guardStaffDetails =
                         client ||
                         packageDoc.client ||
                         null
+
                 };
 
 
@@ -424,12 +527,15 @@ exports.guardStaffDetails =
                         ...data,
 
                         packageDoc
+
                     },
 
                     callback
                 );
+
             };
 
 
         next();
+
     };
