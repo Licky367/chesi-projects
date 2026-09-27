@@ -418,6 +418,25 @@ async function getCategory(
 // ==========================================================
 // GET CATEGORY PRODUCTS
 // ==========================================================
+//
+// Product.category
+//       ↓
+// Category._id
+//
+// Product.stock
+//       ↓
+// Stock._id
+//       ↓
+// productStock
+//
+// Each returned product therefore contains:
+//
+// product.productStock
+//
+// as an array containing the corresponding Stock
+// document(s).
+//
+// ==========================================================
 
 async function getCategoryProducts(
     categoryId
@@ -434,9 +453,33 @@ async function getCategoryProducts(
 
     }
 
-    return Product.find({
-        category: categoryId
-    });
+    const products =
+        await Product.aggregate([
+
+            {
+                $match: {
+                    category:
+                        new mongoose.Types.ObjectId(
+                            categoryId
+                        )
+                }
+            },
+
+            {
+                $lookup: {
+                    from: "stocks",
+
+                    localField: "stock",
+
+                    foreignField: "_id",
+
+                    as: "productStock"
+                }
+            }
+
+        ]);
+
+    return products;
 
 }
 
