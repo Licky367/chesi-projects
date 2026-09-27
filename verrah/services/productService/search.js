@@ -27,11 +27,20 @@
 //     "serum"     → Serum products...
 //
 // The frontend never receives the Category ObjectId.
+//
+// Each returned Product also receives:
+//
+//     productStock
+//
+// resolved from:
+//
+//     Product.stock
+//          ↓
+//     Stock._id
+//          ↓
+//     productStock
+//
 // ==========================================================
-
-const mongoose =
-    require("mongoose");
-
 
 const Product =
     require("../../models/products");
@@ -70,6 +79,8 @@ function escapeRegex(value) {
 //
 //     Product.name
 //     Category.name
+//
+// Also resolves the Stock document related to each Product.
 //
 // ==========================================================
 
@@ -112,7 +123,12 @@ async function searchProducts(searchTerm) {
     // SEARCH PRODUCTS
     // ========================================================
     //
-    // First resolve the category, then search both:
+    // First resolve:
+    //
+    //     Category
+    //     Stock
+    //
+    // Then search:
     //
     //     Product.name
     //     Category.name
@@ -154,6 +170,36 @@ async function searchProducts(searchTerm) {
 
                     as:
                         "categoryData"
+
+                }
+            },
+
+
+            // =================================================
+            // RESOLVE PRODUCT STOCK
+            // =================================================
+            //
+            // Product.stock contains the Stock._id.
+            //
+            // The matching Stock document(s) are returned as
+            // productStockData.
+            //
+            // =================================================
+
+            {
+                $lookup: {
+
+                    from:
+                        "stocks",
+
+                    localField:
+                        "stock",
+
+                    foreignField:
+                        "_id",
+
+                    as:
+                        "productStockData"
 
                 }
             },
@@ -228,6 +274,7 @@ async function searchProducts(searchTerm) {
                                         regex
 
                                 }
+
                             },
 
                             0,
@@ -282,6 +329,10 @@ async function searchProducts(searchTerm) {
                     : "Other";
 
 
+            // =================================================
+            // PREPARE PRODUCT
+            // =================================================
+
             const preparedProduct =
                 prepareProduct(
                     product,
@@ -289,9 +340,30 @@ async function searchProducts(searchTerm) {
                 );
 
 
-            // -----------------------------------------------
-            // Backend-only field
-            // -----------------------------------------------
+            // =================================================
+            // PASS RELATED STOCK DOCUMENT
+            // =================================================
+            //
+            // Product.stock
+            //       ↓
+            // Stock._id
+            //
+            // The lookup returns an array, so productStock is
+            // passed as an array just like in products/list.js.
+            //
+            // =================================================
+
+            preparedProduct.productStock =
+                Array.isArray(
+                    product.productStockData
+                )
+                    ? product.productStockData
+                    : [];
+
+
+            // =================================================
+            // BACKEND-ONLY FIELDS
+            // =================================================
 
             delete preparedProduct.categoryData;
 
@@ -299,9 +371,13 @@ async function searchProducts(searchTerm) {
             delete preparedProduct.searchPriority;
 
 
+            delete preparedProduct.productStockData;
+
+
             return preparedProduct;
 
         }
+
     );
 
 }
