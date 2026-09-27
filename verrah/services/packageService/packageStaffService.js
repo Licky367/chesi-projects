@@ -5,14 +5,11 @@
 // STAFF / ADMIN PACKAGE SERVICE
 // =========================================================
 
-const mongoose =
-  require("mongoose");
+const mongoose = require("mongoose");
 
-const Package =
-  require("../../models/package");
+const Package = require("../../models/package");
 
-const User =
-  require("../../models/user");
+const User = require("../../models/user");
 
 const {
   SUBSTATION_VIEW_FIELDS,
@@ -26,34 +23,18 @@ const {
   addPackageFinancials
 } = require("./packageHelpers");
 
-
 // =========================================================
 // GET STAFF PACKAGES
 // =========================================================
 
-async function getStaffPackages(
-  req,
-  status = "all"
-) {
+async function getStaffPackages(req, status = "all") {
+  const role = roleOf(req);
 
-  const role =
-    roleOf(req);
-
-  if (
-    role !== "staff" &&
-    role !== "admin"
-  ) {
-
-    throw new Error(
-      "Staff or admin access required."
-    );
-
+  if (role !== "staff" && role !== "admin") {
+    throw new Error("Staff or admin access required.");
   }
 
-  status =
-    normalizeStatus(
-      status
-    );
+  status = normalizeStatus(status);
 
   let visibleQuery = {};
 
@@ -62,36 +43,22 @@ async function getStaffPackages(
   // =======================================================
 
   if (role === "staff") {
-
-    const id =
-      staffIdOf(req);
+    const id = staffIdOf(req);
 
     if (!id) {
-
-      throw new Error(
-        "Staff identity is missing."
-      );
-
+      throw new Error("Staff identity is missing.");
     }
 
     visibleQuery = {
-
       $or: [
-
         {
-          status:
-            "pending"
+          status: "pending"
         },
-
         {
-          confirmedByStaffId:
-            id
+          confirmedByStaffId: id
         }
-
       ]
-
     };
-
   }
 
   // =======================================================
@@ -100,75 +67,40 @@ async function getStaffPackages(
   // Admin sees all packages.
   // =======================================================
 
-  const allVisible =
-    await Package.find(
-      visibleQuery
-    )
-      .sort({
-        createdAt: -1
-      })
-      .populate(
-        "packageSubstation",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .populate(
-        "confirmedSubstationId",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .populate(
-        "deliveredSubstationId",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .lean();
+  const allVisible = await Package.find(visibleQuery)
+    .sort({
+      createdAt: -1
+    })
+    .populate("packageSubstation", SUBSTATION_VIEW_FIELDS)
+    .populate("confirmedSubstationId", SUBSTATION_VIEW_FIELDS)
+    .populate("deliveredSubstationId", SUBSTATION_VIEW_FIELDS)
+    .lean();
 
   // =======================================================
   // PREPARE SUBSTATIONS
   // =======================================================
 
-  allVisible.forEach(
-    preparePackageSubstations
-  );
+  allVisible.forEach(preparePackageSubstations);
 
   // =======================================================
   // COUNTS
   // =======================================================
 
   const counts = {
+    all: allVisible.length,
 
-    all:
-      allVisible.length,
+    pending: allVisible.filter((p) => p.status === "pending").length,
 
-    pending:
-      allVisible.filter(
-        (p) =>
-          p.status === "pending"
-      ).length,
+    confirmed: allVisible.filter((p) => p.status === "confirmed").length,
 
-    confirmed:
-      allVisible.filter(
-        (p) =>
-          p.status === "confirmed"
-      ).length,
-
-    delivered:
-      allVisible.filter(
-        (p) =>
-          p.status === "delivered"
-      ).length
-
+    delivered: allVisible.filter((p) => p.status === "delivered").length
   };
 
   // =======================================================
   // STATUS FILTER
   // =======================================================
 
-  const packages =
-    status === "all"
-      ? allVisible
-      : allVisible.filter(
-          (p) =>
-            p.status === status
-        );
+  const packages = status === "all" ? allVisible : allVisible.filter((p) => p.status === status);
 
   // =======================================================
   // CLIENT IDS
@@ -176,16 +108,9 @@ async function getStaffPackages(
 
   const clientIds = [
     ...new Set(
-
       packages
-        .map(
-          (p) =>
-            String(
-              p.clientId
-            )
-        )
+        .map((p) => String(p.clientId))
         .filter(Boolean)
-
     )
   ];
 
@@ -193,148 +118,69 @@ async function getStaffPackages(
   // CLIENTS
   // =======================================================
 
-  const clients =
-    await User.find({
+  const clients = await User.find({
+    _id: {
+      $in: clientIds
+    }
+  })
+    .select("_id name email phone")
+    .lean();
 
-      _id: {
-        $in:
-          clientIds
+  const clientMap = new Map(
+    clients.map((client) => [
+      String(client._id),
+      {
+        ...client,
+        phone: normalizePhone(client.phone)
       }
-
-    })
-      .select(
-        "_id name email phone"
-      )
-      .lean();
-
-  const clientMap =
-    new Map(
-
-      clients.map(
-        (client) => [
-
-          String(
-            client._id
-          ),
-
-          {
-            ...client,
-
-            phone:
-              normalizePhone(
-                client.phone
-              )
-
-          }
-
-        ]
-      )
-
-    );
+    ])
+  );
 
   // =======================================================
   // RETURN
   // =======================================================
 
   return {
+    packages: packages.map((pkg) => {
+      const client = clientMap.get(String(pkg.clientId)) || null;
 
-    packages:
+      if (client) {
+        client.phone = normalizePhone(client.phone) || normalizePhone(pkg.phoneNumber);
+      }
 
-      packages.map(
-        (pkg) => {
-
-          const client =
-            clientMap.get(
-              String(
-                pkg.clientId
-              )
-            ) || null;
-
-          if (client) {
-
-            client.phone =
-              normalizePhone(
-                client.phone
-              ) ||
-              normalizePhone(
-                pkg.phoneNumber
-              );
-
-          }
-
-          return addPackageFinancials({
-
-            ...pkg,
-
-            client
-
-          });
-
-        }
-      ),
+      return addPackageFinancials({
+        ...pkg,
+        client
+      });
+    }),
 
     counts
-
   };
-
 }
-
 
 // =========================================================
 // GET STAFF PACKAGE
 // =========================================================
 
-async function getStaffPackage(
-  req,
-  id
-) {
+async function getStaffPackage(req, id) {
+  const role = roleOf(req);
 
-  const role =
-    roleOf(req);
-
-  if (
-    role !== "staff" &&
-    role !== "admin"
-  ) {
-
-    throw new Error(
-      "Staff or admin access required."
-    );
-
+  if (role !== "staff" && role !== "admin") {
+    throw new Error("Staff or admin access required.");
   }
 
-  if (
-    !mongoose.isValidObjectId(
-      id
-    )
-  ) {
-
+  if (!mongoose.isValidObjectId(id)) {
     return null;
-
   }
 
-  const pkg =
-    await Package.findById(
-      id
-    )
-      .populate(
-        "packageSubstation",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .populate(
-        "confirmedSubstationId",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .populate(
-        "deliveredSubstationId",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .lean();
+  const pkg = await Package.findById(id)
+    .populate("packageSubstation", SUBSTATION_VIEW_FIELDS)
+    .populate("confirmedSubstationId", SUBSTATION_VIEW_FIELDS)
+    .populate("deliveredSubstationId", SUBSTATION_VIEW_FIELDS)
+    .lean();
 
   if (!pkg) {
-
     return null;
-
   }
 
   // =======================================================
@@ -342,87 +188,48 @@ async function getStaffPackage(
   // =======================================================
 
   if (role === "staff") {
-
-    const staffId =
-      staffIdOf(req);
+    const staffId = staffIdOf(req);
 
     if (
       pkg.status !== "pending" &&
-      String(
-        pkg.confirmedByStaffId || ""
-      ) !==
-      String(
-        staffId || ""
-      )
+      String(pkg.confirmedByStaffId || "") !== String(staffId || "")
     ) {
-
       return null;
-
     }
-
   }
 
   // =======================================================
   // DESTINATION
   // =======================================================
 
-  await preparePackageDestination(
-    pkg
-  );
+  await preparePackageDestination(pkg);
 
   // =======================================================
   // CONFIRMED SUBSTATION
   // =======================================================
 
-  if (
-    pkg.confirmedSubstationId
-  ) {
-
-    pkg.confirmedSubstationId =
-      prepareSubstationForView(
-        pkg.confirmedSubstationId
-      );
-
+  if (pkg.confirmedSubstationId) {
+    pkg.confirmedSubstationId = prepareSubstationForView(pkg.confirmedSubstationId);
   }
 
   // =======================================================
   // DELIVERED SUBSTATION
   // =======================================================
 
-  if (
-    pkg.deliveredSubstationId
-  ) {
-
-    pkg.deliveredSubstationId =
-      prepareSubstationForView(
-        pkg.deliveredSubstationId
-      );
-
+  if (pkg.deliveredSubstationId) {
+    pkg.deliveredSubstationId = prepareSubstationForView(pkg.deliveredSubstationId);
   }
 
   // =======================================================
   // CLIENT
   // =======================================================
 
-  const client =
-    await User.findById(
-      pkg.clientId
-    )
-      .select(
-        "_id name email phone"
-      )
-      .lean();
+  const client = await User.findById(pkg.clientId)
+    .select("_id name email phone")
+    .lean();
 
   if (client) {
-
-    client.phone =
-      normalizePhone(
-        client.phone
-      ) ||
-      normalizePhone(
-        pkg.phoneNumber
-      );
-
+    client.phone = normalizePhone(client.phone) || normalizePhone(pkg.phoneNumber);
   }
 
   // =======================================================
@@ -430,15 +237,10 @@ async function getStaffPackage(
   // =======================================================
 
   return addPackageFinancials({
-
     ...pkg,
-
     client
-
   });
-
 }
-
 
 // =========================================================
 // CONFIRM PACKAGE
@@ -458,132 +260,75 @@ async function getStaffPackage(
 //
 // =========================================================
 
-async function confirmPackage(
-  req,
-  id
-) {
-
-  const role =
-    roleOf(req);
+async function confirmPackage(req, id) {
+  const role = roleOf(req);
 
   // =======================================================
   // ADMIN OR STAFF
   // =======================================================
 
-  if (
-    role !== "admin" &&
-    role !== "staff"
-  ) {
-
-    throw new Error(
-      "Staff or admin access required."
-    );
-
+  if (role !== "admin" && role !== "staff") {
+    throw new Error("Staff or admin access required.");
   }
 
   // =======================================================
   // VALIDATE ID
   // =======================================================
 
-  if (
-    !mongoose.isValidObjectId(
-      id
-    )
-  ) {
-
-    throw new Error(
-      "Invalid package ID."
-    );
-
+  if (!mongoose.isValidObjectId(id)) {
+    throw new Error("Invalid package ID.");
   }
 
   // =======================================================
   // LOAD PENDING PACKAGE
   // =======================================================
 
-  const packageDoc =
-    await Package.findOne({
-
-      _id:
-        id,
-
-      status:
-        "pending"
-
-    })
-      .select(
-        "_id status packageSubstation clientId items totalAmount totalPaid paidAmount phoneNumber"
-      )
-      .lean();
+  const packageDoc = await Package.findOne({
+    _id: id,
+    status: "pending"
+  })
+    .select(
+      "_id status packageSubstation clientId items totalAmount totalPaid paidAmount phoneNumber"
+    )
+    .lean();
 
   if (!packageDoc) {
-
-    throw new Error(
-      "Package is no longer pending or does not exist."
-    );
-
+    throw new Error("Package is no longer pending or does not exist.");
   }
 
   // =======================================================
   // PACKAGE SUBSTATION REQUIRED
   // =======================================================
 
-  if (
-    !packageDoc.packageSubstation
-  ) {
-
-    throw new Error(
-      "This package has no package substation."
-    );
-
+  if (!packageDoc.packageSubstation) {
+    throw new Error("This package has no package substation.");
   }
 
   // =======================================================
   // CONFIRMING USER
   // =======================================================
 
-  const userId =
-    staffIdOf(req);
+  const userId = staffIdOf(req);
 
   if (!userId) {
-
-    throw new Error(
-      "User identity is missing."
-    );
-
+    throw new Error("User identity is missing.");
   }
 
-  const user =
-    await User.findById(
-      userId
-    )
-      .select(
-        "_id name email role"
-      )
-      .lean();
+  const user = await User.findById(userId)
+    .select("_id name email role")
+    .lean();
 
   if (!user) {
-
-    throw new Error(
-      "User account not found."
-    );
-
+    throw new Error("User account not found.");
   }
 
   // =======================================================
   // CONFIRMER NAME
   // =======================================================
 
-  const confirmerName =
-    String(
-      user.name ||
-      user.email ||
-      (
-        role === "admin"
-          ? "Admin"
-          : "Staff"
-      )
-    ).trim();
+  const confirmerName = String(
+    user.name || user.email || (role === "admin" ? "Admin" : "Staff")
+  ).trim();
 
   // =======================================================
   // CONFIRMATION SUBSTATION
@@ -596,157 +341,80 @@ async function confirmPackage(
   //
   // =======================================================
 
-  const confirmationSubstationId =
-    packageDoc.packageSubstation;
+  const confirmationSubstationId = packageDoc.packageSubstation;
 
   // =======================================================
-  // UPDATE
+  // UPDATE - FIXED
   // =======================================================
 
   const update = {
-
     $set: {
+      status: "confirmed",
+      confirmedAt: new Date(),
+      confirmedSubstationId: confirmationSubstationId,
 
-      status:
-        "confirmed",
-
-      confirmedAt:
-        new Date(),
-
-      confirmedSubstationId:
-        confirmationSubstationId
-
+      // Both admin and staff set these so deliver button works
+      confirmedByStaffId: userId,
+      confirmedByStaffName: confirmerName,
+      confirmedByRole: role
     }
-
   };
-
-  // =======================================================
-  // STAFF CONFIRMATION
-  // =======================================================
-  //
-  // Keep these because the existing delivery logic uses
-  // confirmedByStaffId to determine which staff member can
-  // deliver the package.
-  //
-  // =======================================================
-
-  if (role === "staff") {
-
-    update.$set.confirmedByStaffId =
-      userId;
-
-    update.$set.confirmedByStaffName =
-      confirmerName;
-
-  }
 
   // =======================================================
   // CONFIRM
   // =======================================================
 
-  const updated =
-    await Package.findOneAndUpdate(
-
-      {
-        _id:
-          id,
-
-        status:
-          "pending"
-
-      },
-
-      update,
-
-      {
-        new:
-          true
-      }
-
-    )
-      .populate(
-        "packageSubstation",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .populate(
-        "confirmedSubstationId",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .populate(
-        "deliveredSubstationId",
-        SUBSTATION_VIEW_FIELDS
-      )
-      .lean();
+  const updated = await Package.findOneAndUpdate(
+    {
+      _id: id,
+      status: "pending"
+    },
+    update,
+    {
+      new: true
+    }
+  )
+    .populate("packageSubstation", SUBSTATION_VIEW_FIELDS)
+    .populate("confirmedSubstationId", SUBSTATION_VIEW_FIELDS)
+    .populate("deliveredSubstationId", SUBSTATION_VIEW_FIELDS)
+    .lean();
 
   if (!updated) {
-
-    throw new Error(
-      "Package is no longer pending or does not exist."
-    );
-
+    throw new Error("Package is no longer pending or does not exist.");
   }
 
   // =======================================================
   // DESTINATION
   // =======================================================
 
-  await preparePackageDestination(
-    updated
-  );
+  await preparePackageDestination(updated);
 
   // =======================================================
   // CONFIRMED SUBSTATION
   // =======================================================
 
-  if (
-    updated.confirmedSubstationId
-  ) {
-
-    updated.confirmedSubstationId =
-      prepareSubstationForView(
-        updated.confirmedSubstationId
-      );
-
+  if (updated.confirmedSubstationId) {
+    updated.confirmedSubstationId = prepareSubstationForView(updated.confirmedSubstationId);
   }
 
   // =======================================================
   // DELIVERED SUBSTATION
   // =======================================================
 
-  if (
-    updated.deliveredSubstationId
-  ) {
-
-    updated.deliveredSubstationId =
-      prepareSubstationForView(
-        updated.deliveredSubstationId
-      );
-
+  if (updated.deliveredSubstationId) {
+    updated.deliveredSubstationId = prepareSubstationForView(updated.deliveredSubstationId);
   }
 
   // =======================================================
   // CLIENT
   // =======================================================
 
-  const client =
-    await User.findById(
-      updated.clientId
-    )
-      .select(
-        "_id name email phone"
-      )
-      .lean();
+  const client = await User.findById(updated.clientId)
+    .select("_id name email phone")
+    .lean();
 
   if (client) {
-
-    client.phone =
-      normalizePhone(
-        client.phone
-      ) ||
-      normalizePhone(
-        updated.phoneNumber
-      );
-
+    client.phone = normalizePhone(client.phone) || normalizePhone(updated.phoneNumber);
   }
 
   // =======================================================
@@ -754,26 +422,17 @@ async function confirmPackage(
   // =======================================================
 
   return addPackageFinancials({
-
     ...updated,
-
     client
-
   });
-
 }
-
 
 // =========================================================
 // EXPORTS
 // =========================================================
 
 module.exports = {
-
   getStaffPackages,
-
   getStaffPackage,
-
   confirmPackage
-
 };
