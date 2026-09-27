@@ -21,10 +21,109 @@ const isCash =
 const isDelivered =
   packageDoc?.status === "delivered";
 
+const isPending =
+  packageDoc?.status === "pending";
+
+const isConfirmed =
+  packageDoc?.status === "confirmed";
+
+const isAdmin =
+  role === "admin";
+
+const isStaff =
+  role === "staff";
+
 const canClear =
   isDelivered &&
   arrears === 0 &&
   !cleared;
+
+
+/* ========================================================
+   PACKAGE SUBSTATION
+
+   packageSubstation is the ONLY substation used for
+   package confirmation.
+
+   It may arrive as:
+       populated object
+   or:
+       ObjectId / string
+======================================================== */
+
+const packageSubstation =
+  packageDoc?.packageSubstation || null;
+
+
+const packageSubstationName =
+  packageSubstation &&
+  typeof packageSubstation === "object"
+    ? (
+        packageSubstation.name ||
+        packageSubstation.substationName ||
+        ""
+      )
+    : (
+        typeof packageSubstation === "string"
+          ? packageSubstation
+          : ""
+      );
+
+
+const packageSubstationId =
+  packageSubstation &&
+  typeof packageSubstation === "object"
+    ? (
+        packageSubstation._id ||
+        packageSubstation.id ||
+        ""
+      )
+    : (
+        packageSubstation || ""
+      );
+
+
+/* ========================================================
+   CONFIRMED SUBSTATION
+
+   This should represent WHERE the package was confirmed.
+
+   The business rule is:
+
+       confirmedSubstationId
+       =
+       packageSubstation
+
+   for BOTH admin and staff.
+
+   If the package is already confirmed, display the package
+   substation as the confirmation location.
+======================================================== */
+
+const confirmedSubstation =
+  packageDoc?.confirmedSubstationId ||
+  null;
+
+
+const confirmedSubstationName =
+  confirmedSubstation &&
+  typeof confirmedSubstation === "object"
+    ? (
+        confirmedSubstation.name ||
+        confirmedSubstation.substationName ||
+        ""
+      )
+    : (
+        typeof confirmedSubstation === "string"
+          ? confirmedSubstation
+          : ""
+      );
+
+
+const confirmedAtName =
+  packageSubstationName ||
+  confirmedSubstationName ||
+  "";
 %>
 
 
@@ -62,6 +161,7 @@ const canClear =
         <div class="staff-item-name">
           <%= item.name %>
         </div>
+
 
         <div class="staff-item-meta">
 
@@ -114,12 +214,48 @@ const canClear =
 
 
   <!-- ===================================================
+       PACKAGE SUBSTATION
+  ==================================================== -->
+
+  <% if (packageSubstationName) { %>
+
+    <div class="staff-action-card">
+
+      <div class="staff-action-title">
+        Package substation
+      </div>
+
+
+      <p>
+        <strong>
+          <%= packageSubstationName %>
+        </strong>
+      </p>
+
+    </div>
+
+  <% } %>
+
+
+  <!-- ===================================================
        CONFIRM PACKAGE
+
+       BOTH ADMIN AND STAFF CAN CONFIRM.
+
+       IMPORTANT:
+
+       Confirmation is always at packageSubstation.
+
+       It is NOT based on:
+           user.assignedSubstation
   ==================================================== -->
 
   <% if (
-    role === "staff" &&
-    packageDoc.status === "pending"
+    (
+      isAdmin ||
+      isStaff
+    ) &&
+    isPending
   ) { %>
 
     <div class="staff-action-card">
@@ -129,11 +265,29 @@ const canClear =
       </div>
 
 
-      <% if (canConfirm) { %>
+      <% if (packageSubstationName) { %>
 
         <p>
-          All package quantities are available at your
-          assigned substation.
+          This package will be confirmed at:
+          <strong>
+            <%= packageSubstationName %>
+          </strong>
+        </p>
+
+      <% } else { %>
+
+        <p>
+          This package does not have a package substation.
+        </p>
+
+      <% } %>
+
+
+      <% if (canConfirm && packageSubstationId) { %>
+
+        <p>
+          All package quantities are available at the
+          package substation.
         </p>
 
 
@@ -161,7 +315,11 @@ const canClear =
         <div class="staff-action-error">
 
           <%= confirmationError ||
-            "This package cannot be confirmed because one or more products exceed the assigned substation balance."
+            (
+              !packageSubstationId
+                ? "This package cannot be confirmed because no package substation has been assigned."
+                : "This package cannot be confirmed because one or more products exceed the package substation balance."
+            )
           %>
 
         </div>
@@ -174,12 +332,50 @@ const canClear =
 
 
   <!-- ===================================================
+       CONFIRMED PACKAGE INFORMATION
+
+       The confirmation location is ALWAYS the
+       packageSubstation.
+
+       This applies to:
+           - Admin
+           - Staff
+  ==================================================== -->
+
+  <% if (isConfirmed && confirmedAtName) { %>
+
+    <div class="staff-action-card">
+
+      <div class="staff-action-title">
+        Package confirmed
+      </div>
+
+
+      <p>
+
+        Confirmed at:
+
+        <strong>
+          <%= confirmedAtName %>
+        </strong>
+
+      </p>
+
+    </div>
+
+  <% } %>
+
+
+  <!-- ===================================================
        DELIVER PACKAGE
+
+       Staff delivery remains restricted to the staff
+       member who confirmed the package.
   ==================================================== -->
 
   <% if (
-    role === "staff" &&
-    packageDoc.status === "confirmed" &&
+    isStaff &&
+    isConfirmed &&
     String(packageDoc.confirmedByStaffId) ===
     String(user?._id || "")
   ) { %>
@@ -216,9 +412,9 @@ const canClear =
 
   <!-- ===================================================
        CASH PAYMENT SELECTION
-       
+
        Only appears when:
-       
+
        - Package has arrears
        - Package is not already cash
        - Package has been delivered
@@ -231,7 +427,7 @@ const canClear =
     arrears > 0 &&
     !isCash &&
     (
-      role === "admin" ||
+      isAdmin ||
       String(packageDoc.deliveredByStaffId) ===
       String(user?._id || "")
     )
@@ -245,10 +441,13 @@ const canClear =
 
 
       <p>
+
         This package has an outstanding balance of
+
         <strong>
           KSh <%= arrears.toLocaleString() %>
         </strong>.
+
       </p>
 
 
@@ -291,9 +490,9 @@ const canClear =
 
   <!-- ===================================================
        RECORD CASH PAYMENT
-       
+
        Only appears when:
-       
+
        - Package has arrears
        - isCash === true
        - Package has been delivered
@@ -306,7 +505,7 @@ const canClear =
     arrears > 0 &&
     isCash &&
     (
-      role === "admin" ||
+      isAdmin ||
       String(packageDoc.deliveredByStaffId) ===
       String(user?._id || "")
     )
@@ -381,10 +580,13 @@ const canClear =
           Package ready to be cleared
         </div>
 
+
         <p>
+
           This package has been delivered and has no
           outstanding arrears. Mark it as cleared to close
           its payment handling.
+
         </p>
 
 
@@ -434,6 +636,7 @@ const canClear =
           Package cleared
         </strong>
 
+
         <p>
 
           Cleared
@@ -441,6 +644,7 @@ const canClear =
           <% if (clearedAt) { %>
 
             on
+
             <%= new Date(
               clearedAt
             ).toLocaleString() %>
@@ -451,6 +655,7 @@ const canClear =
           <% if (clearedByStaffName) { %>
 
             by
+
             <%= clearedByStaffName %>
 
           <% } %>
