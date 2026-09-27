@@ -9,22 +9,25 @@
 // - Retrieving carts
 // - Cart totals
 // - Optional active substation context
+// - Populating cartSubstation for EJS
 //
 // IMPORTANT:
-// activeSubstationId is OPTIONAL.
 //
-// If supplied:
-//     -> Validate the supplied substation ID
-//     -> Save the ID directly as cartSubstation
+// cartSubstation is STORED as the Substation ObjectId.
 //
-// If NOT supplied:
-//     -> Do not require it
-//     -> Do not throw an error
-//     -> Preserve normal cart behavior
+// When the cart is returned from this service:
 //
-// cartSubstation stores the SUBSTATION ID, never the name.
+//     cart.cartSubstation
 //
-// This works for admin, staff, and other roles.
+// is populated with:
+//
+//     _id
+//     name
+//
+// Therefore EJS can use:
+//
+//     cart.cartSubstation.name
+//
 // ==========================================================
 
 
@@ -73,8 +76,9 @@ const {
 //     verify that the substation exists
 //     return the ID itself
 //
-// DO NOT resolve the name.
-// DO NOT save the name.
+// DO NOT resolve the name here.
+//
+// The name is populated separately when the cart is returned.
 // ==========================================================
 
 async function getOptionalCartSubstation(
@@ -164,6 +168,21 @@ async function getOptionalCartSubstation(
 // ==========================================================
 // APPLY OPTIONAL CART SUBSTATION
 // ==========================================================
+//
+// This function works with the raw ObjectId value.
+//
+// IMPORTANT:
+//
+// Do not populate cartSubstation before calling this
+// function.
+//
+// Otherwise:
+//
+//     String(cart.cartSubstation)
+//
+// would operate on a populated document instead of the ID.
+//
+// ==========================================================
 
 async function applyOptionalCartSubstation(
     req,
@@ -179,7 +198,8 @@ async function applyOptionalCartSubstation(
 
     // ------------------------------------------------------
     // No active substation supplied.
-    // Leave existing value untouched.
+    //
+    // Leave existing cartSubstation untouched.
     // ------------------------------------------------------
 
     if (!activeSubstationId) {
@@ -210,7 +230,7 @@ async function applyOptionalCartSubstation(
 
 
     // ------------------------------------------------------
-    // Only save when the substation actually changed.
+    // Only update when the substation changed.
     // ------------------------------------------------------
 
     if (
@@ -245,27 +265,17 @@ async function applyOptionalCartSubstation(
 // CALCULATE TOTAL
 // ==========================================================
 //
-// IMPORTANT:
-//
-// Verrah cart items use:
+// Cart items use:
 //
 //     qty
 //
-// not only:
+// The older `quantity` field is also supported.
 //
-//     quantity
+// Price uses:
 //
-// Therefore both are supported.
-//
-// Expected item:
-//
-// {
-//     qty,
-//     quantity,
 //     price
-// }
 //
-// Price is the item's stored unit price.
+// `unitSellPrice` is supported as a fallback.
 //
 // ==========================================================
 
@@ -298,13 +308,6 @@ function calculateTotal(
             }
 
 
-            // ------------------------------------------------
-            // Cart quantity.
-            //
-            // Prefer qty because that is the cart field.
-            // quantity remains supported for compatibility.
-            // ------------------------------------------------
-
             const quantity =
                 Number(
                     item.qty ??
@@ -313,10 +316,6 @@ function calculateTotal(
                 );
 
 
-            // ------------------------------------------------
-            // Unit price.
-            // ------------------------------------------------
-
             const price =
                 Number(
                     item.price ??
@@ -324,10 +323,6 @@ function calculateTotal(
                     0
                 );
 
-
-            // ------------------------------------------------
-            // Ignore invalid values.
-            // ------------------------------------------------
 
             if (
                 !Number.isFinite(
@@ -362,13 +357,9 @@ function calculateTotal(
 // SYNC CART TOTAL
 // ==========================================================
 //
-// Calculates the current total from cart.items and stores
-// the result in:
+// Calculates the current cart total and stores it in:
 //
 //     cart.totalPrice
-//
-// This is the important part that prevents the database
-// cart total from remaining 0 while the cart contains items.
 //
 // ==========================================================
 
@@ -390,17 +381,9 @@ async function syncCartTotal(
         );
 
 
-    // ------------------------------------------------------
-    // Store the calculated total on the cart document.
-    // ------------------------------------------------------
-
     cart.totalPrice =
         calculatedTotal;
 
-
-    // ------------------------------------------------------
-    // Attach transaction session when supplied.
-    // ------------------------------------------------------
 
     if (session) {
 
@@ -420,7 +403,76 @@ async function syncCartTotal(
 
 
 // ==========================================================
+// POPULATE CART SUBSTATION
+// ==========================================================
+//
+// cartSubstation remains an ObjectId in MongoDB.
+//
+// This function only populates the returned Mongoose
+// document so controllers and EJS can access:
+//
+//     cart.cartSubstation._id
+//
+//     cart.cartSubstation.name
+//
+// Only the fields required here are selected.
+// ==========================================================
+
+async function populateCartSubstation(
+    cart
+) {
+
+    if (!cart) {
+
+        return cart;
+
+    }
+
+
+    // ------------------------------------------------------
+    // If there is no cartSubstation, there is nothing to
+    // populate.
+    // ------------------------------------------------------
+
+    if (!cart.cartSubstation) {
+
+        return cart;
+
+    }
+
+
+    // ------------------------------------------------------
+    // Populate the existing Mongoose document.
+    // ------------------------------------------------------
+
+    await cart.populate({
+        path:
+            "cartSubstation",
+
+        select:
+            "_id name"
+    });
+
+
+    return cart;
+
+}
+
+
+// ==========================================================
 // GET OR CREATE CART
+// ==========================================================
+//
+// Finds the logged-in user's cart.
+//
+// If it does not exist:
+//     create it.
+//
+// If activeSubstationId is supplied:
+//     save it as cartSubstation.
+//
+// The returned cart has cartSubstation populated so EJS
+// receives the substation name.
 // ==========================================================
 
 async function getOrCreateCart(
@@ -444,7 +496,7 @@ async function getOrCreateCart(
 
 
     // ------------------------------------------------------
-    // Resolve optional active substation ID.
+    // Resolve optional active substation.
     // ------------------------------------------------------
 
     const activeSubstationId =
@@ -455,11 +507,18 @@ async function getOrCreateCart(
 
     // ------------------------------------------------------
     // Find existing cart.
+    //
+    // IMPORTANT:
+    //
+    // Do NOT populate here yet.
+    //
+    // applyOptionalCartSubstation() needs the raw ObjectId.
     // ------------------------------------------------------
 
     let cart =
         await Cart.findOne({
-            user: userId
+            user:
+                userId
         }).session(
             session || null
         );
@@ -489,7 +548,7 @@ async function getOrCreateCart(
 
 
         // --------------------------------------------------
-        // Only add cartSubstation when supplied.
+        // Save cartSubstation only when supplied.
         // --------------------------------------------------
 
         if (activeSubstationId) {
@@ -520,6 +579,15 @@ async function getOrCreateCart(
         await cart.save();
 
 
+        // --------------------------------------------------
+        // Populate the substation for the caller/EJS.
+        // --------------------------------------------------
+
+        await populateCartSubstation(
+            cart
+        );
+
+
         return cart;
 
     }
@@ -530,7 +598,9 @@ async function getOrCreateCart(
     // ======================================================
 
     // ------------------------------------------------------
-    // Apply optional active substation.
+    // Apply active substation only when supplied.
+    //
+    // cartSubstation is still an ObjectId at this point.
     // ------------------------------------------------------
 
     if (activeSubstationId) {
@@ -578,14 +648,20 @@ async function getOrCreateCart(
 
     // ------------------------------------------------------
     // Synchronize total.
-    //
-    // This also repairs an existing cart whose totalPrice
-    // is currently 0 or stale.
     // ------------------------------------------------------
 
     await syncCartTotal(
         cart,
         session
+    );
+
+
+    // ------------------------------------------------------
+    // Populate cartSubstation AFTER all ID operations.
+    // ------------------------------------------------------
+
+    await populateCartSubstation(
+        cart
     );
 
 
@@ -601,10 +677,22 @@ async function getOrCreateCart(
 // Retrieves the user's existing cart.
 //
 // If no cart exists:
-//     create one.
+//     create one through getOrCreateCart()
 //
-// The cart total is synchronized before returning.
+// If activeSubstationId was supplied:
+//     update cartSubstation.
 //
+// Before returning:
+//
+//     cart.totalPrice
+//
+// is synchronized.
+//
+// Then:
+//
+//     cart.cartSubstation
+//
+// is populated with the substation name.
 // ==========================================================
 
 async function getCart(
@@ -626,14 +714,19 @@ async function getCart(
     }
 
 
+    // ------------------------------------------------------
+    // Get the raw cart first.
+    // ------------------------------------------------------
+
     let cart =
         await Cart.findOne({
-            user: userId
+            user:
+                userId
         });
 
 
     // ------------------------------------------------------
-    // No cart yet.
+    // No cart exists.
     // ------------------------------------------------------
 
     if (!cart) {
@@ -647,6 +740,8 @@ async function getCart(
 
     // ------------------------------------------------------
     // Apply optional active substation.
+    //
+    // This happens BEFORE population.
     // ------------------------------------------------------
 
     await applyOptionalCartSubstation(
@@ -656,12 +751,24 @@ async function getCart(
 
 
     // ------------------------------------------------------
-    // Recalculate and save total.
-    //
-    // This is what fixes stale/zero cart.totalPrice.
+    // Synchronize cart total.
     // ------------------------------------------------------
 
     await syncCartTotal(
+        cart
+    );
+
+
+    // ------------------------------------------------------
+    // Populate cartSubstation.
+    //
+    // EJS can now use:
+    //
+    //     cart.cartSubstation.name
+    //
+    // ------------------------------------------------------
+
+    await populateCartSubstation(
         cart
     );
 
@@ -683,6 +790,8 @@ module.exports = {
 
     calculateTotal,
 
-    syncCartTotal
+    syncCartTotal,
+
+    populateCartSubstation
 
 };
