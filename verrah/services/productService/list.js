@@ -24,7 +24,15 @@ const {
 //       ↓
 // Category.name
 //
+// Product.stock
+//       ↓
+// Stock._id
+//       ↓
+// productStock
+//
 // Frontend receives categoryName, never the ObjectId.
+// Frontend also receives the related Stock documents as
+// productStock.
 //
 // ==========================================================
 
@@ -68,6 +76,36 @@ async function getProductsByCategory() {
 
 
             // =================================================
+            // RESOLVE PRODUCT STOCK
+            // =================================================
+            //
+            // Product.stock contains the Stock._id.
+            //
+            // The complete related Stock documents are passed
+            // forward as productStockData.
+            //
+            // =================================================
+
+            {
+                $lookup: {
+
+                    from:
+                        "stocks",
+
+                    localField:
+                        "stock",
+
+                    foreignField:
+                        "_id",
+
+                    as:
+                        "productStockData"
+
+                }
+            },
+
+
+            // =================================================
             // GET SINGLE CATEGORY
             // =================================================
 
@@ -100,6 +138,7 @@ async function getProductsByCategory() {
                     createdAt: 1
 
                 }
+
             }
 
         ]);
@@ -137,6 +176,25 @@ async function getProductsByCategory() {
                 product,
                 categoryName
             );
+
+
+        // ====================================================
+        // PASS RELATED STOCK DOCUMENTS
+        // ====================================================
+        //
+        // Product.stock → Stock._id
+        //
+        // productStock is an array because the lookup returns
+        // the matching Stock documents.
+        //
+        // ====================================================
+
+        preparedProduct.productStock =
+            Array.isArray(
+                product.productStockData
+            )
+                ? product.productStockData
+                : [];
 
 
         // ====================================================
