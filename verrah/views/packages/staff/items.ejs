@@ -1,3 +1,5 @@
+
+
 <%
 const totalAmount =
 Number(packageDoc?.totalAmount || 0);
@@ -102,8 +104,8 @@ ITEMS
 </strong>
 
 <% if (
-  (role === "staff" || role === "admin") &&
-  packageDoc.status === "pending"
+role === "staff" &&
+packageDoc.status === "pending"
 ) { %>
 
 <div class="staff-action-card">    
@@ -116,8 +118,8 @@ ITEMS
   <% if (canConfirm) { %>    
   
     <p>    
-      All package quantities are available at    
-      <strong><%= packageDoc.packageSubstation %></strong> substation.    
+      All package quantities are available at your    
+      assigned substation.    
     </p>    
   
   
@@ -145,7 +147,7 @@ ITEMS
     <div class="staff-action-error">    
   
       <%= confirmationError ||    
-        "This package cannot be confirmed because one or more products exceed the " + (packageDoc.packageSubstation || "package") + " substation balance."    
+        "This package cannot be confirmed because one or more products exceed the assigned substation balance."    
       %>    
   
     </div>    
