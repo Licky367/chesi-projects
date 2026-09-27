@@ -34,7 +34,7 @@ const Substation =
 const {
     roleOf,
     staffIdOf
-} = require("../../middleware/auth");
+} = require("./packageHelpers");
 
 
 // ==========================================================
