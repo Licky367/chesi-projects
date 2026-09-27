@@ -3,39 +3,9 @@
 //
 // PACKAGE DELIVERY SERVICE
 // ==========================================================
-//
-// DELIVERY FLOW
-// ----------------------------------------------------------
-//
-// Package
-//     ↓
-// packageSubstation
-//     ↓
-// Substation.productInventory reduction
-//     ↓
-// Product FIFO reduction
-//     ↓
-// Product.units / unitBuyPrice synchronization
-//     ↓
-// productReductions ledger
-//     ↓
-// DeliveredPackage record
-//
-// IMPORTANT
-// ----------------------------------------------------------
-//
-// Delivery DOES NOT return anything to Stock.
-//
-// Stock.purchaseBatches are only involved when stock is
-// allocated into Product FIFO.
-//
-// Once units have been allocated to a Product and moved into
-// substations, delivery removes those units from the Product
-// FIFO and the physical substation inventory.
-//
-// ==========================================================
 
-const mongoose = require("mongoose");
+const mongoose =
+    require("mongoose");
 
 const Package =
     require("../../models/package");
@@ -52,10 +22,24 @@ const DeliveredPackage =
 const Substation =
     require("../../models/substations");
 
+
+// ==========================================================
+// AUTH HELPERS
+// ==========================================================
+//
+// Keep using the application's existing authentication helpers.
+// No new middleware is introduced here.
+// ==========================================================
+
 const {
     roleOf,
     staffIdOf
 } = require("../../middleware/auth");
+
+
+// ==========================================================
+// PRODUCT FIFO
+// ==========================================================
 
 const {
     releaseProductFifo
@@ -63,8 +47,7 @@ const {
 
 const {
     productFifoUnits,
-    weightedProductBuyPrice,
-    batchUnits
+    weightedProductBuyPrice
 } = require("../stockService/helpers");
 
 
@@ -73,52 +56,59 @@ const {
 // ==========================================================
 
 function number(value) {
-    const parsed =
+
+    const result =
         Number(value);
 
-    return Number.isFinite(parsed)
-        ? parsed
+    return Number.isFinite(result)
+        ? result
         : 0;
 }
 
 
-// ----------------------------------------------------------
-// WHOLE NUMBER
-// ----------------------------------------------------------
+function wholeNumber(
+    value,
+    label
+) {
 
-function wholeNumber(value, label) {
-
-    const parsed =
+    const result =
         Number(value);
 
     if (
-        !Number.isFinite(parsed) ||
-        !Number.isInteger(parsed) ||
-        parsed < 0
+        !Number.isFinite(result) ||
+        !Number.isInteger(result) ||
+        result < 0
     ) {
         throw new Error(
             `${label} must be a valid whole number.`
         );
     }
 
-    return parsed;
+    return result;
 }
 
 
 // ==========================================================
-// DELIVERY
+// DELIVER PACKAGE
 // ==========================================================
 
-async function deliverPackage(req, id) {
+async function deliverPackage(
+    req,
+    id
+) {
 
-    if (!mongoose.isValidObjectId(id)) {
-        throw new Error("Invalid package.");
+    if (
+        !mongoose.isValidObjectId(id)
+    ) {
+        throw new Error(
+            "Invalid package."
+        );
     }
 
 
-    // ------------------------------------------------------
-    // ACCESS
-    // ------------------------------------------------------
+    // ======================================================
+    // AUTHORIZATION
+    // ======================================================
 
     const role =
         roleOf(req);
@@ -133,10 +123,6 @@ async function deliverPackage(req, id) {
     }
 
 
-    // ------------------------------------------------------
-    // ACTOR
-    // ------------------------------------------------------
-
     const actorId =
         staffIdOf(req);
 
@@ -145,13 +131,17 @@ async function deliverPackage(req, id) {
             req.user?.name ||
             req.user?.fullName ||
             req.user?.email ||
-            (role === "admin" ? "Admin" : "Staff")
+            (
+                role === "admin"
+                    ? "Admin"
+                    : "Staff"
+            )
         ).trim();
 
 
-    // ------------------------------------------------------
-    // START TRANSACTION
-    // ------------------------------------------------------
+    // ======================================================
+    // TRANSACTION
+    // ======================================================
 
     const session =
         await mongoose.startSession();
@@ -165,7 +155,7 @@ async function deliverPackage(req, id) {
             async () => {
 
                 // ==================================================
-                // LOAD PACKAGE
+                // PACKAGE
                 // ==================================================
 
                 const pkg =
@@ -183,9 +173,9 @@ async function deliverPackage(req, id) {
                 }
 
 
-                // --------------------------------------------------
-                // PREVENT DOUBLE DELIVERY
-                // --------------------------------------------------
+                // ==================================================
+                // PREVENT DUPLICATE REDUCTION
+                // ==================================================
 
                 if (
                     pkg.substationReductionRecorded === true
@@ -197,13 +187,13 @@ async function deliverPackage(req, id) {
 
 
                 // ==================================================
-                // OPERATIONAL SUBSTATION
+                // PACKAGE SUBSTATION
                 // ==================================================
                 //
-                // packageSubstation is the authoritative
-                // substation for delivery.
+                // packageSubstation is the ONLY substation used
+                // for package delivery.
                 //
-                // NEVER use staff.assignedSubstation here.
+                // Do not use staff.assignedSubstation.
                 //
                 // ==================================================
 
@@ -233,7 +223,7 @@ async function deliverPackage(req, id) {
 
 
                 // ==================================================
-                // PACKAGE ITEMS
+                // ITEMS
                 // ==================================================
 
                 const items =
@@ -249,18 +239,23 @@ async function deliverPackage(req, id) {
 
 
                 // ==================================================
-                // PROCESS EACH PRODUCT
+                // DELIVER EACH PRODUCT
                 // ==================================================
 
-                for (const item of items) {
+                for (
+                    const item of items
+                ) {
 
                     const productId =
                         item.productId ||
                         item.product;
 
+
                     if (
                         !productId ||
-                        !mongoose.isValidObjectId(productId)
+                        !mongoose.isValidObjectId(
+                            productId
+                        )
                     ) {
                         throw new Error(
                             "A package item contains an invalid Product."
@@ -274,6 +269,7 @@ async function deliverPackage(req, id) {
                             `Quantity for ${item.name || "package product"}`
                         );
 
+
                     if (qty <= 0) {
                         throw new Error(
                             `Invalid delivery quantity for ${item.name || "package product"}.`
@@ -282,7 +278,7 @@ async function deliverPackage(req, id) {
 
 
                     // ==================================================
-                    // LOAD PRODUCT
+                    // PRODUCT
                     // ==================================================
 
                     const product =
@@ -301,11 +297,27 @@ async function deliverPackage(req, id) {
 
 
                     // ==================================================
-                    // CURRENT PRODUCT FIFO
+                    // PRODUCT FIFO UNITS
                     // ==================================================
 
-                    const currentFifoUnits =
-                        productFifoUnits(product);
+                    const fifoUnitsBefore =
+                        productFifoUnits(
+                            product
+                        );
+
+
+                    if (
+                        fifoUnitsBefore < qty
+                    ) {
+                        throw new Error(
+                            `Cannot deliver ${qty} units of ${product.name || item.name || "this product"} because Product FIFO contains only ${fifoUnitsBefore} units.`
+                        );
+                    }
+
+
+                    // ==================================================
+                    // PRODUCT UNITS
+                    // ==================================================
 
                     const productUnits =
                         wholeNumber(
@@ -314,22 +326,9 @@ async function deliverPackage(req, id) {
                         );
 
 
-                    // --------------------------------------------------
-                    // FIFO MUST HAVE ENOUGH UNITS
-                    // --------------------------------------------------
-
-                    if (currentFifoUnits < qty) {
-                        throw new Error(
-                            `Cannot deliver ${qty} units of ${product.name || item.name || "this product"} because Product FIFO contains only ${currentFifoUnits} units.`
-                        );
-                    }
-
-
-                    // --------------------------------------------------
-                    // PRODUCT.UNITS MUST NOT BE LESS THAN DELIVERY
-                    // --------------------------------------------------
-
-                    if (productUnits < qty) {
+                    if (
+                        productUnits < qty
+                    ) {
                         throw new Error(
                             `Cannot deliver ${qty} units of ${product.name || item.name || "this product"} because only ${productUnits} Product units are available.`
                         );
@@ -337,7 +336,7 @@ async function deliverPackage(req, id) {
 
 
                     // ==================================================
-                    // SUBSTATION PHYSICAL INVENTORY
+                    // SUBSTATION INVENTORY
                     // ==================================================
 
                     if (
@@ -354,8 +353,12 @@ async function deliverPackage(req, id) {
                     const inventory =
                         substation.productInventory.find(
                             entry =>
-                                String(entry.productId) ===
-                                String(product._id)
+                                String(
+                                    entry.productId
+                                ) ===
+                                String(
+                                    product._id
+                                )
                         );
 
 
@@ -373,7 +376,9 @@ async function deliverPackage(req, id) {
                         );
 
 
-                    if (substationUnits < qty) {
+                    if (
+                        substationUnits < qty
+                    ) {
                         throw new Error(
                             `Cannot deliver ${qty} units of ${product.name || item.name || "this product"} because the substation has only ${substationUnits} units.`
                         );
@@ -384,10 +389,15 @@ async function deliverPackage(req, id) {
                     // REDUCE PRODUCT FIFO
                     // ==================================================
                     //
-                    // Existing FIFO implementation releases the
-                    // newest Product FIFO layers first.
+                    // IMPORTANT:
                     //
-                    // NOTHING is returned to Stock.
+                    // This is NOT a return to Stock.
+                    //
+                    // The Product FIFO represents units that were
+                    // already allocated out of warehouse Stock.
+                    //
+                    // Delivery therefore removes the delivered
+                    // quantity from Product FIFO only.
                     //
                     // ==================================================
 
@@ -398,36 +408,39 @@ async function deliverPackage(req, id) {
 
 
                     // ==================================================
-                    // SYNCHRONIZE PRODUCT FIFO / UNITS
+                    // SYNCHRONIZE PRODUCT UNITS
                     // ==================================================
 
-                    const remainingProductFifoUnits =
-                        productFifoUnits(product);
+                    const remainingFifoUnits =
+                        productFifoUnits(
+                            product
+                        );
 
-
-                    const expectedProductUnits =
+                    const expectedUnits =
                         productUnits - qty;
 
 
                     if (
-                        remainingProductFifoUnits !==
-                        expectedProductUnits
+                        remainingFifoUnits !==
+                        expectedUnits
                     ) {
                         throw new Error(
-                            `Product FIFO became inconsistent for ${product.name || item.name || productId}. Product should contain ${expectedProductUnits} units, but Product FIFO contains ${remainingProductFifoUnits}.`
+                            `Product FIFO became inconsistent for ${product.name || item.name || productId}. Product should contain ${expectedUnits} units, but Product FIFO contains ${remainingFifoUnits}.`
                         );
                     }
 
 
                     product.units =
-                        expectedProductUnits;
+                        expectedUnits;
 
 
-                    // --------------------------------------------------
-                    // PRODUCT WEIGHTED BUY PRICE
-                    // --------------------------------------------------
+                    // ==================================================
+                    // SYNCHRONIZE PRODUCT BUY PRICE
+                    // ==================================================
 
-                    if (expectedProductUnits > 0) {
+                    if (
+                        expectedUnits > 0
+                    ) {
 
                         const unitBuyPrice =
                             weightedProductBuyPrice(
@@ -462,13 +475,13 @@ async function deliverPackage(req, id) {
 
 
                     // ==================================================
-                    // PRODUCT REDUCTION LEDGER
+                    // PRODUCT REDUCTION
                     // ==================================================
                     //
                     // This records the physical reduction from the
                     // substation.
                     //
-                    // It does NOT move anything back to Stock.
+                    // It does NOT return anything to Stock.
                     //
                     // ==================================================
 
@@ -477,15 +490,13 @@ async function deliverPackage(req, id) {
                             substation.productReductions
                         )
                     ) {
-                        substation.productReductions = [];
+                        substation.productReductions =
+                            [];
                     }
 
 
-                    const reductionDate =
-                        new Date();
-
-
                     substation.productReductions.push({
+
                         productId:
                             product._id,
 
@@ -497,14 +508,11 @@ async function deliverPackage(req, id) {
                         units:
                             qty,
 
-                        substationId:
-                            substation._id,
-
                         packageId:
                             pkg._id,
 
                         reducedAt:
-                            reductionDate,
+                            new Date(),
 
                         recordedBy:
                             actorId ||
@@ -535,7 +543,7 @@ async function deliverPackage(req, id) {
 
 
                 // ==================================================
-                // PACKAGE DELIVERY STATUS
+                // MARK PACKAGE DELIVERED
                 // ==================================================
 
                 pkg.status =
@@ -551,12 +559,14 @@ async function deliverPackage(req, id) {
                 pkg.deliveredAt =
                     new Date();
 
+
                 // --------------------------------------------------
-                // Delivery is always tied to packageSubstation.
+                // ALWAYS packageSubstation
                 // --------------------------------------------------
 
                 pkg.deliveredSubstationId =
                     pkg.packageSubstation;
+
 
                 pkg.substationReductionRecorded =
                     true;
@@ -581,11 +591,16 @@ async function deliverPackage(req, id) {
 
                 if (
                     clientId &&
-                    mongoose.isValidObjectId(clientId)
+                    mongoose.isValidObjectId(
+                        clientId
+                    )
                 ) {
+
                     client =
                         await User
-                            .findById(clientId)
+                            .findById(
+                                clientId
+                            )
                             .session(session);
                 }
 
@@ -601,7 +616,7 @@ async function deliverPackage(req, id) {
 
 
                 // ==================================================
-                // PAYMENT VALUES
+                // PAYMENT
                 // ==================================================
 
                 const amountPaid =
@@ -620,47 +635,56 @@ async function deliverPackage(req, id) {
                 const arrearsAmount =
                     Math.max(
                         0,
-                        totalAmount - amountPaid
+                        totalAmount -
+                        amountPaid
                     );
 
 
                 // ==================================================
-                // DELIVERED PACKAGE RECORD
+                // DELIVERED PRODUCTS SNAPSHOT
                 // ==================================================
 
                 const deliveredProducts =
-                    items.map(item => ({
-                        productId:
-                            item.productId ||
-                            item.product,
+                    items.map(
+                        item => ({
+                            productId:
+                                item.productId ||
+                                item.product,
 
-                        name:
-                            item.name ||
-                            "",
+                            name:
+                                item.name ||
+                                "",
 
-                        category:
-                            item.category ||
-                            "",
+                            category:
+                                item.category ||
+                                "",
 
-                        price:
-                            number(item.price),
+                            price:
+                                number(
+                                    item.price
+                                ),
 
-                        qty:
-                            wholeNumber(
-                                item.qty,
-                                "Delivered product quantity"
-                            ),
+                            qty:
+                                wholeNumber(
+                                    item.qty,
+                                    "Delivered product quantity"
+                                ),
 
-                        image:
-                            item.image ||
-                            "",
+                            image:
+                                item.image ||
+                                "",
 
-                        substationId:
-                            pkg.packageSubstation
-                    }));
+                            substationId:
+                                pkg.packageSubstation
+                        })
+                    );
 
 
-                const deliveredRecord =
+                // ==================================================
+                // DELIVERED PACKAGE
+                // ==================================================
+
+                delivered =
                     await DeliveredPackage
                         .findOneAndUpdate(
                             {
@@ -714,13 +738,10 @@ async function deliverPackage(req, id) {
                                 upsert: true,
                                 new: true,
                                 session,
-                                setDefaultsOnInsert: true
+                                setDefaultsOnInsert:
+                                    true
                             }
                         );
-
-
-                delivered =
-                    deliveredRecord;
             }
         );
 
