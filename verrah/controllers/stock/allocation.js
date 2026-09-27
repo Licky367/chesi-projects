@@ -1,5 +1,6 @@
 // ==========================================================
 // verrah/controllers/stock/allocation.js
+//
 // STOCK ENTRY / PRODUCT ALLOCATION
 // ==========================================================
 
@@ -12,34 +13,59 @@ const {
 
 
 // ==========================================================
-// FILTER SUBSTATIONS BY STOCK CATEGORY BUSINESS TYPE
+// FILTER SUBSTATIONS BY BUSINESS TYPE
+// ==========================================================
+//
+// Category:
+//
+// categoryDocument.businessType.id
+//
+// Substation:
+//
+// substation.businessType.id
+//
+// Both are ObjectIds.
 // ==========================================================
 
-function getMatchingSubstations(
+function filterSubstationsByBusinessType(
     stock,
     allSubstations
 ) {
 
-    const businessTypeId =
+    const stockBusinessTypeId =
+        stock &&
         stock.categoryDocument &&
         stock.categoryDocument.businessType &&
-        stock.categoryDocument.businessType._id;
+        stock.categoryDocument.businessType.id;
 
 
-    if (!businessTypeId) {
+    if (!stockBusinessTypeId) {
 
         return [];
     }
 
 
-    return allSubstations.filter(
+    return (allSubstations || []).filter(
         substation => {
 
-            return (
+            const substationBusinessTypeId =
+                substation &&
                 substation.businessType &&
-                substation.businessType._id &&
-                substation.businessType._id.equals(
-                    businessTypeId
+                substation.businessType.id;
+
+
+            if (!substationBusinessTypeId) {
+
+                return false;
+            }
+
+
+            return (
+                String(
+                    substationBusinessTypeId
+                ) ===
+                String(
+                    stockBusinessTypeId
                 )
             );
 
@@ -60,40 +86,49 @@ async function loadEntryData(
         stock,
         products,
         allSubstations
-    ] = await Promise.all([
+    ] =
+        await Promise.all([
 
-        service.getStock(
-            stockId
-        ),
+            service.getStock(
+                stockId
+            ),
 
-        getProductsForAllocation(),
+            getProductsForAllocation(),
 
-        service.getSubstations()
+            service.getSubstations()
 
-    ]);
+        ]);
 
 
     if (!stock) {
 
         return {
+
             stock: null,
-            products,
+
+            products: [],
+
             substations: []
+
         };
     }
 
 
     const substations =
-        getMatchingSubstations(
+        filterSubstationsByBusinessType(
             stock,
             allSubstations
         );
 
 
     return {
+
         stock,
+
         products,
+
         substations
+
     };
 }
 
@@ -130,6 +165,7 @@ async function entry(
         return res.render(
             "stock/stock-entry",
             {
+
                 title:
                     "Allocate Product",
 
@@ -140,13 +176,16 @@ async function entry(
                 substations,
 
                 error:
-                    req.query.error || null,
+                    req.query.error ||
+                    null,
 
                 old:
                     {},
 
                 saved:
-                    req.query.saved || ""
+                    req.query.saved ||
+                    ""
+
             }
         );
 
@@ -221,6 +260,7 @@ async function createProduct(
             return res.status(400).render(
                 "stock/stock-entry",
                 {
+
                     title:
                         "Allocate Product",
 
@@ -238,6 +278,7 @@ async function createProduct(
 
                     saved:
                         ""
+
                 }
             );
 
@@ -260,7 +301,14 @@ async function createProduct(
 }
 
 
+// ==========================================================
+// EXPORTS
+// ==========================================================
+
 module.exports = {
+
     entry,
+
     createProduct
+
 };
