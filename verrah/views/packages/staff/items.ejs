@@ -42,13 +42,12 @@ const canClear =
 /* ========================================================
    PACKAGE SUBSTATION
 
-   packageSubstation is the ONLY substation used for
-   package confirmation.
+   Confirmation is ALWAYS done at packageSubstation.
 
-   It may arrive as:
-       populated object
-   or:
-       ObjectId / string
+   It may be:
+     - populated object
+     - ObjectId
+     - string
 ======================================================== */
 
 const packageSubstation =
@@ -81,53 +80,15 @@ const packageSubstationId =
     : (
         packageSubstation || ""
       );
-
-
-/* ========================================================
-   CONFIRMED SUBSTATION
-
-   This should represent WHERE the package was confirmed.
-
-   The business rule is:
-
-       confirmedSubstationId
-       =
-       packageSubstation
-
-   for BOTH admin and staff.
-
-   If the package is already confirmed, display the package
-   substation as the confirmation location.
-======================================================== */
-
-const confirmedSubstation =
-  packageDoc?.confirmedSubstationId ||
-  null;
-
-
-const confirmedSubstationName =
-  confirmedSubstation &&
-  typeof confirmedSubstation === "object"
-    ? (
-        confirmedSubstation.name ||
-        confirmedSubstation.substationName ||
-        ""
-      )
-    : (
-        typeof confirmedSubstation === "string"
-          ? confirmedSubstation
-          : ""
-      );
-
-
-const confirmedAtName =
-  packageSubstationName ||
-  confirmedSubstationName ||
-  "";
 %>
 
 
 <div class="staff-items-card">
+
+
+  <!-- =====================================================
+       ITEMS
+  ====================================================== -->
 
   <div class="staff-items-heading">
     ITEMS
@@ -197,6 +158,10 @@ const confirmedAtName =
   <% }); %>
 
 
+  <!-- =====================================================
+       TOTAL
+  ====================================================== -->
+
   <div class="staff-total-line">
 
     <span>
@@ -213,9 +178,9 @@ const confirmedAtName =
   </div>
 
 
-  <!-- ===================================================
+  <!-- =====================================================
        PACKAGE SUBSTATION
-  ==================================================== -->
+  ====================================================== -->
 
   <% if (packageSubstationName) { %>
 
@@ -237,18 +202,25 @@ const confirmedAtName =
   <% } %>
 
 
-  <!-- ===================================================
+  <!-- =====================================================
        CONFIRM PACKAGE
 
        BOTH ADMIN AND STAFF CAN CONFIRM.
 
        IMPORTANT:
 
-       Confirmation is always at packageSubstation.
+       Confirmation is ALWAYS at packageSubstation.
 
        It is NOT based on:
            user.assignedSubstation
-  ==================================================== -->
+
+       For STAFF:
+           confirmedByStaffId is still recorded so that
+           the confirming staff member can later deliver.
+
+       For ADMIN:
+           no confirmedByStaffId is created.
+  ====================================================== -->
 
   <% if (
     (
@@ -283,7 +255,10 @@ const confirmedAtName =
       <% } %>
 
 
-      <% if (canConfirm && packageSubstationId) { %>
+      <% if (
+        canConfirm &&
+        packageSubstationId
+      ) { %>
 
         <p>
           All package quantities are available at the
@@ -331,18 +306,16 @@ const confirmedAtName =
   <% } %>
 
 
-  <!-- ===================================================
+  <!-- =====================================================
        CONFIRMED PACKAGE INFORMATION
 
-       The confirmation location is ALWAYS the
-       packageSubstation.
+       The confirmation location is packageSubstation.
 
-       This applies to:
-           - Admin
-           - Staff
-  ==================================================== -->
+       confirmedSubstationId should therefore contain the
+       same substation after confirmation.
+  ====================================================== -->
 
-  <% if (isConfirmed && confirmedAtName) { %>
+  <% if (isConfirmed) { %>
 
     <div class="staff-action-card">
 
@@ -351,27 +324,40 @@ const confirmedAtName =
       </div>
 
 
-      <p>
+      <% if (packageSubstationName) { %>
 
-        Confirmed at:
+        <p>
 
-        <strong>
-          <%= confirmedAtName %>
-        </strong>
+          Confirmed at:
 
-      </p>
+          <strong>
+            <%= packageSubstationName %>
+          </strong>
+
+        </p>
+
+      <% } %>
 
     </div>
 
   <% } %>
 
 
-  <!-- ===================================================
+  <!-- =====================================================
        DELIVER PACKAGE
 
-       Staff delivery remains restricted to the staff
-       member who confirmed the package.
-  ==================================================== -->
+       IMPORTANT:
+
+       Keep the original delivery rule.
+
+       Only STAFF can deliver.
+
+       The staff member must be the same staff member
+       recorded in confirmedByStaffId.
+
+       Admin confirmation does NOT give admin delivery
+       permission and does NOT create a fake staff ID.
+  ====================================================== -->
 
   <% if (
     isStaff &&
@@ -410,16 +396,19 @@ const confirmedAtName =
   <% } %>
 
 
-  <!-- ===================================================
+  <!-- =====================================================
        CASH PAYMENT SELECTION
 
-       Only appears when:
+       ORIGINAL LOGIC PRESERVED.
 
-       - Package has arrears
-       - Package is not already cash
-       - Package has been delivered
-       - User is admin OR delivered staff
-  ==================================================== -->
+       Appears when:
+
+       - delivered
+       - not cleared
+       - arrears exist
+       - package is not cash
+       - current user is admin OR the staff who delivered
+  ====================================================== -->
 
   <% if (
     isDelivered &&
@@ -488,16 +477,11 @@ const confirmedAtName =
   <% } %>
 
 
-  <!-- ===================================================
+  <!-- =====================================================
        RECORD CASH PAYMENT
 
-       Only appears when:
-
-       - Package has arrears
-       - isCash === true
-       - Package has been delivered
-       - User is admin OR delivered staff
-  ==================================================== -->
+       ORIGINAL LOGIC PRESERVED.
+  ====================================================== -->
 
   <% if (
     isDelivered &&
@@ -559,9 +543,11 @@ const confirmedAtName =
   <% } %>
 
 
-  <!-- ===================================================
+  <!-- =====================================================
        CLEAR PACKAGE
-  ==================================================== -->
+
+       ORIGINAL LOGIC PRESERVED.
+  ====================================================== -->
 
   <% if (canClear) { %>
 
@@ -615,9 +601,11 @@ const confirmedAtName =
   <% } %>
 
 
-  <!-- ===================================================
+  <!-- =====================================================
        ALREADY CLEARED
-  ==================================================== -->
+
+       ORIGINAL LOGIC PRESERVED.
+  ====================================================== -->
 
   <% if (cleared) { %>
 
@@ -667,5 +655,6 @@ const confirmedAtName =
     </div>
 
   <% } %>
+
 
 </div>
