@@ -39,7 +39,6 @@ async function getStaffPackages(
   const role =
     roleOf(req);
 
-
   if (
     role !== "staff" &&
     role !== "admin"
@@ -49,10 +48,8 @@ async function getStaffPackages(
     );
   }
 
-
   status =
     normalizeStatus(status);
-
 
   let visibleQuery = {};
 
@@ -61,20 +58,16 @@ async function getStaffPackages(
 // STAFF VISIBILITY
 // =========================================================
 
-  if (
-    role === "staff"
-  ) {
+  if (role === "staff") {
 
     const id =
       staffIdOf(req);
-
 
     if (!id) {
       throw new Error(
         "Staff identity is missing."
       );
     }
-
 
     visibleQuery = {
       $or: [
@@ -273,7 +266,6 @@ async function getStaffPackage(
   const role =
     roleOf(req);
 
-
   if (
     role !== "staff" &&
     role !== "admin"
@@ -282,7 +274,6 @@ async function getStaffPackage(
       "Staff or admin access required."
     );
   }
-
 
   if (
     !mongoose.isValidObjectId(id)
@@ -317,13 +308,10 @@ async function getStaffPackage(
 // STAFF VISIBILITY
 // =========================================================
 
-  if (
-    role === "staff"
-  ) {
+  if (role === "staff") {
 
     const staffId =
       staffIdOf(req);
-
 
     if (
       pkg.status !== "pending" &&
@@ -348,7 +336,7 @@ async function getStaffPackage(
 
 
 // =========================================================
-// OTHER SUBSTATIONS
+// CONFIRMED SUBSTATION
 // =========================================================
 
   if (
@@ -361,6 +349,10 @@ async function getStaffPackage(
       );
   }
 
+
+// =========================================================
+// DELIVERED SUBSTATION
+// =========================================================
 
   if (
     pkg.deliveredSubstationId
@@ -414,18 +406,13 @@ async function getStaffPackage(
 // CONFIRM PACKAGE
 // =========================================================
 //
-// IMPORTANT:
-// ---------------------------------------------------------
-// The package destination is packageSubstation.
+// The package's own packageSubstation is authoritative.
 //
-// Confirmation must NOT replace that destination with the
-// confirming staff member's assignedSubstation.
+// confirmedSubstationId is copied from packageSubstation.
 //
-// confirmedSubstationId is therefore recorded from:
-//     packageSubstation
+// assignedSubstation is NOT used.
 //
-// The staff member's assignedSubstation is not used as the
-// package destination.
+// Both staff and admin can confirm.
 // =========================================================
 
 async function confirmPackage(
@@ -433,29 +420,37 @@ async function confirmPackage(
   id
 ) {
 
+  const role =
+    roleOf(req);
+
   if (
-    roleOf(req) !== "staff"
+    role !== "staff" &&
+    role !== "admin"
   ) {
     throw new Error(
-      "Only staff can confirm packages."
+      "Staff or admin access required."
     );
   }
 
 
-  const staffId =
+  const actorId =
     staffIdOf(req);
 
 
-  const staffName =
+  const actorName =
     String(
       req.user?.name ||
       req.user?.email ||
-      "Staff"
+      (
+        role === "admin"
+          ? "Admin"
+          : "Staff"
+      )
     ).trim();
 
 
 // =========================================================
-// LOAD PACKAGE FIRST
+// LOAD PENDING PACKAGE
 // =========================================================
 
   const existing =
@@ -477,7 +472,7 @@ async function confirmPackage(
 
 
 // =========================================================
-// PACKAGE SUBSTATION IS REQUIRED
+// PACKAGE SUBSTATION REQUIRED
 // =========================================================
 
   if (
@@ -490,15 +485,16 @@ async function confirmPackage(
 
 
 // =========================================================
-// CONFIRM PACKAGE
+// CONFIRM
 // =========================================================
 //
-// confirmedSubstationId is deliberately taken from
-// packageSubstation.
+// IMPORTANT:
 //
-// Do NOT use:
-//     staff.assignedSubstation
+// confirmedSubstationId ALWAYS comes from:
+//     existing.packageSubstation
 //
+// It does NOT come from:
+//     req.user.assignedSubstation
 // =========================================================
 
   const updated =
@@ -514,10 +510,10 @@ async function confirmPackage(
             "confirmed",
 
           confirmedByStaffId:
-            staffId,
+            actorId,
 
           confirmedByStaffName:
-            staffName,
+            actorName,
 
           confirmedAt:
             new Date(),
@@ -572,10 +568,6 @@ async function confirmPackage(
   }
 
 
-// =========================================================
-// RETURN
-// =========================================================
-
   return updated;
 }
 
@@ -585,10 +577,7 @@ async function confirmPackage(
 // =========================================================
 
 module.exports = {
-
   getStaffPackages,
-
   getStaffPackage,
-
   confirmPackage
 };
