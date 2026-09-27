@@ -386,13 +386,13 @@ exports.getConfirmationState =
 //
 //     package.packageSubstation
 //
-// Staff additionally gets:
+// confirmedByStaffId / confirmedByStaffName:
 //
-//     confirmedByStaffId
-//     confirmedByStaffName
+//     record the actual user who confirmed the package.
 //
-// This preserves the existing delivery rule:
-// only the confirming staff member can deliver.
+// This does NOT restrict delivery to the confirmer.
+// Any authorized staff or admin can deliver a confirmed
+// package.
 //
 // =========================================================
 
@@ -516,7 +516,7 @@ exports.confirmPackage =
 
 
           // ------------------------------------------------
-          // IMPORTANT:
+          // CONFIRMATION
           //
           // ALWAYS packageSubstation.
           //
@@ -532,37 +532,19 @@ exports.confirmPackage =
               new Date(),
 
             confirmedSubstationId:
-              state.package.packageSubstation
+              state.package.packageSubstation,
+
+            confirmedByStaffId:
+              userId,
+
+            confirmedByStaffName:
+              confirmerName
 
           };
 
 
           // ------------------------------------------------
-          // STAFF
-          //
-          // Preserve the staff identity because this
-          // determines who may deliver the package.
-          // ------------------------------------------------
-
-          if (
-            role === "staff"
-          ) {
-
-            updateSet.confirmedByStaffId =
-              userId;
-
-            updateSet.confirmedByStaffName =
-              confirmerName;
-
-          }
-
-
-          // ------------------------------------------------
-          // ADMIN
-          //
-          // Do NOT invent confirmedByAdmin fields.
-          // The package schema already has the essential
-          // confirmation fields above.
+          // UPDATE PACKAGE
           // ------------------------------------------------
 
           updated =
