@@ -1,78 +1,63 @@
-// =========================================================
-// verrah/services/packageService.js
-//
-// VERRAH COSMETICS
-// PACKAGE SERVICE
-//
-// FACADE / PUBLIC API
-//
-// The package logic is split into smaller service files.
-// Existing controllers can continue requiring:
-//
-//     require("../services/packageService")
-//
-// without changing their imports.
-// =========================================================
-
 const {
-  getPaymentStatus,
-  getConfirmedPaymentTotal
+    getPaymentStatus,
+    getConfirmedPaymentTotal
 } = require("./packageHelpers");
 
 const {
-  createPackageFromCart,
-  createPackageFromPayment
+    createPackageFromCart,
+    createPackageFromPayment
 } = require("./packageCreationService");
 
 const {
-  getUserPackages,
-  getUserPackage
+    getUserPackages,
+    getUserPackage
 } = require("./packageCustomerService");
 
 const {
-  getStaffPackages,
-  getStaffPackage,
-  confirmPackage
+    getStaffPackages,
+    getStaffPackage
 } = require("./packageStaffService");
 
 const {
-  deliverPackage
+    getConfirmationState,
+    confirmPackage
+} = require("../packageConfirmationService");
+
+const {
+    deliverPackage
 } = require("./packageDeliveryService");
 
 const {
-  recordPayment,
-  confirmPackagePayment,
-  releasePaymentReservation
+    clearPackage
+} = require("./packageClearService");
+
+const {
+    recordPayment,
+    confirmPackagePayment,
+    releasePaymentReservation
 } = require("./packagePaymentService");
 
 
-// =========================================================
-// PUBLIC EXPORTS
-// =========================================================
-//
-// This preserves the original packageService.js API.
-// Controllers do not need to know that the implementation
-// is now split across multiple files.
-// =========================================================
-
 module.exports = {
-  getPaymentStatus,
-  getConfirmedPaymentTotal,
+    getPaymentStatus,
+    getConfirmedPaymentTotal,
 
-  createPackageFromCart,
-  createPackageFromPayment,
+    createPackageFromCart,
+    createPackageFromPayment,
 
-  getUserPackages,
-  getUserPackage,
+    getUserPackages,
+    getUserPackage,
 
-  getStaffPackages,
-  getStaffPackage,
+    getStaffPackages,
+    getStaffPackage,
 
-  confirmPackage,
-  deliverPackage,
+    getConfirmationState,
+    confirmPackage,
 
-  recordPayment,
-  confirmPackagePayment,
+    deliverPackage,
+    clearPackage,
 
-  releasePaymentReservation
+    recordPayment,
+    confirmPackagePayment,
+    releasePaymentReservation
 };

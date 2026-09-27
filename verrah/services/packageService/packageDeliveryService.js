@@ -1,6 +1,7 @@
 // ==========================================================
-// FILE:
-// services/packageService/packageDeliveryService.js
+// verrah/services/packageService/packageDeliveryService.js
+//
+// PACKAGE DELIVERY SERVICE
 // ==========================================================
 
 const mongoose =
@@ -21,10 +22,20 @@ const DeliveredPackage =
 const Substation =
     require("../../models/substations");
 
+
+// ==========================================================
+// PACKAGE HELPERS
+// ==========================================================
+
 const {
     roleOf,
     staffIdOf
 } = require("./packageHelpers");
+
+
+// ==========================================================
+// PRODUCT FIFO
+// ==========================================================
 
 const {
     releaseProductFifo
@@ -35,6 +46,10 @@ const {
     weightedProductBuyPrice
 } = require("../stockService/helpers");
 
+
+// ==========================================================
+// HELPERS
+// ==========================================================
 
 function number(value) {
 
@@ -69,6 +84,10 @@ function wholeNumber(
 }
 
 
+// ==========================================================
+// DELIVER PACKAGE
+// ==========================================================
+
 async function deliverPackage(
     req,
     id
@@ -83,6 +102,10 @@ async function deliverPackage(
     }
 
 
+    // ======================================================
+    // ACCESS
+    // ======================================================
+
     const role =
         roleOf(req);
 
@@ -91,7 +114,7 @@ async function deliverPackage(
         role !== "admin"
     ) {
         throw new Error(
-            "Staff or admin access required."
+            "You are not authorized to deliver packages."
         );
     }
 
@@ -102,6 +125,7 @@ async function deliverPackage(
     const actorName =
         String(
             req.user?.name ||
+            req.user?.fullName ||
             req.user?.email ||
             (
                 role === "admin"
@@ -111,47 +135,47 @@ async function deliverPackage(
         ).trim();
 
 
+    // ======================================================
+    // TRANSACTION
+    // ======================================================
+
     const session =
         await mongoose.startSession();
 
-
     try {
 
-        let resultPackage;
+        let resultPackage = null;
 
 
         await session.withTransaction(
             async () => {
 
                 // ==================================================
-                // CONFIRMED PACKAGE
+                // PACKAGE
                 // ==================================================
 
                 const pkg =
-                    await Package.findOne({
-                        _id:
-                            id,
-
-                        status:
-                            "confirmed"
-                    })
-                        .session(
-                            session
-                        );
-
+                    await Package
+                        .findOne({
+                            _id: id,
+                            status: "confirmed"
+                        })
+                        .session(session);
 
                 if (!pkg) {
-
                     throw new Error(
                         "Package was not found or is not confirmed."
                     );
                 }
 
 
-                if (
-                    pkg.substationReductionRecorded === true
-                ) {
+                // ==================================================
+                // PREVENT DOUBLE DELIVERY
+                // ==================================================
 
+                if (
+                    pkg.substationReductionRecorded
+                ) {
                     throw new Error(
                         "This package has already been delivered."
                     );
@@ -161,11 +185,16 @@ async function deliverPackage(
                 // ==================================================
                 // PACKAGE SUBSTATION
                 // ==================================================
+                //
+                // This is the ONLY substation used for delivery.
+                //
+                // assignedSubstation is deliberately not used.
+                //
+                // ==================================================
 
                 if (
                     !pkg.packageSubstation
                 ) {
-
                     throw new Error(
                         "Package substation is missing."
                     );
@@ -173,38 +202,32 @@ async function deliverPackage(
 
 
                 const substation =
-                    await Substation.findOne({
-
-                        _id:
-                            pkg.packageSubstation,
-
-                        isActive:
-                            true
-
-                    })
-                        .session(
-                            session
-                        );
-
+                    await Substation
+                        .findOne({
+                            _id:
+                                pkg.packageSubstation,
+                            isActive:
+                                true
+                        })
+                        .session(session);
 
                 if (!substation) {
-
                     throw new Error(
                         "The package substation was not found or is inactive."
                     );
                 }
 
 
+                // ==================================================
+                // PACKAGE ITEMS
+                // ==================================================
+
                 const items =
-                    Array.isArray(
-                        pkg.items
-                    )
+                    Array.isArray(pkg.items)
                         ? pkg.items
                         : [];
 
-
                 if (!items.length) {
-
                     throw new Error(
                         "This package contains no products."
                     );
@@ -212,16 +235,16 @@ async function deliverPackage(
 
 
                 // ==================================================
-                // PROCESS PRODUCTS
+                // PROCESS ITEMS
                 // ==================================================
 
                 for (
-                    const item
-                    of items
+                    const item of items
                 ) {
 
                     const productId =
-                        item.productId;
+                        item.productId ||
+                        item.product;
 
 
                     if (
@@ -230,7 +253,6 @@ async function deliverPackage(
                             productId
                         )
                     ) {
-
                         throw new Error(
                             "Package contains an invalid product."
                         );
@@ -245,7 +267,6 @@ async function deliverPackage(
 
 
                     if (qty <= 0) {
-
                         throw new Error(
                             `Invalid quantity for ${item.name || productId}.`
                         );
@@ -257,23 +278,24 @@ async function deliverPackage(
                     // ==================================================
 
                     const product =
-                        await Product.findById(
-                            productId
-                        )
-                            .session(
-                                session
-                            );
-
+                        await Product
+                            .findById(
+                                productId
+                            )
+                            .session(session);
 
                     if (!product) {
-
                         throw new Error(
                             `Product ${item.name || productId} was not found.`
                         );
                     }
 
 
-                    const productUnits =
+                    // ==================================================
+                    // PRODUCT UNITS
+                    // ==================================================
+
+                    const currentProductUnits =
                         wholeNumber(
                             product.units || 0,
                             `Product units for ${product.name || item.name || productId}`
@@ -281,11 +303,10 @@ async function deliverPackage(
 
 
                     if (
-                        productUnits < qty
+                        currentProductUnits < qty
                     ) {
-
                         throw new Error(
-                            `Insufficient Product units for ${product.name || item.name || productId}. Available: ${productUnits}, required: ${qty}.`
+                            `Insufficient Product units for ${product.name || item.name || productId}. Available: ${currentProductUnits}, required: ${qty}.`
                         );
                     }
 
@@ -294,18 +315,17 @@ async function deliverPackage(
                     // PRODUCT FIFO
                     // ==================================================
 
-                    const fifoUnits =
+                    const currentFifoUnits =
                         productFifoUnits(
                             product
                         );
 
 
                     if (
-                        fifoUnits < qty
+                        currentFifoUnits < qty
                     ) {
-
                         throw new Error(
-                            `Insufficient Product FIFO units for ${product.name || item.name || productId}. Available: ${fifoUnits}, required: ${qty}.`
+                            `Insufficient Product FIFO units for ${product.name || item.name || productId}. FIFO available: ${currentFifoUnits}, required: ${qty}.`
                         );
                     }
 
@@ -319,7 +339,6 @@ async function deliverPackage(
                             substation.productInventory
                         )
                     ) {
-
                         throw new Error(
                             `Product inventory is missing at ${substation.name || "the package substation"}.`
                         );
@@ -339,14 +358,13 @@ async function deliverPackage(
 
 
                     if (!inventory) {
-
                         throw new Error(
                             `${product.name || item.name || productId} is not available at ${substation.name || "the package substation"}.`
                         );
                     }
 
 
-                    const substationUnits =
+                    const currentSubstationUnits =
                         wholeNumber(
                             inventory.units || 0,
                             `Substation units for ${product.name || item.name || productId}`
@@ -354,11 +372,10 @@ async function deliverPackage(
 
 
                     if (
-                        substationUnits < qty
+                        currentSubstationUnits < qty
                     ) {
-
                         throw new Error(
-                            `Insufficient substation units for ${product.name || item.name || productId}. Available: ${substationUnits}, required: ${qty}.`
+                            `Insufficient substation units for ${product.name || item.name || productId}. Available: ${currentSubstationUnits}, required: ${qty}.`
                         );
                     }
 
@@ -367,11 +384,13 @@ async function deliverPackage(
                     // REMOVE FROM PRODUCT FIFO
                     // ==================================================
                     //
-                    // IMPORTANT:
+                    // Existing FIFO implementation:
                     //
-                    // Nothing goes back to Stock.
+                    // releaseProductFifo()
                     //
-                    // These units were already allocated out of Stock.
+                    // releases the newest Product FIFO layers first.
+                    //
+                    // NOTHING is returned to Stock.
                     //
                     // ==================================================
 
@@ -382,13 +401,11 @@ async function deliverPackage(
 
 
                     // ==================================================
-                    // PRODUCT UNITS
+                    // CALCULATE REMAINING PRODUCT UNITS
                     // ==================================================
 
                     const newProductUnits =
-                        productUnits -
-                        qty;
-
+                        currentProductUnits - qty;
 
                     const newFifoUnits =
                         productFifoUnits(
@@ -400,9 +417,8 @@ async function deliverPackage(
                         newFifoUnits !==
                         newProductUnits
                     ) {
-
                         throw new Error(
-                            `Product FIFO mismatch for ${product.name || item.name || productId}. Expected ${newProductUnits}, found ${newFifoUnits}.`
+                            `Product FIFO mismatch for ${product.name || item.name || productId}. Product units should be ${newProductUnits}, but FIFO contains ${newFifoUnits}.`
                         );
                     }
 
@@ -410,6 +426,10 @@ async function deliverPackage(
                     product.units =
                         newProductUnits;
 
+
+                    // ==================================================
+                    // PRODUCT WEIGHTED BUY PRICE
+                    // ==================================================
 
                     if (
                         newProductUnits > 0
@@ -437,11 +457,11 @@ async function deliverPackage(
 
 
                     // ==================================================
-                    // SUBSTATION INVENTORY REDUCTION
+                    // REDUCE SUBSTATION INVENTORY
                     // ==================================================
 
                     inventory.units =
-                        substationUnits -
+                        currentSubstationUnits -
                         qty;
 
                     inventory.updatedAt =
@@ -449,17 +469,7 @@ async function deliverPackage(
 
 
                     // ==================================================
-                    // PRODUCT REDUCTION LEDGER
-                    // ==================================================
-                    //
-                    // Actual schema:
-                    //
-                    // productId
-                    // productName
-                    // category
-                    // unitsReduced
-                    // lastReducedAt
-                    //
+                    // PRODUCT REDUCTION
                     // ==================================================
 
                     if (
@@ -467,74 +477,65 @@ async function deliverPackage(
                             substation.productReductions
                         )
                     ) {
-
                         substation.productReductions =
                             [];
                     }
 
 
-                    const existingReduction =
+                    const reduction =
                         substation.productReductions.find(
-                            reduction =>
-                                String(
-                                    reduction.productId
-                                ) ===
-                                String(
-                                    product._id
-                                )
+                            entry =>
+                                String(entry.productId) ===
+                                String(product._id)
                         );
 
 
-                    if (existingReduction) {
+                    if (reduction) {
 
-                        existingReduction.unitsReduced =
-                            number(
-                                existingReduction.unitsReduced
-                            ) +
+                        reduction.unitsReduced =
+                            Number(reduction.unitsReduced || 0) +
                             qty;
 
-                        existingReduction.productName =
+                        reduction.productName =
                             product.name ||
+                            reduction.productName ||
                             item.name ||
                             "";
 
-                        existingReduction.category =
+                        reduction.category =
                             String(
                                 product.category ||
+                                reduction.category ||
                                 item.category ||
                                 ""
                             );
 
-                        existingReduction.lastReducedAt =
+                        reduction.lastReducedAt =
                             new Date();
 
                     } else {
 
                         substation.productReductions.push({
-
-                            productId:
-                                product._id,
-
+                            productId: product._id,
                             productName:
                                 product.name ||
                                 item.name ||
                                 "",
-
                             category:
                                 String(
                                     product.category ||
                                     item.category ||
                                     ""
                                 ),
-
-                            unitsReduced:
-                                qty,
-
-                            lastReducedAt:
-                                new Date()
+                            unitsReduced: qty,
+                            lastReducedAt: new Date()
                         });
                     }
 
+
+                    // ==================================================
+                    // SAVE PRODUCT
+                    // ==================================================
 
                     await product.save({
                         session
@@ -552,27 +553,31 @@ async function deliverPackage(
 
 
                 // ==================================================
-                // CLIENT
+                // DELIVERED PACKAGE DATA
                 // ==================================================
 
-                let client =
-                    null;
+                const clientId =
+                    pkg.user ||
+                    pkg.client ||
+                    pkg.userId;
+
+
+                let client = null;
 
 
                 if (
-                    pkg.clientId &&
+                    clientId &&
                     mongoose.isValidObjectId(
-                        pkg.clientId
+                        clientId
                     )
                 ) {
 
                     client =
-                        await User.findById(
-                            pkg.clientId
-                        )
-                            .session(
-                                session
-                            );
+                        await User
+                            .findById(
+                                clientId
+                            )
+                            .session(session);
                 }
 
 
@@ -580,23 +585,22 @@ async function deliverPackage(
                     String(
                         client?.name ||
                         client?.fullName ||
+                        pkg.clientName ||
+                        pkg.customerName ||
                         "Client"
                     ).trim();
-
-
-                // ==================================================
-                // PAYMENT SNAPSHOT
-                // ==================================================
-
-                const amountPaid =
-                    number(
-                        pkg.paidAmount
-                    );
 
 
                 const totalAmount =
                     number(
                         pkg.totalAmount
+                    );
+
+
+                const amountPaid =
+                    number(
+                        pkg.totalPaid ??
+                        pkg.paidAmount
                     );
 
 
@@ -609,26 +613,19 @@ async function deliverPackage(
 
 
                 // ==================================================
-                // DELIVERED PACKAGE
-                // ==================================================
-                //
-                // Clearing is a separate action.
-                //
-                // Therefore the delivered record starts with:
-                //
-                //     cleared = false
-                //
+                // DELIVERED PRODUCTS
                 // ==================================================
 
                 const deliveredProducts =
                     items.map(
                         item => ({
-
                             productId:
-                                item.productId,
+                                item.productId ||
+                                item.product,
 
                             name:
-                                item.name,
+                                item.name ||
+                                "",
 
                             category:
                                 item.category ||
@@ -655,70 +652,70 @@ async function deliverPackage(
                     );
 
 
-                await DeliveredPackage.findOneAndUpdate(
+                // ==================================================
+                // DELIVERED PACKAGE RECORD
+                // ==================================================
 
-                    {
-                        packageId:
-                            pkg._id
-                    },
+                await DeliveredPackage
+                    .findOneAndUpdate(
+                        {
+                            packageId:
+                                pkg._id
+                        },
+                        {
+                            packageId:
+                                pkg._id,
 
-                    {
-                        packageId:
-                            pkg._id,
+                            products:
+                                deliveredProducts,
 
-                        products:
-                            deliveredProducts,
+                            clientName:
+                                clientName,
 
-                        clientName:
-                            clientName,
+                            staffName:
+                                actorName,
 
-                        staffName:
-                            actorName,
+                            substationId:
+                                pkg.packageSubstation,
 
-                        substationId:
-                            pkg.packageSubstation,
+                            amountPaid:
+                                amountPaid,
 
-                        amountPaid:
-                            amountPaid,
+                            arrearsAmount:
+                                arrearsAmount,
 
-                        arrearsAmount:
-                            arrearsAmount,
+                            cleared: false,
 
-                        cleared:
-                            false,
+                            clearedAt: null,
 
-                        clearedAt:
-                            null,
+                            clearedByStaffId: null,
 
-                        clearedByStaffId:
-                            null,
+                            clearedByStaffName: ""
+                        },
+                        {
+                            upsert:
+                                true,
 
-                        clearedByStaffName:
-                            ""
-                    },
+                            new:
+                                true,
 
-                    {
-                        upsert:
-                            true,
+                            session,
 
-                        new:
-                            true,
-
-                        session,
-
-                        setDefaultsOnInsert:
-                            true
-                    }
-                );
+                            setDefaultsOnInsert:
+                                true
+                        }
+                    );
 
 
                 // ==================================================
                 // MARK PACKAGE DELIVERED
                 // ==================================================
                 //
-                // IMPORTANT:
+                // Do this AFTER all inventory and DeliveredPackage
+                // operations have succeeded.
                 //
-                // Use the actual Package schema field names.
+                // If anything above fails, the transaction rolls
+                // back and the package remains confirmed.
                 //
                 // ==================================================
 
@@ -726,7 +723,8 @@ async function deliverPackage(
                     "delivered";
 
                 pkg.deliveredByStaffId =
-                    actorId;
+                    actorId ||
+                    null;
 
                 pkg.deliveredByStaffName =
                     actorName;
@@ -752,6 +750,10 @@ async function deliverPackage(
         );
 
 
+        // ======================================================
+        // RETURN
+        // ======================================================
+
         return Package
             .findById(
                 resultPackage._id
@@ -765,403 +767,10 @@ async function deliverPackage(
 }
 
 
+// ==========================================================
+// EXPORT
+// ==========================================================
+
 module.exports = {
     deliverPackage
 };
-
-
-// ==========================================================
-// FILE:
-// controllers/packages/staffDetails.js
-// ==========================================================
-
-const packageService =
-    require("../../services/packageService");
-
-const confirmationService =
-    require("../../services/packageConfirmationService");
-
-const DeliveredPackage =
-    require("../../models/delivered");
-
-const getEnrichedStaffPackages =
-    require("./helpers/enrichStaffPackages");
-
-
-exports.staffDetails =
-    async (req, res) => {
-
-        try {
-
-            const packageDoc =
-                await packageService.getStaffPackage(
-                    req,
-                    req.params.id
-                );
-
-
-            if (!packageDoc) {
-
-                return res.status(404).render(
-                    "packages/staff-details",
-                    {
-                        title:
-                            "Package not found | CoreVester",
-
-                        packageDoc:
-                            null,
-
-                        role:
-                            req.user.role,
-
-                        user:
-                            req.user,
-
-                        canConfirm:
-                            false,
-
-                        canClear:
-                            false,
-
-                        cleared:
-                            false,
-
-                        confirmationError:
-                            "Package not found.",
-
-                        error:
-                            "Package not found."
-                    }
-                );
-            }
-
-
-            const {
-                packages:
-                    enrichedPackages
-            } =
-                await getEnrichedStaffPackages(
-                    req,
-                    "all"
-                );
-
-
-            const enrichedPackage =
-                enrichedPackages.find(
-                    pkg =>
-                        String(pkg._id) ===
-                        String(packageDoc._id)
-                );
-
-
-            if (enrichedPackage) {
-
-                packageDoc.isDirectSell =
-                    enrichedPackage.isDirectSell;
-
-                packageDoc.clientRole =
-                    enrichedPackage.clientRole;
-            }
-
-
-            const confirmationState =
-                packageDoc.status === "pending"
-                    ? await confirmationService.getConfirmationState(
-                        req,
-                        packageDoc._id
-                    )
-                    : {
-                        ok:
-                            false,
-
-                        message:
-                            ""
-                    };
-
-
-            const deliveredRecord =
-                await DeliveredPackage.findOne({
-                    packageId:
-                        packageDoc._id
-                })
-                    .select(
-                        "cleared clearedAt clearedByStaffId clearedByStaffName"
-                    )
-                    .lean();
-
-
-            const cleared =
-                Boolean(
-                    deliveredRecord?.cleared
-                );
-
-
-            const arrears =
-                Math.max(
-                    0,
-                    Number(
-                        packageDoc.totalAmount ||
-                        0
-                    ) -
-                    Number(
-                        packageDoc.paidAmount ||
-                        0
-                    )
-                );
-
-
-            const role =
-                String(
-                    req.user?.role ||
-                    ""
-                ).toLowerCase();
-
-
-            const staffId =
-                String(
-                    req.user?._id ||
-                    req.user?.id ||
-                    ""
-                );
-
-
-            const canClear =
-                packageDoc.status === "delivered" &&
-                !cleared &&
-                arrears <= 0 &&
-                (
-                    role === "admin" ||
-                    String(
-                        packageDoc.deliveredByStaffId ||
-                        ""
-                    ) === staffId
-                );
-
-
-            return res.render(
-                "packages/staff-details",
-                {
-                    title:
-                        `Package ${String(packageDoc._id).slice(-8)} | Package Management`,
-
-                    packageDoc,
-
-                    role:
-                        req.user.role,
-
-                    user:
-                        req.user,
-
-                    canConfirm:
-                        confirmationState.ok,
-
-                    confirmationError:
-                        confirmationState.ok
-                            ? null
-                            : confirmationState.message,
-
-                    canClear,
-
-                    cleared,
-
-                    clearedAt:
-                        deliveredRecord?.clearedAt ||
-                        null,
-
-                    clearedByStaffName:
-                        deliveredRecord?.clearedByStaffName ||
-                        "",
-
-                    error:
-                        req.query.error ||
-                        null,
-
-                    success:
-                        req.query.success ||
-                        null
-                }
-            );
-
-        } catch (err) {
-
-            console.error(err);
-
-            return res.status(404).redirect(
-                "/packages/staff"
-            );
-        }
-    };
-
-
-// ==========================================================
-// FILE:
-// controllers/packages/clear.js
-// ==========================================================
-
-const packageService =
-    require("../../services/packageService");
-
-const DeliveredPackage =
-    require("../../models/delivered");
-
-
-exports.clear =
-    async (req, res) => {
-
-        try {
-
-            const role =
-                String(
-                    req.user?.role ||
-                    ""
-                ).toLowerCase();
-
-
-            const staffId =
-                String(
-                    req.user?._id ||
-                    req.user?.id ||
-                    ""
-                );
-
-
-            if (
-                role !== "staff" &&
-                role !== "admin"
-            ) {
-
-                throw new Error(
-                    "Staff or admin access required."
-                );
-            }
-
-
-            const packageDoc =
-                await packageService.getStaffPackage(
-                    req,
-                    req.params.id
-                );
-
-
-            if (!packageDoc) {
-
-                throw new Error(
-                    "Package not found."
-                );
-            }
-
-
-            if (
-                packageDoc.status !==
-                "delivered"
-            ) {
-
-                throw new Error(
-                    "Only delivered packages can be cleared."
-                );
-            }
-
-
-            const arrears =
-                Math.max(
-                    0,
-                    Number(
-                        packageDoc.totalAmount ||
-                        0
-                    ) -
-                    Number(
-                        packageDoc.paidAmount ||
-                        0
-                    )
-                );
-
-
-            if (arrears > 0) {
-
-                throw new Error(
-                    "This package cannot be cleared while it has outstanding arrears."
-                );
-            }
-
-
-            // --------------------------------------------------
-            // Staff can only clear a package they delivered.
-            // Admin can clear any delivered package.
-            // --------------------------------------------------
-
-            if (
-                role === "staff" &&
-                String(
-                    packageDoc.deliveredByStaffId ||
-                    ""
-                ) !== staffId
-            ) {
-
-                throw new Error(
-                    "Only the staff member who delivered this package can clear it."
-                );
-            }
-
-
-            const deliveredRecord =
-                await DeliveredPackage.findOne({
-                    packageId:
-                        packageDoc._id
-                });
-
-
-            if (!deliveredRecord) {
-
-                throw new Error(
-                    "Delivered package record was not found."
-                );
-            }
-
-
-            if (
-                deliveredRecord.cleared
-            ) {
-
-                throw new Error(
-                    "This package has already been cleared."
-                );
-            }
-
-
-            deliveredRecord.cleared =
-                true;
-
-            deliveredRecord.clearedAt =
-                new Date();
-
-            deliveredRecord.clearedByStaffId =
-                staffId;
-
-            deliveredRecord.clearedByStaffName =
-                String(
-                    req.user?.name ||
-                    req.user?.email ||
-                    "Staff"
-                ).trim();
-
-
-            await deliveredRecord.save();
-
-
-            return res.redirect(
-                `/packages/staff/${req.params.id}?success=${encodeURIComponent(
-                    "Package marked as cleared."
-                )}`
-            );
-
-        } catch (err) {
-
-            console.error(err);
-
-            return res.redirect(
-                `/packages/staff/${req.params.id}?error=${encodeURIComponent(
-                    err.message
-                )}`
-            );
-        }
-    };
