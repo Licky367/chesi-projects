@@ -100,7 +100,7 @@ const checkoutProductId =
 <% if (isStaff && hasItems) { %>
 
             <h1 class="page-title">
-                <%= cartSubstation.name || user.assignedSubstation || "" %> Client's Cart
+                <%= cartSubstation.name || user.assignedSubstation.name || "" %> Client's Cart
             </h1>
 
             <p class="page-subtitle">
