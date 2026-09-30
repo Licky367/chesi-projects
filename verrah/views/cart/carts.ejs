@@ -16,8 +16,8 @@ const isAdmin =
 
 
 const staffBranchUrl =
-    isStaff && user?.assignedSubstation
-        ? `/branch/${user.assignedSubstation}`
+    isStaff
+        ? `/sales`
         : "/products";
 
 
