@@ -99,9 +99,9 @@ const checkoutProductId =
             </span>
 <% if (isStaff && hasItems) { %>
 
-            <h1 class="page-title">
-                <%= cartSubstation.name || user.assignedSubstation.name || "" %> Client's Cart
-            </h1>
+  <h1 class="page-title">
+  <%= cartSubstation?.name || user.assignedSubstation?.name || user.assignedSubstation || "General" %> Client's Cart
+</h1>
 
             <p class="page-subtitle">
               Record the Sales for These Items
