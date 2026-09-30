@@ -97,10 +97,10 @@ const checkoutProductId =
             <span class="cart-kicker">
                 VERRAH COSMETICS
             </span>
-<% if (isStaff) { %>
+<% if (isStaff && hasItems) { %>
 
             <h1 class="page-title">
-                <%= cart.cartSubstation.name %> Client's Cart
+                <%= cart.cartSubstation.name || user.assignedSubstation || "" %> Client's Cart
             </h1>
 
             <p class="page-subtitle">
