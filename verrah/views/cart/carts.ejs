@@ -14,36 +14,30 @@ const isStaff =
 const isAdmin =
     userRole === "admin";
 
-
 const staffBranchUrl =
     isStaff
-        ? `/sales`
+       ? `/sales`
         : "/products";
-
 
 const cartItems =
     Array.isArray(cart?.items)
-        ? cart.items
+       ? cart.items
         : [];
-
 
 const hasItems =
     cartItems.length > 0;
-
 
 const cartTotal =
     Number(
         cart?.totalPrice || 0
     );
 
-
 /*
- * true  = Mpesa
+ * true = Mpesa
  * false = Cash
  */
 const isMobile =
     cart?.isMobile === true;
-
 
 /*
  * ADMIN
@@ -60,21 +54,19 @@ const isMobile =
  */
 const cartSubstation =
     hasItems
-        ? String(
+       ? String(
             cart?.cartSubstation || ""
         ).trim()
         : "";
-
 
 const staffSalesSubstation =
     String(
         user?.assignedSubstation || ""
     ).trim();
 
-
 const checkoutProductId =
     hasItems
-        ? String(
+       ? String(
             cartItems[0]?.product?._id ||
             cartItems[0]?.product ||
             cartItems[0]?.productId ||
@@ -82,7 +74,6 @@ const checkoutProductId =
         )
         : "";
 %>
-
 
 <section class="shop-page cart-page">
 
@@ -100,8 +91,8 @@ const checkoutProductId =
 <% if (isStaff && hasItems) { %>
 
   <h1 class="page-title">
-  <%= cartSubstation?.name || user.assignedSubstation?.name || user.assignedSubstation || "General" %> Client's Cart
-</h1>
+    <%= (isAdmin? cartSubstation : staffSalesSubstation) || cartSubstation || staffSalesSubstation || "General" %> Client's Cart
+  </h1>
 
             <p class="page-subtitle">
               Record the Sales for These Items
@@ -116,7 +107,6 @@ const checkoutProductId =
 
         </div>
 
-
         <a
             href="<%= staffBranchUrl %>"
             class="secondary-btn"
@@ -130,12 +120,11 @@ const checkoutProductId =
 
     </div>
 
-
     <!-- ======================================================
          ERROR
     ======================================================= -->
 
-    <% if (typeof error !== "undefined" && error) { %>
+    <% if (typeof error!== "undefined" && error) { %>
 
         <div class="cart-alert cart-alert-error">
 
@@ -148,7 +137,6 @@ const checkoutProductId =
         </div>
 
     <% } %>
-
 
     <!-- ======================================================
          EMPTY CART
@@ -164,16 +152,13 @@ const checkoutProductId =
 
             </div>
 
-
             <h2>
                 Your Cart Is Empty
             </h2>
 
-
             <p>
                 You have not added any products to your cart yet.
             </p>
-
 
             <a
                 class="primary-btn"
@@ -188,16 +173,13 @@ const checkoutProductId =
 
         </div>
 
-
     <% } else { %>
-
 
         <!-- ==================================================
              CART LAYOUT
         =================================================== -->
 
         <div class="cart-layout">
-
 
             <!-- ==================================================
                  CART ITEMS
@@ -219,20 +201,18 @@ const checkoutProductId =
 
                     </div>
 
-
                     <span class="cart-item-count">
 
                         <%= cartItems.length %>
 
                         <%= cartItems.length === 1
-                            ? "item"
+                           ? "item"
                             : "items"
                         %>
 
                     </span>
 
                 </div>
-
 
                 <div class="cart-list">
 
@@ -247,37 +227,31 @@ const checkoutProductId =
                                     ""
                                 );
 
-
                             const quantity =
                                 Number(
-                                    item.qty ??
-                                    item.quantity ??
+                                    item.qty??
+                                    item.quantity??
                                     0
                                 );
-
 
                             const price =
                                 Number(
                                     item.price || 0
                                 );
 
-
                             const itemTotal =
                                 price * quantity;
-
 
                             const productName =
                                 item.name ||
                                 item.product?.name ||
                                 "Product";
 
-
                             const image =
                                 item.image ||
                                 item.product?.image ||
                                 "";
                         %>
-
 
                         <div class="cart-item-card">
 
@@ -307,7 +281,6 @@ const checkoutProductId =
 
                                 </div>
 
-
                                 <div class="cart-item-main">
 
                                     <div class="cart-item-topline">
@@ -322,11 +295,9 @@ const checkoutProductId =
 
                                     </div>
 
-
                                     <h3>
                                         <%= productName %>
                                     </h3>
-
 
                                     <div class="cart-item-meta">
 
@@ -341,7 +312,6 @@ const checkoutProductId =
                                             </strong>
 
                                         </span>
-
 
                                         <span>
 
@@ -358,7 +328,6 @@ const checkoutProductId =
 
                                     </div>
 
-
                                     <div class="cart-item-total">
 
                                         KSh
@@ -369,7 +338,6 @@ const checkoutProductId =
                                 </div>
 
                             </a>
-
 
                             <form
                                 action="/carts/<%= productId %>/remove"
@@ -391,13 +359,11 @@ const checkoutProductId =
 
                         </div>
 
-
                     <% }) %>
 
                 </div>
 
             </div>
-
 
             <!-- ==================================================
                  ORDER SUMMARY
@@ -415,7 +381,6 @@ const checkoutProductId =
 
                 </div>
 
-
                 <div class="cart-summary-row">
 
                     <span>
@@ -427,7 +392,6 @@ const checkoutProductId =
                     </strong>
 
                 </div>
-
 
                 <div class="cart-summary-row cart-summary-total">
 
@@ -441,7 +405,6 @@ const checkoutProductId =
                     </strong>
 
                 </div>
-
 
                 <!-- ==================================================
                      ADMIN / STAFF PAYMENT MODE
@@ -458,7 +421,6 @@ const checkoutProductId =
                             Payment mode:
                         </label>
 
-
                         <select
                             id="staffPaymentMode"
                             class="cart-payment-mode-select"
@@ -471,18 +433,16 @@ const checkoutProductId =
                                 Select payment mode
                             </option>
 
-
                             <option
                                 value="cash"
-                                <%= !isMobile ? "selected" : "" %>
+                                <%=!isMobile? "selected" : "" %>
                             >
                                 Cash Payment
                             </option>
 
-
                             <option
                                 value="mpesa"
-                                <%= isMobile ? "selected" : "" %>
+                                <%= isMobile? "selected" : "" %>
                             >
                                 Mpesa Payment
                             </option>
@@ -493,13 +453,11 @@ const checkoutProductId =
 
                 <% } %>
 
-
                 <!-- ==================================================
                      CHECKOUT ACTION
                 =================================================== -->
 
                 <% if (isStaff) { %>
-
 
                     <% if (!isMobile) { %>
 
@@ -517,7 +475,6 @@ const checkoutProductId =
 
                         </button>
 
-
                     <% } else { %>
 
                         <a
@@ -525,7 +482,7 @@ const checkoutProductId =
                             id="staffMpesaCheckout"
                             href="/carts/<%= checkoutProductId %>?salesSubstation=<%= encodeURIComponent(
                                 isAdmin
-                                    ? cartSubstation
+                                   ? cartSubstation
                                     : staffSalesSubstation
                             ) %>"
                         >
@@ -540,9 +497,7 @@ const checkoutProductId =
 
                     <% } %>
 
-
                 <% } else { %>
-
 
                     <a
                         class="primary-btn cart-checkout-btn"
@@ -555,9 +510,7 @@ const checkoutProductId =
 
                     </a>
 
-
                 <% } %>
-
 
                 <a
                     class="secondary-btn cart-continue-btn"
@@ -574,17 +527,15 @@ const checkoutProductId =
 
         </div>
 
-
     <% } %>
 
 </section>
-
 
 <!-- ==========================================================
      ADMIN / STAFF CASH SALE MODAL
 ========================================================== -->
 
-<% if (isStaff && hasItems && !isMobile) { %>
+<% if (isStaff && hasItems &&!isMobile) { %>
 
     <div
         class="staff-sale-modal"
@@ -597,14 +548,12 @@ const checkoutProductId =
             data-close-staff-sale-modal
         ></div>
 
-
         <div
             class="staff-sale-modal-content"
             role="dialog"
             aria-modal="true"
             aria-labelledby="staffSaleModalTitle"
         >
-
 
             <!-- ==================================================
                  MODAL HEADER
@@ -618,25 +567,22 @@ const checkoutProductId =
 
                 </div>
 
-
                 <div>
 
                     <span class="staff-sale-modal-kicker">
 
                         <%= isAdmin
-                            ? "ADMIN SALE"
+                           ? "ADMIN SALE"
                             : "STAFF SALE"
                         %>
 
                     </span>
-
 
                     <h2 id="staffSaleModalTitle">
                         Record Sale
                     </h2>
 
                 </div>
-
 
                 <button
                     type="button"
@@ -650,7 +596,6 @@ const checkoutProductId =
                 </button>
 
             </div>
-
 
             <!-- ==================================================
                  MODAL BODY
@@ -676,14 +621,12 @@ const checkoutProductId =
 
                 <% } %>
 
-
                 <form
                     action="/carts/staff-sale"
                     method="POST"
                     id="staffSaleForm"
                     class="staff-sale-form"
                 >
-
 
                     <!-- ==================================================
                          PAYMENT MODE
@@ -695,20 +638,11 @@ const checkoutProductId =
                         value="false"
                     >
 
-
                     <!-- ==================================================
                          SALES SUBSTATION
                     ================================================== -->
 
                     <% if (isAdmin) { %>
-
-                        <!--
-                            ADMIN:
-                            Use the cart's current sales substation.
-
-                            This is deliberately NOT taken from
-                            the admin user's assignedSubstation.
-                        -->
 
                         <input
                             type="hidden"
@@ -716,13 +650,7 @@ const checkoutProductId =
                             value="<%= cartSubstation %>"
                         >
 
-
                     <% } else { %>
-
-                        <!--
-                            STAFF:
-                            Existing staff behavior remains unchanged.
-                        -->
 
                         <input
                             type="hidden"
@@ -731,7 +659,6 @@ const checkoutProductId =
                         >
 
                     <% } %>
-
 
                     <!-- ==================================================
                          SALES NAME
@@ -742,7 +669,6 @@ const checkoutProductId =
                         <label for="salesName">
                             Sales Name
                         </label>
-
 
                         <div class="staff-sale-input-wrap">
 
@@ -762,7 +688,6 @@ const checkoutProductId =
 
                     </div>
 
-
                     <!-- ==================================================
                          SALE SUMMARY
                     =================================================== -->
@@ -780,7 +705,6 @@ const checkoutProductId =
 
                     </div>
 
-
                     <!-- ==================================================
                          MODAL ACTIONS
                     =================================================== -->
@@ -796,7 +720,6 @@ const checkoutProductId =
                             Cancel
 
                         </button>
-
 
                         <button
                             type="submit"
@@ -819,11 +742,6 @@ const checkoutProductId =
 
     </div>
 
-
-    <!-- ==========================================================
-         CASH SALE MODAL JAVASCRIPT
-    =========================================================== -->
-
     <script>
         (function () {
 
@@ -832,23 +750,19 @@ const checkoutProductId =
                     "staffSaleModal"
                 );
 
-
             const openButton =
                 document.getElementById(
                     "openStaffSaleModal"
                 );
-
 
             const nameInput =
                 document.getElementById(
                     "salesName"
                 );
 
-
-            if (!modal || !openButton) {
+            if (!modal ||!openButton) {
                 return;
             }
-
 
             function closeModal() {
 
@@ -856,12 +770,10 @@ const checkoutProductId =
                     "is-open"
                 );
 
-
                 modal.setAttribute(
                     "aria-hidden",
                     "true"
                 );
-
 
                 document.body.classList.remove(
                     "staff-sale-modal-open"
@@ -869,24 +781,20 @@ const checkoutProductId =
 
             }
 
-
             function openModal() {
 
                 modal.classList.add(
                     "is-open"
                 );
 
-
                 modal.setAttribute(
                     "aria-hidden",
                     "false"
                 );
 
-
                 document.body.classList.add(
                     "staff-sale-modal-open"
                 );
-
 
                 window.setTimeout(
                     function () {
@@ -903,18 +811,16 @@ const checkoutProductId =
 
             }
 
-
             openButton.addEventListener(
                 "click",
                 openModal
             );
 
-
             modal
-                .querySelectorAll(
+               .querySelectorAll(
                     "[data-close-staff-sale-modal]"
                 )
-                .forEach(
+               .forEach(
                     function (element) {
 
                         element.addEventListener(
@@ -924,7 +830,6 @@ const checkoutProductId =
 
                     }
                 );
-
 
             document.addEventListener(
                 "keydown",
@@ -949,11 +854,6 @@ const checkoutProductId =
 
 <% } %>
 
-
-<!-- ==========================================================
-     ADMIN / STAFF PAYMENT MODE JAVASCRIPT
-========================================================== -->
-
 <% if (isStaff && hasItems) { %>
 
     <script>
@@ -964,11 +864,9 @@ const checkoutProductId =
                     "staffPaymentMode"
                 );
 
-
             if (!paymentMode) {
                 return;
             }
-
 
             paymentMode.addEventListener(
                 "change",
@@ -977,24 +875,20 @@ const checkoutProductId =
                     const selectedMode =
                         paymentMode.value;
 
-
                     if (
-                        selectedMode !== "cash" &&
-                        selectedMode !== "mpesa"
+                        selectedMode!== "cash" &&
+                        selectedMode!== "mpesa"
                     ) {
                         return;
                     }
 
-
                     const newIsMobile =
                         selectedMode === "mpesa";
-
 
                     paymentMode.setAttribute(
                         "aria-busy",
                         "true"
                     );
-
 
                     try {
 
@@ -1022,7 +916,6 @@ const checkoutProductId =
                                 }
                             );
 
-
                         if (!response.ok) {
 
                             throw new Error(
@@ -1031,9 +924,7 @@ const checkoutProductId =
 
                         }
 
-
                         window.location.reload();
-
 
                     } catch (error) {
 
@@ -1042,15 +933,12 @@ const checkoutProductId =
                             error
                         );
 
-
                         paymentMode.value =
                             selectedMode;
-
 
                         paymentMode.removeAttribute(
                             "aria-busy"
                         );
-
 
                         alert(
                             error?.message ||
