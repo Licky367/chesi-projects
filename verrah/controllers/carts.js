@@ -16,7 +16,6 @@ const packageService =
 const substationService =
     require("../services/substationService");
 
-
 // ==========================================================
 // CART ERROR HELPER
 // ==========================================================
@@ -39,15 +38,8 @@ function getCartErrorMessage(err, fallback) {
     return message || fallback;
 }
 
-
 // ==========================================================
 // PACKAGE REDIRECT HELPER
-//
-// Staff or admin:
-//     /packages/staffDirect
-//
-// Everyone else:
-//     /packages
 // ==========================================================
 
 function getPackageRedirect(req) {
@@ -60,7 +52,6 @@ function getPackageRedirect(req) {
             .trim()
             .toLowerCase();
 
-
     if (
         role === "staff" || role === "admin"
     ) {
@@ -68,18 +59,11 @@ function getPackageRedirect(req) {
         return "/packages/staffDirect";
     }
 
-
     return "/packages";
 }
 
-
 // ==========================================================
 // GET SUBSTATIONS
-//
-// Uses the actual Verrah substation service.
-//
-// substationService.list()
-// returns active substations sorted by name.
 // ==========================================================
 
 async function getSubstations() {
@@ -91,7 +75,6 @@ async function getSubstations() {
         ? substations
         : [];
 }
-
 
 // ==========================================================
 // CART LIST
@@ -113,12 +96,59 @@ exports.list = async (req, res) => {
 
         ]);
 
-
         const total =
             cartService.calculateTotal(
                 cart
             );
 
+        // --------------------------------------------------
+        // MAP SUBSTATION ID -> NAME FOR DISPLAY
+        // cart.cartSubstation is ID, need name from substations list
+        // --------------------------------------------------
+
+        const rawCartSub =
+            cart?.cartSubstation;
+
+        const rawStaffSub =
+            req.user?.assignedSubstation;
+
+        const cartSubId =
+            String(
+                rawCartSub?._id ||
+                rawCartSub ||
+                ""
+            ).trim();
+
+        const staffSubId =
+            String(
+                rawStaffSub?._id ||
+                rawStaffSub ||
+                ""
+            ).trim();
+
+        const cartSubstationName =
+            cartSubId
+
+                ? (
+                    substations.find(
+                        s =>
+                            String(s._id) === cartSubId
+                    )?.name || cartSubId
+                )
+
+                : "";
+
+        const staffSalesSubstationName =
+            staffSubId
+
+                ? (
+                    substations.find(
+                        s =>
+                            String(s._id) === staffSubId
+                    )?.name || staffSubId
+                )
+
+                : "";
 
         return res.render(
             "cart/carts",
@@ -131,6 +161,10 @@ exports.list = async (req, res) => {
                 total,
 
                 substations,
+
+                cartSubstationName,
+
+                staffSalesSubstationName,
 
                 error:
                     req.query.error ||
@@ -148,7 +182,6 @@ exports.list = async (req, res) => {
             err
         );
 
-
         return res.status(500).render(
             "cart/carts",
             {
@@ -164,6 +197,12 @@ exports.list = async (req, res) => {
                 substations:
                     [],
 
+                cartSubstationName:
+                    "",
+
+                staffSalesSubstationName:
+                    "",
+
                 error:
                     "Unable to load your cart.",
 
@@ -174,18 +213,9 @@ exports.list = async (req, res) => {
     }
 };
 
-
 // ==========================================================
 // UPDATE PAYMENT MODE
 // POST /carts/payment-mode
-//
-// ADMIN + STAFF
-//
-// Cash:
-//     isMobile = false
-//
-// M-PESA:
-//     isMobile = true
 // ==========================================================
 
 exports.updatePaymentMode = async (
@@ -194,10 +224,6 @@ exports.updatePaymentMode = async (
 ) => {
 
     try {
-
-        // --------------------------------------------------
-        // USER MUST BE LOGGED IN
-        // --------------------------------------------------
 
         if (!req.user) {
 
@@ -211,11 +237,6 @@ exports.updatePaymentMode = async (
             });
         }
 
-
-        // --------------------------------------------------
-        // USER ROLE
-        // --------------------------------------------------
-
         const role =
             String(
                 req.user.role ||
@@ -223,11 +244,6 @@ exports.updatePaymentMode = async (
             )
                 .trim()
                 .toLowerCase();
-
-
-        // --------------------------------------------------
-        // ADMIN + STAFF ONLY
-        // --------------------------------------------------
 
         if (
             role !== "staff" &&
@@ -244,20 +260,10 @@ exports.updatePaymentMode = async (
             });
         }
 
-
-        // --------------------------------------------------
-        // READ SUBMITTED VALUE
-        //
-        // true  = M-PESA
-        // false = CASH
-        // --------------------------------------------------
-
         const submittedValue =
             req.body?.isMobile;
 
-
         let isMobile;
-
 
         if (
             submittedValue === true ||
@@ -295,17 +301,11 @@ exports.updatePaymentMode = async (
             });
         }
 
-
-        // --------------------------------------------------
-        // UPDATE THROUGH CART SERVICE
-        // --------------------------------------------------
-
         const cart =
             await cartService.updatePaymentMode(
                 req,
                 isMobile
             );
-
 
         return res.json({
 
@@ -326,7 +326,6 @@ exports.updatePaymentMode = async (
             err
         );
 
-
         return res.status(
             err.statusCode || 500
         ).json({
@@ -341,7 +340,6 @@ exports.updatePaymentMode = async (
         });
     }
 };
-
 
 // ==========================================================
 // CHECKOUT PAGE
@@ -360,7 +358,6 @@ exports.checkoutPage = async (
                 req
             );
 
-
         if (
             !cart ||
             !Array.isArray(cart.items) ||
@@ -371,11 +368,6 @@ exports.checkoutPage = async (
                 "/carts"
             );
         }
-
-
-        // --------------------------------------------------
-        // FIND CART ITEM
-        // --------------------------------------------------
 
         const item =
             cart.items.find(
@@ -388,18 +380,12 @@ exports.checkoutPage = async (
                     )
             );
 
-
         if (!item) {
 
             return res.redirect(
                 "/carts"
             );
         }
-
-
-        // --------------------------------------------------
-        // CHECKOUT SUBSTATIONS
-        // --------------------------------------------------
 
         let substations =
             Array.isArray(
@@ -408,17 +394,11 @@ exports.checkoutPage = async (
                 ? res.locals.substations
                 : null;
 
-
         if (!substations) {
 
             substations =
                 await getSubstations();
         }
-
-
-        // --------------------------------------------------
-        // PICKUP STATION
-        // --------------------------------------------------
 
         const pickupStation =
             res.locals.pickupStation ||
@@ -430,16 +410,10 @@ exports.checkoutPage = async (
                     : ""
             );
 
-
-        // --------------------------------------------------
-        // TOTAL
-        // --------------------------------------------------
-
         const total =
             cartService.calculateTotal(
                 cart
             );
-
 
         return res.render(
             "cart/cart-checkout",
@@ -473,7 +447,6 @@ exports.checkoutPage = async (
             err
         );
 
-
         return res.redirect(
             `/carts/${encodeURIComponent(
                 req.params.id
@@ -486,7 +459,6 @@ exports.checkoutPage = async (
         );
     }
 };
-
 
 // ==========================================================
 // CART ITEM DETAILS
@@ -505,7 +477,6 @@ exports.details = async (
                 req
             );
 
-
         if (
             !cart ||
             !Array.isArray(cart.items) ||
@@ -516,7 +487,6 @@ exports.details = async (
                 "/carts"
             );
         }
-
 
         const item =
             cart.items.find(
@@ -529,7 +499,6 @@ exports.details = async (
                     )
             );
 
-
         if (!item) {
 
             return res.redirect(
@@ -537,12 +506,10 @@ exports.details = async (
             );
         }
 
-
         const total =
             cartService.calculateTotal(
                 cart
             );
-
 
         return res.render(
             "cart/cart-details",
@@ -572,7 +539,6 @@ exports.details = async (
             err
         );
 
-
         return res.redirect(
             `/carts/${encodeURIComponent(
                 req.params.id
@@ -585,7 +551,6 @@ exports.details = async (
         );
     }
 };
-
 
 // ==========================================================
 // REMOVE CART ITEM
@@ -604,7 +569,6 @@ exports.remove = async (
             req.params.id
         );
 
-
         return res.redirect(
             "/carts"
         );
@@ -615,7 +579,6 @@ exports.remove = async (
             "Cart remove error:",
             err
         );
-
 
         return res.redirect(
             `/carts/${encodeURIComponent(
@@ -630,31 +593,9 @@ exports.remove = async (
     }
 };
 
-
 // ==========================================================
 // CHECKOUT PROCESS
 // POST /carts/checkout
-//
-// Internal users:
-//     staff
-//     admin
-//
-// Both staff and admin:
-//     salesName is required
-//
-// Staff:
-//     assignedSubstation determines the substation.
-//
-// Admin:
-//     selected package substation is handled by the
-//     checkout flow.
-//
-// Cash:
-//     handled by /carts/staff-sale
-//
-// M-PESA:
-//     normal M-PESA/payment flow, with salesName retained
-//     for internal users.
 // ==========================================================
 
 exports.checkout = async (
@@ -668,13 +609,11 @@ exports.checkout = async (
             ""
         ).trim();
 
-
     const productId =
         String(
             req.body?.productId ||
             ""
         ).trim();
-
 
     try {
 
@@ -682,7 +621,6 @@ exports.checkout = async (
             await cartService.getCart(
                 req
             );
-
 
         const role =
             String(
@@ -692,45 +630,17 @@ exports.checkout = async (
                 .trim()
                 .toLowerCase();
 
-
-        // --------------------------------------------------
-        // INTERNAL USERS
-        //
-        // BOTH STAFF AND ADMIN
-        // --------------------------------------------------
-
         const isInternalSale =
             role === "staff" ||
             role === "admin";
-
-
-        const isStaff =
-            role === "staff";
-
-
-        const isAdmin =
-            role === "admin";
-
 
         const isMobile =
             isInternalSale &&
             cart &&
             cart.isMobile === true;
 
-
-        // --------------------------------------------------
-        // SALES NAME
-        //
-        // BOTH STAFF AND ADMIN
-        //
-        // This is intentionally not restricted to staff.
-        // The checkout EJS already displays salesName for
-        // both roles.
-        // --------------------------------------------------
-
         let salesName =
             "";
-
 
         if (isInternalSale) {
 
@@ -740,7 +650,6 @@ exports.checkout = async (
                     ""
                 ).trim();
 
-
             if (
                 !salesName
             ) {
@@ -749,7 +658,6 @@ exports.checkout = async (
                     "Sales name is required."
                 );
             }
-
 
             if (
                 salesName.length >
@@ -761,11 +669,6 @@ exports.checkout = async (
                 );
             }
         }
-
-
-        // --------------------------------------------------
-        // PAY UPON DELIVERY
-        // --------------------------------------------------
 
         if (
             method ===
@@ -787,51 +690,26 @@ exports.checkout = async (
                     ""
             };
 
-
-            // ------------------------------------------------
-            // INTERNAL USERS
-            //
-            // BOTH STAFF + ADMIN
-            //
-            // Preserve salesName.
-            // ------------------------------------------------
-
             if (isInternalSale) {
 
                 packageOptions.salesName =
                     salesName;
             }
 
-
             await packageService.createPackageFromCart(
                 req,
                 packageOptions
             );
-
 
             return res.redirect(
                 getPackageRedirect(req)
             );
         }
 
-
-        // --------------------------------------------------
-        // M-PESA
-        // --------------------------------------------------
-
         if (
             method ===
             "mpesa"
         ) {
-
-            // ------------------------------------------------
-            // For staff + admin, salesName has already been
-            // validated above.
-            //
-            // Keep it on req.body so the existing payment
-            // service receives the same checkout request
-            // containing salesName.
-            // ------------------------------------------------
 
             if (isInternalSale) {
 
@@ -839,29 +717,21 @@ exports.checkout = async (
                     salesName;
             }
 
-
             const result =
                 await paymentService.initiateStkPush(
                     req,
                     req.body?.phoneNumber
                 );
 
-
             return res.redirect(
                 `/carts/payment/${result.paymentId}`
             );
         }
 
-
-        // --------------------------------------------------
-        // NO PAYMENT METHOD
-        // --------------------------------------------------
-
         const error =
             encodeURIComponent(
                 "Choose a checkout method."
             );
-
 
         return res.redirect(
 
@@ -881,13 +751,11 @@ exports.checkout = async (
             err
         );
 
-
         const message =
             getCartErrorMessage(
                 err,
                 "Checkout failed."
             );
-
 
         return res.redirect(
 
@@ -906,23 +774,9 @@ exports.checkout = async (
     }
 };
 
-
 // ==========================================================
 // STAFF / ADMIN SALE
 // POST /carts/staff-sale
-//
-// CASH PAYMENT
-//
-// STAFF:
-//     salesName
-//     user.assignedSubstation
-//
-// ADMIN:
-//     salesName
-//     req.body.salesSubstation
-//
-// DATABASE:
-//     salesSubstation
 // ==========================================================
 
 exports.staffSale = async (
@@ -932,21 +786,12 @@ exports.staffSale = async (
 
     try {
 
-        // --------------------------------------------------
-        // USER MUST BE LOGGED IN
-        // --------------------------------------------------
-
         if (!req.user) {
 
             return res.redirect(
                 "/login"
             );
         }
-
-
-        // --------------------------------------------------
-        // USER ROLE
-        // --------------------------------------------------
 
         const role =
             String(
@@ -956,18 +801,11 @@ exports.staffSale = async (
                 .trim()
                 .toLowerCase();
 
-
         const isStaff =
             role === "staff";
 
-
         const isAdmin =
             role === "admin";
-
-
-        // --------------------------------------------------
-        // ADMIN + STAFF ONLY
-        // --------------------------------------------------
 
         if (
             !isStaff &&
@@ -979,19 +817,11 @@ exports.staffSale = async (
             );
         }
 
-
-        // --------------------------------------------------
-        // SALES NAME
-        //
-        // BOTH STAFF + ADMIN
-        // --------------------------------------------------
-
         const salesName =
             String(
                 req.body?.salesName ||
                 ""
             ).trim();
-
 
         if (!salesName) {
 
@@ -999,7 +829,6 @@ exports.staffSale = async (
                 "Sales name is required."
             );
         }
-
 
         if (
             salesName.length >
@@ -1011,26 +840,12 @@ exports.staffSale = async (
             );
         }
 
-
-        // --------------------------------------------------
-        // SALES SUBSTATION
-        // --------------------------------------------------
-        //
-        // STAFF:
-        //     Always use assignedSubstation from user.
-        //
-        // ADMIN:
-        //     Use the substation selected in the modal.
-        // --------------------------------------------------
-
         let salesSubstation;
-
 
         if (isStaff) {
 
             salesSubstation =
                 req.user.assignedSubstation;
-
 
             if (
                 !salesSubstation
@@ -1049,7 +864,6 @@ exports.staffSale = async (
                     ""
                 ).trim();
 
-
             if (
                 !salesSubstation
             ) {
@@ -1059,11 +873,6 @@ exports.staffSale = async (
                 );
             }
         }
-
-
-        // --------------------------------------------------
-        // NORMALIZE SUBSTATION ID
-        // --------------------------------------------------
 
         if (
             typeof salesSubstation ===
@@ -1076,12 +885,10 @@ exports.staffSale = async (
                 "";
         }
 
-
         salesSubstation =
             String(
                 salesSubstation
             ).trim();
-
 
         if (
             !salesSubstation
@@ -1092,14 +899,8 @@ exports.staffSale = async (
             );
         }
 
-
-        // --------------------------------------------------
-        // VERIFY SUBSTATION EXISTS
-        // --------------------------------------------------
-
         const substations =
             await getSubstations();
-
 
         const selectedSubstation =
             substations.find(
@@ -1112,7 +913,6 @@ exports.staffSale = async (
                     salesSubstation
             );
 
-
         if (
             !selectedSubstation
         ) {
@@ -1122,13 +922,6 @@ exports.staffSale = async (
             );
         }
 
-
-        // --------------------------------------------------
-        // CREATE SALE
-        //
-        // BOTH VALUES ARE PASSED TO THE CART SERVICE.
-        // --------------------------------------------------
-
         await cartService.createStaffSale(
             req,
             {
@@ -1136,11 +929,6 @@ exports.staffSale = async (
                 salesSubstation
             }
         );
-
-
-        // --------------------------------------------------
-        // REDIRECT
-        // --------------------------------------------------
 
         return res.redirect(
             `/sales`
@@ -1153,7 +941,6 @@ exports.staffSale = async (
             err
         );
 
-
         return res.status(400).send(
             getCartErrorMessage(
                 err,
@@ -1162,7 +949,6 @@ exports.staffSale = async (
         );
     }
 };
-
 
 // ==========================================================
 // PAYMENT PAGE
@@ -1182,14 +968,12 @@ exports.paymentPage = async (
                 req.params.id
             );
 
-
         if (!payment) {
 
             return res.redirect(
                 "/carts"
             );
         }
-
 
         return res.render(
             "cart/payment-status",
@@ -1211,13 +995,11 @@ exports.paymentPage = async (
             err
         );
 
-
         return res.redirect(
             "/carts"
         );
     }
 };
-
 
 // ==========================================================
 // PAYMENT STATUS
@@ -1237,7 +1019,6 @@ exports.paymentStatus = async (
                 req.params.id
             );
 
-
         if (!payment) {
 
             return res.status(404).json({
@@ -1249,7 +1030,6 @@ exports.paymentStatus = async (
                     "Payment not found."
             });
         }
-
 
         return res.json({
 
@@ -1279,7 +1059,6 @@ exports.paymentStatus = async (
             err
         );
 
-
         return res.status(500).json({
 
             ok:
@@ -1290,7 +1069,6 @@ exports.paymentStatus = async (
         });
     }
 };
-
 
 // ==========================================================
 // M-PESA CALLBACK
@@ -1315,7 +1093,6 @@ exports.mpesaCallback = async (
             err
         );
     }
-
 
     return res.json({
 
